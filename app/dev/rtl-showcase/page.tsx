@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function RtlShowcasePage() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(undefined);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-12 p-8">
