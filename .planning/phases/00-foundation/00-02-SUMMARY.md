@@ -63,8 +63,8 @@ decisions:
   - "app/dev/rtl-showcase (not _dev/) used because Next.js App Router treats _-prefixed folders as private (unrouted)"
 metrics:
   duration: "25 minutes"
-  completed_date: "2026-05-08"
-  tasks_completed: 4
+  completed_date: "2026-05-09"
+  tasks_completed: 5
   tasks_total: 5
   files_created: 12
   files_modified: 7
@@ -86,7 +86,8 @@ Wire complete test infrastructure (Vitest + Playwright smoke tests), install sha
 | 2 | Wire Playwright e2e testing | 093fb29 | Complete |
 | 3 | Install shadcn + RTL CSS patches | 4a5b980 | Complete |
 | 4 | Build RTL showcase page | ba20c50 | Complete |
-| 5 | Visual verification checkpoint | — | Awaiting human verification |
+| 5 | Visual verification checkpoint | — | Approved by user |
+| — | Post-checkpoint fix: DropdownMenuLabel crash + calendar hydration | aa8dc53 | Complete |
 
 ## Vitest Configuration
 
@@ -230,10 +231,37 @@ All three sections include instructions for human visual verification per D-02.
 
 None — all components are wired with real data (date picker state, Hebrew labels).
 
-## Checkpoint (Task 5 — Awaiting)
+## Checkpoint (Task 5 — APPROVED)
 
-Visual verification of RTL correctness at `/dev/rtl-showcase` is pending human approval. See the plan for the full verification protocol (D-02).
+Human visual verification of RTL correctness at `/dev/rtl-showcase` was completed and approved by the user. All three components (Popover, Calendar, Dropdown) rendered correctly in RTL with no misalignment, no console errors.
+
+Two bugs were found during the verification session and fixed in commit `aa8dc53`:
+
+**5. [Rule 1 - Bug] DropdownMenuLabel GroupLabel crash**
+- **Found during:** Task 5 visual verification
+- **Issue:** `DropdownMenuLabel` component caused a runtime crash due to prop incompatibility in shadcn v4 Base UI implementation
+- **Fix:** Corrected prop usage to match Base UI API; removed incompatible `inset` prop
+- **Files modified:** `app/dev/rtl-showcase/page.tsx`, `components/ui/dropdown-menu.tsx`
+- **Commit:** aa8dc53
+
+**6. [Rule 1 - Bug] Calendar hydration mismatch**
+- **Found during:** Task 5 visual verification
+- **Issue:** React hydration error from `new Date()` being different between server and client renders
+- **Fix:** Deferred initial date state to client-only to eliminate SSR/CSR mismatch
+- **Files modified:** `app/dev/rtl-showcase/page.tsx`
+- **Commit:** aa8dc53
 
 ## Self-Check
 
-Pending — will be completed after checkpoint resolution.
+**PASSED**
+
+- `fe20e98` exists in git log — Task 1 Vitest commit confirmed
+- `093fb29` exists in git log — Task 2 Playwright commit confirmed
+- `4a5b980` exists in git log — Task 3 shadcn + RTL patches commit confirmed
+- `ba20c50` exists in git log — Task 4 RTL showcase commit confirmed
+- `aa8dc53` exists in git log — Post-checkpoint bug fix commit confirmed
+- `vitest.config.ts`, `playwright.config.ts`, `test/unit/smoke.test.ts`, `test/e2e/smoke.spec.ts` — all exist
+- `components/ui/popover.tsx`, `components/ui/calendar.tsx`, `components/ui/dropdown-menu.tsx`, `components/ui/button.tsx` — all exist
+- `lib/utils.ts` — exists with `export function cn`
+- `app/dev/rtl-showcase/page.tsx` — exists
+- `app/globals.css` — contains RTL override block

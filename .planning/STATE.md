@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "00-02-PLAN.md checkpoint:human-verify (Task 5)"
-last_updated: "2026-05-08T23:18:21.333Z"
+status: verifying
+stopped_at: Completed 00-02-PLAN.md (all 5 tasks including human-verify checkpoint approved)
+last_updated: "2026-05-08T23:50:46.096Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 9
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 
 Phase: 00 (foundation) — EXECUTING
 Plan: 3 of 3 in current phase
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-05-08
 
 Progress: [███░░░░░░░] 33%
@@ -57,6 +57,7 @@ Progress: [███░░░░░░░] 33%
 |-------|------|----------|-------|-------|
 | Phase 00-foundation | P01 | 5 min | 3 tasks | 15 files |
 | Phase 00-foundation P02 | 25 | 4 tasks | 19 files |
+| Phase 00-foundation P02 | 45 | 5 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: shadcn v4 uses Base UI not Radix - RTL is handled natively via dir attribute
 - [Phase 00-foundation]: Tailwind v3 upgraded to v4 (required by shadcn v4 components)
 - [Phase 00-foundation]: app/dev/rtl-showcase (not _dev/) - Next.js App Router excludes _-prefixed folders from routing
+- [Phase 00-foundation]: shadcn v4 (4.7.0) installs @base-ui/react (Base UI) instead of Radix — handles RTL natively via dir attribute, fewer CSS patches needed
+- [Phase 00-foundation]: Tailwind v3 upgraded to v4 (required by shadcn v4); @tailwindcss/postcss replaces tailwindcss in postcss config; CSS config now uses @import + @theme inline tokens
 
 ### Pending Todos
 
@@ -88,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T23:18:21.322Z
-Stopped at: 00-02-PLAN.md checkpoint:human-verify (Task 5)
+Last session: 2026-05-08T23:50:46.088Z
+Stopped at: Completed 00-02-PLAN.md (all 5 tasks including human-verify checkpoint approved)
 Resume file: None
