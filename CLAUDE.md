@@ -175,3 +175,62 @@ Never commit these.
 - WCAG 2.1 AA — axe-core zero serious/critical issues
 - Color + glyph encoding (color-blind safe)
 - Print-legible on A3/A4 monochrome (`@media print`)
+
+<!-- GSD:project-start source:PROJECT.md -->
+## Project
+
+**School Gantt Chart System**
+
+Multi-tenant school event calendar where each school is an isolated tenant (Postgres RLS). Staff editors submit events through a 7-step wizard → school admin approves or rejects → events appear on 4 synchronized public views (Gantt chart, printable yearly calendar, mobile agenda, per-user iCal feed). Unauthenticated public viewers (students, parents, teachers) browse without accounts.
+
+**Core Value:** An admin can approve a staff-submitted event and it appears publicly across all views within 5 seconds.
+
+### Constraints
+
+- **Tech Stack:** Next.js 15 App Router + React 19 + TypeScript 5 strict; Tailwind + shadcn/ui; Supabase (Postgres + Auth + RLS); Drizzle ORM + `pg`; `next-intl`; `ical-generator`; Resend; Zod; Vitest + Playwright
+- **RTL:** CSS logical properties only (`start`/`end`) — never hardcode `left`/`right` in layout/position styles
+- **DB safety:** Every query touching school data must use `db.withSchool(schoolId, fn)`. ESLint rule bans raw service client outside `lib/db/`
+- **Security:** Parameterized SQL only; no SQL string interpolation; `supabaseAdmin` only inside `lib/db/`
+- **Auth lockout:** 10 failed attempts / 15 min window
+- **Performance:** Gantt ≤ 2 s first paint (1k events); iCal ≤ 500 ms; public view freshness ≤ 5 s after approval
+- **Coverage:** ≥ 80% on new code; integration tests use real Postgres (no mocks)
+- **Code style:** Functions < 50 lines; files < 400 lines; no `any`; `snake_case` DB → `camelCase` frontend transformed at API layer
+<!-- GSD:project-end -->
+
+<!-- GSD:stack-start source:STACK.md -->
+## Technology Stack
+
+Technology stack not yet documented. Will populate after codebase mapping or first phase.
+<!-- GSD:stack-end -->
+
+<!-- GSD:conventions-start source:CONVENTIONS.md -->
+## Conventions
+
+Conventions not yet established. Will populate as patterns emerge during development.
+<!-- GSD:conventions-end -->
+
+<!-- GSD:architecture-start source:ARCHITECTURE.md -->
+## Architecture
+
+Architecture not yet mapped. Follow existing patterns found in the codebase.
+<!-- GSD:architecture-end -->
+
+<!-- GSD:workflow-start source:GSD defaults -->
+## GSD Workflow Enforcement
+
+Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
+
+Use these entry points:
+- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
+- `/gsd:debug` for investigation and bug fixing
+- `/gsd:execute-phase` for planned phase work
+
+Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+<!-- GSD:workflow-end -->
+
+<!-- GSD:profile-start -->
+## Developer Profile
+
+> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
+> This section is managed by `generate-claude-profile` -- do not edit manually.
+<!-- GSD:profile-end -->
