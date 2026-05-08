@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 0 context gathered
-last_updated: "2026-05-08T22:10:07.979Z"
-last_activity: 2026-05-09 — Roadmap and STATE initialized
+status: executing
+stopped_at: "Checkpoint: Task 3 human-verify — awaiting visual RTL confirmation at localhost:3000"
+last_updated: "2026-05-08T22:35:37.798Z"
+last_activity: "2026-05-09 — Plan 00-01 executing (checkpoint:human-verify at Task 3)"
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 0 of 9 (Foundation)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-05-09 — Roadmap and STATE initialized
+Plan: 1 of 3 in current phase
+Status: executing
+Last activity: 2026-05-09 — Plan 00-01 executing (checkpoint:human-verify at Task 3)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 00-foundation P01 | 5 | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Recent decisions affecting current work:
 - Init: CSS `@media print` for PDF (D1) — no server-side rendering needed
 - Init: Polling + 5 s Cache-Control for ≤ 5 s freshness (E1)
 - Init: shadcn RTL patches needed for Popover, Calendar, Dropdown — budget half-day in Phase 0
+- [Phase 00-foundation]: typedRoutes moved to top-level in next.config.ts (Next.js 15.5 changed it from experimental)
+- [Phase 00-foundation]: CSS logical properties pattern established: use ms-*/me-*/ps-*/pe-*/text-start/text-end for RTL, never left/right
+- [Phase 00-foundation]: Server Components by default — no 'use client' unless hooks or browser APIs are needed
 
 ### Pending Todos
 
@@ -77,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T22:10:07.971Z
-Stopped at: Phase 0 context gathered
-Resume file: .planning/phases/00-foundation/00-CONTEXT.md
+Last session: 2026-05-08T22:35:37.789Z
+Stopped at: Checkpoint: Task 3 human-verify — awaiting visual RTL confirmation at localhost:3000
+Resume file: None

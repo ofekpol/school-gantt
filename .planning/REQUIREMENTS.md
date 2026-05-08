@@ -8,7 +8,7 @@
 
 ### Foundation & Infrastructure
 
-- [ ] **INFRA-01**: Developer can run `pnpm dev` and see Hebrew-RTL placeholder at `localhost:3000`
+- [x] **INFRA-01**: Developer can run `pnpm dev` and see Hebrew-RTL placeholder at `localhost:3000`
 - [ ] **INFRA-02**: `pnpm test` runs zero tests successfully (Vitest wired)
 - [ ] **INFRA-03**: `pnpm playwright test` runs Playwright e2e suite (wired, zero tests)
 - [ ] **INFRA-04**: CI pipeline (lint + typecheck + test) runs on every push
@@ -154,7 +154,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 0 — Foundation | Pending |
+| INFRA-01 | Phase 0 — Foundation | Complete |
 | INFRA-02 | Phase 0 — Foundation | Pending |
 | INFRA-03 | Phase 0 — Foundation | Pending |
 | INFRA-04 | Phase 0 — Foundation | Pending |
