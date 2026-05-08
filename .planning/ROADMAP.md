@@ -31,7 +31,10 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
   2. Running `pnpm test` and `pnpm playwright test` both exit successfully (zero tests, no errors)
   3. Every push triggers CI that runs lint, typecheck, and test; a failing lint blocks merge
   4. shadcn Popover, Calendar, and Dropdown components render correctly in RTL direction without misaligned dropdowns
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 00-01-PLAN.md — Repo scaffold + Next.js 15 + RTL root layout + Hebrew placeholder (INFRA-01)
+- [ ] 00-02-PLAN.md — Vitest + Playwright wiring + shadcn Popover/Calendar/Dropdown + RTL CSS overrides + showcase (INFRA-02, INFRA-03, INFRA-05)
+- [ ] 00-03-PLAN.md — GitHub Actions CI pipeline + branch protection on main (INFRA-04)
 **UI hint**: yes
 
 ### Phase 1: Database, RLS & Auth
@@ -142,7 +145,7 @@ Phases execute in order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 0/? | Not started | - |
+| 0. Foundation | 0/3 | Not started | - |
 | 1. Database, RLS & Auth | 0/? | Not started | - |
 | 2. Event CRUD & 7-Step Wizard | 0/? | Not started | - |
 | 3. Approval Workflow | 0/? | Not started | - |
