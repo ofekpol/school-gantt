@@ -9,10 +9,10 @@
 ### Foundation & Infrastructure
 
 - [x] **INFRA-01**: Developer can run `pnpm dev` and see Hebrew-RTL placeholder at `localhost:3000`
-- [ ] **INFRA-02**: `pnpm test` runs zero tests successfully (Vitest wired)
-- [ ] **INFRA-03**: `pnpm playwright test` runs Playwright e2e suite (wired, zero tests)
+- [x] **INFRA-02**: `pnpm test` runs zero tests successfully (Vitest wired)
+- [x] **INFRA-03**: `pnpm playwright test` runs Playwright e2e suite (wired, zero tests)
 - [ ] **INFRA-04**: CI pipeline (lint + typecheck + test) runs on every push
-- [ ] **INFRA-05**: shadcn/ui RTL patches applied for Popover, Calendar, Dropdown components
+- [x] **INFRA-05**: shadcn/ui RTL patches applied for Popover, Calendar, Dropdown components
 
 ### Database & Multi-Tenancy
 
@@ -155,10 +155,10 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | INFRA-01 | Phase 0 — Foundation | Complete |
-| INFRA-02 | Phase 0 — Foundation | Pending |
-| INFRA-03 | Phase 0 — Foundation | Pending |
+| INFRA-02 | Phase 0 — Foundation | Complete |
+| INFRA-03 | Phase 0 — Foundation | Complete |
 | INFRA-04 | Phase 0 — Foundation | Pending |
-| INFRA-05 | Phase 0 — Foundation | Pending |
+| INFRA-05 | Phase 0 — Foundation | Complete |
 | DB-01 | Phase 1 — Database, RLS & Auth | Pending |
 | DB-02 | Phase 1 — Database, RLS & Auth | Pending |
 | DB-03 | Phase 1 — Database, RLS & Auth | Pending |

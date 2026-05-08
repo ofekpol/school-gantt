@@ -33,7 +33,7 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
   4. shadcn Popover, Calendar, and Dropdown components render correctly in RTL direction without misaligned dropdowns
 **Plans**: 3 plans
 - [x] 00-01-PLAN.md — Repo scaffold + Next.js 15 + RTL root layout + Hebrew placeholder (INFRA-01)
-- [ ] 00-02-PLAN.md — Vitest + Playwright wiring + shadcn Popover/Calendar/Dropdown + RTL CSS overrides + showcase (INFRA-02, INFRA-03, INFRA-05)
+- [x] 00-02-PLAN.md — Vitest + Playwright wiring + shadcn Popover/Calendar/Dropdown + RTL CSS overrides + showcase (INFRA-02, INFRA-03, INFRA-05)
 - [ ] 00-03-PLAN.md — GitHub Actions CI pipeline + branch protection on main (INFRA-04)
 **UI hint**: yes
 
@@ -145,7 +145,7 @@ Phases execute in order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 1/3 | In Progress|  |
+| 0. Foundation | 2/3 | In Progress|  |
 | 1. Database, RLS & Auth | 0/? | Not started | - |
 | 2. Event CRUD & 7-Step Wizard | 0/? | Not started | - |
 | 3. Approval Workflow | 0/? | Not started | - |

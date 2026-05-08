@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 00-01-PLAN.md — INFRA-01 satisfied, human-verify approved
-last_updated: "2026-05-09T00:00:00.000Z"
-last_activity: 2026-05-09 — Plan 00-01 complete (INFRA-01 satisfied)
+stopped_at: "00-02-PLAN.md checkpoint:human-verify (Task 5)"
+last_updated: "2026-05-08T23:18:21.333Z"
+last_activity: 2026-05-08
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 33
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 00 (foundation) — EXECUTING
-Plan: 2 of 3 in current phase
-Status: executing
-Last activity: 2026-05-09 — Plan 00-01 complete (INFRA-01 satisfied)
+Plan: 3 of 3 in current phase
+Status: Ready to execute
+Last activity: 2026-05-08
 
 Progress: [███░░░░░░░] 33%
 
@@ -56,6 +56,7 @@ Progress: [███░░░░░░░] 33%
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | Phase 00-foundation | P01 | 5 min | 3 tasks | 15 files |
+| Phase 00-foundation P02 | 25 | 4 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,9 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: typedRoutes moved to top-level in next.config.ts — Next.js 15.5 moved it from experimental
 - [Phase 00-foundation]: CSS logical properties pattern established: use ms-*/me-*/ps-*/pe-*/text-start/text-end for RTL, never left/right
 - [Phase 00-foundation]: Server Components by default — no 'use client' unless hooks or browser APIs are needed
+- [Phase 00-foundation]: shadcn v4 uses Base UI not Radix - RTL is handled natively via dir attribute
+- [Phase 00-foundation]: Tailwind v3 upgraded to v4 (required by shadcn v4 components)
+- [Phase 00-foundation]: app/dev/rtl-showcase (not _dev/) - Next.js App Router excludes _-prefixed folders from routing
 
 ### Pending Todos
 
@@ -84,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T22:48:44.435Z
-Stopped at: Completed 00-01-PLAN.md — INFRA-01 satisfied, human-verify approved
+Last session: 2026-05-08T23:18:21.322Z
+Stopped at: 00-02-PLAN.md checkpoint:human-verify (Task 5)
 Resume file: None
