@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 00-01-PLAN.md — INFRA-01 satisfied, human-verify approved
-last_updated: "2026-05-08T22:48:44.444Z"
-last_activity: 2026-05-08
+last_updated: "2026-05-09T00:00:00.000Z"
+last_activity: 2026-05-09 — Plan 00-01 complete (INFRA-01 satisfied)
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 3
   completed_plans: 1
-  percent: 0
+  percent: 33
 ---
 
 # Project State
@@ -21,39 +21,41 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** An admin can approve a staff-submitted event and it appears publicly across all views within 5 seconds.
-**Current focus:** Phase 0 — Foundation
+**Current focus:** Phase 00 — foundation
 
 ## Current Position
 
-Phase: 0 of 9 (Foundation)
+Phase: 00 (foundation) — EXECUTING
 Plan: 2 of 3 in current phase
-Status: Ready to execute
-Last activity: 2026-05-08
+Status: executing
+Last activity: 2026-05-09 — Plan 00-01 complete (INFRA-01 satisfied)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: 0 h
+- Total plans completed: 1
+- Average duration: 5 min
+- Total execution time: 0.08 h
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| — | — | — | — |
+| 00-foundation | 1/3 | 5 min | 5 min |
 
 **Recent Trend:**
 
-- Last 5 plans: —
+- Last 5 plans: 5 min (00-01)
 - Trend: —
 
 *Updated after each plan completion*
-| Phase 00-foundation P01 | 5 | 2 tasks | 15 files |
-| Phase 00-foundation P01 | 5 | 3 tasks | 15 files |
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| Phase 00-foundation | P01 | 5 min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -66,9 +68,6 @@ Recent decisions affecting current work:
 - Init: CSS `@media print` for PDF (D1) — no server-side rendering needed
 - Init: Polling + 5 s Cache-Control for ≤ 5 s freshness (E1)
 - Init: shadcn RTL patches needed for Popover, Calendar, Dropdown — budget half-day in Phase 0
-- [Phase 00-foundation]: typedRoutes moved to top-level in next.config.ts (Next.js 15.5 changed it from experimental)
-- [Phase 00-foundation]: CSS logical properties pattern established: use ms-*/me-*/ps-*/pe-*/text-start/text-end for RTL, never left/right
-- [Phase 00-foundation]: Server Components by default — no 'use client' unless hooks or browser APIs are needed
 - [Phase 00-foundation]: typedRoutes moved to top-level in next.config.ts — Next.js 15.5 moved it from experimental
 - [Phase 00-foundation]: CSS logical properties pattern established: use ms-*/me-*/ps-*/pe-*/text-start/text-end for RTL, never left/right
 - [Phase 00-foundation]: Server Components by default — no 'use client' unless hooks or browser APIs are needed
