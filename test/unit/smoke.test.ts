@@ -5,9 +5,9 @@ describe("smoke", () => {
     expect(1 + 1).toBe(2);
   });
 
-  it("path aliases resolve via tsconfig-paths", async () => {
-    // This import proves that vite-tsconfig-paths is wired.
-    // Once lib/utils.ts is created in Task 3, this test is upgraded to import cn().
-    expect(typeof "@/lib/utils").toBe("string");
+  it("cn() merges classes", async () => {
+    const { cn } = await import("@/lib/utils");
+    expect(cn("a", "b")).toBe("a b");
+    expect(cn("p-2", "p-4")).toBe("p-4"); // tailwind-merge dedupes
   });
 });
