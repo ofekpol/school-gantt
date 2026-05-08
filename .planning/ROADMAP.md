@@ -10,7 +10,7 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
 - Integer phases (0–8): Planned milestone work
 - Decimal phases (e.g. 2.1): Urgent insertions (marked INSERTED)
 
-- [ ] **Phase 0: Foundation** - Repo scaffold, RTL toolchain, CI wired, shadcn RTL patches applied
+- [x] **Phase 0: Foundation** - Repo scaffold, RTL toolchain, CI wired, shadcn RTL patches applied (completed 2026-05-08)
 - [ ] **Phase 1: Database, RLS & Auth** - All schema tables, RLS policies, Supabase Auth, seed script
 - [ ] **Phase 2: Event CRUD & 7-Step Wizard** - Full wizard with autosave, draft dashboard, admin management pages
 - [ ] **Phase 3: Approval Workflow** - Admin queue, approve/reject, revision audit trail, edit-of-approved
@@ -34,7 +34,7 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
 **Plans**: 3 plans
 - [x] 00-01-PLAN.md — Repo scaffold + Next.js 15 + RTL root layout + Hebrew placeholder (INFRA-01)
 - [x] 00-02-PLAN.md — Vitest + Playwright wiring + shadcn Popover/Calendar/Dropdown + RTL CSS overrides + showcase (INFRA-02, INFRA-03, INFRA-05)
-- [ ] 00-03-PLAN.md — GitHub Actions CI pipeline + branch protection on main (INFRA-04)
+- [x] 00-03-PLAN.md — GitHub Actions CI pipeline + branch protection on main (INFRA-04)
 **UI hint**: yes
 
 ### Phase 1: Database, RLS & Auth
@@ -145,7 +145,7 @@ Phases execute in order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 2/3 | In Progress|  |
+| 0. Foundation | 3/3 | Complete   | 2026-05-08 |
 | 1. Database, RLS & Auth | 0/? | Not started | - |
 | 2. Event CRUD & 7-Step Wizard | 0/? | Not started | - |
 | 3. Approval Workflow | 0/? | Not started | - |
