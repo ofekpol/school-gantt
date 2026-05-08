@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* RTL-aware base. Use logical properties everywhere downstream. */
+html {
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    "Helvetica Neue", "Noto Sans Hebrew", "Arial Hebrew", sans-serif;
+}
+
+/* Placeholder for shadcn RTL overrides — populated in Plan 02 Task 3. */
+[dir="rtl"] {
+  /* shadcn overrides go here in Plan 02 Task 3 */
+}
