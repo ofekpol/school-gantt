@@ -12,7 +12,8 @@ An admin can approve a staff-submitted event and it appears publicly across all 
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Hebrew RTL layout across all views — *Validated in Phase 0: Foundation* (Next.js 15 + `<html dir="rtl" lang="he">`, shadcn Base UI components verified RTL-correct)
+- [x] WCAG/a11y toolchain in place — *Validated in Phase 0: Foundation* (axe-core via Playwright smoke test, CI enforces on every PR)
 
 ### Active
 
@@ -98,4 +99,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 after initialization*
+*Last updated: 2026-05-09 — Phase 0: Foundation complete (toolchain + RTL + CI)*
