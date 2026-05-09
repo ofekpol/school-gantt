@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 01-00-PLAN.md (checkpoint:human-action — awaiting Supabase credentials)"
-last_updated: "2026-05-09T14:49:56.179Z"
+stopped_at: "Completed 01-01-PLAN.md: schema + migration + ESLint"
+last_updated: "2026-05-09T14:53:01.660Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
+  completed_plans: 5
   percent: 33
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 01 (database-rls-auth) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-05-09
 
@@ -61,6 +61,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 00-foundation P03 | 2 | 2 tasks | 2 files |
 | Phase 00-foundation P03 | 30 | 3 tasks | 3 files |
 | Phase 01-database-rls-auth P00 | 3 | 2 tasks | 10 files |
+| Phase 01-database-rls-auth P01 | 5 | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,9 @@ Recent decisions affecting current work:
 - [Phase 01-database-rls-auth]: Vitest projects array chosen over separate config files — single config, two named project contexts (unit/jsdom + integration/node)
 - [Phase 01-database-rls-auth]: it.todo() used for test stubs — pending tests appear in coverage map without causing CI failures
 - [Phase 01-database-rls-auth]: skipIfNoTestDb guard in integration setup — tests skip gracefully when TEST_DATABASE_URL absent; TEST_DATABASE_URL left empty (Option C) until Plan 04 AUTH-03 lockout tests require it
+- [Phase 01-database-rls-auth]: staffUsers.id mirrors auth.users.id (no defaultRandom) — seed sets UUID explicitly from Supabase Auth
+- [Phase 01-database-rls-auth]: schoolIsolation pgPolicy defined once as shared const, referenced in 9 table callbacks — DRY RLS policy pattern
+- [Phase 01-database-rls-auth]: Migration named 0000_initial.sql (drizzle-kit default); 0001 reserved for next schema change. NOT yet applied — Plan 02 applies it.
 
 ### Pending Todos
 
@@ -102,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-09T14:49:56.171Z
-Stopped at: Completed 01-00-PLAN.md (checkpoint:human-action — awaiting Supabase credentials)
+Last session: 2026-05-09T14:53:01.653Z
+Stopped at: Completed 01-01-PLAN.md: schema + migration + ESLint
 Resume file: None

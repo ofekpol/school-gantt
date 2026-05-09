@@ -19,7 +19,7 @@
 - [x] **DB-01**: All PRD tables exist with correct schema (schools, academic_years, staff_users, editor_scopes, event_types, events, event_grades, event_revisions, ical_subscriptions, audit_log)
 - [x] **DB-02**: Postgres RLS enforces `school_id = current_setting('app.school_id')` on every school-scoped table
 - [x] **DB-03**: `db.withSchool(schoolId, fn)` wrapper sets `app.school_id` and all queries inside are RLS-scoped
-- [ ] **DB-04**: ESLint rule prevents importing `supabaseAdmin` outside `lib/db/`
+- [x] **DB-04**: ESLint rule prevents importing `supabaseAdmin` outside `lib/db/`
 - [x] **DB-05**: Cross-school access returns 404 (RLS denial surfaces as not-found, not 403)
 - [x] **DB-06**: Seed script creates one school, one admin, six grade-supervisor editors (grades 7–12), one department editor (counselor), and 11 default event types
 
@@ -162,7 +162,7 @@
 | DB-01 | Phase 1 — Database, RLS & Auth | Complete |
 | DB-02 | Phase 1 — Database, RLS & Auth | Complete |
 | DB-03 | Phase 1 — Database, RLS & Auth | Complete |
-| DB-04 | Phase 1 — Database, RLS & Auth | Pending |
+| DB-04 | Phase 1 — Database, RLS & Auth | Complete |
 | DB-05 | Phase 1 — Database, RLS & Auth | Complete |
 | DB-06 | Phase 1 — Database, RLS & Auth | Complete |
 | AUTH-01 | Phase 1 — Database, RLS & Auth | Complete |
