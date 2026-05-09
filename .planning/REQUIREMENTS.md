@@ -16,22 +16,22 @@
 
 ### Database & Multi-Tenancy
 
-- [ ] **DB-01**: All PRD tables exist with correct schema (schools, academic_years, staff_users, editor_scopes, event_types, events, event_grades, event_revisions, ical_subscriptions, audit_log)
-- [ ] **DB-02**: Postgres RLS enforces `school_id = current_setting('app.school_id')` on every school-scoped table
-- [ ] **DB-03**: `db.withSchool(schoolId, fn)` wrapper sets `app.school_id` and all queries inside are RLS-scoped
+- [x] **DB-01**: All PRD tables exist with correct schema (schools, academic_years, staff_users, editor_scopes, event_types, events, event_grades, event_revisions, ical_subscriptions, audit_log)
+- [x] **DB-02**: Postgres RLS enforces `school_id = current_setting('app.school_id')` on every school-scoped table
+- [x] **DB-03**: `db.withSchool(schoolId, fn)` wrapper sets `app.school_id` and all queries inside are RLS-scoped
 - [ ] **DB-04**: ESLint rule prevents importing `supabaseAdmin` outside `lib/db/`
-- [ ] **DB-05**: Cross-school access returns 404 (RLS denial surfaces as not-found, not 403)
-- [ ] **DB-06**: Seed script creates one school, one admin, six grade-supervisor editors (grades 7–12), one department editor (counselor), and 11 default event types
+- [x] **DB-05**: Cross-school access returns 404 (RLS denial surfaces as not-found, not 403)
+- [x] **DB-06**: Seed script creates one school, one admin, six grade-supervisor editors (grades 7–12), one department editor (counselor), and 11 default event types
 
 ### Authentication
 
-- [ ] **AUTH-01**: Staff user can log in with email + password via Supabase Auth
+- [x] **AUTH-01**: Staff user can log in with email + password via Supabase Auth
 - [ ] **AUTH-02**: Staff user can request password reset; receives email via Resend
-- [ ] **AUTH-03**: Account locks after 10 failed login attempts within 15 minutes
-- [ ] **AUTH-04**: `getSession()` server helper returns current authenticated user
-- [ ] **AUTH-05**: `assertEditorScope(user, grade?, eventType?)` throws 403 on scope violation
-- [ ] **AUTH-06**: Admins (`role='admin'`) can access all school data; editors are restricted by `editor_scopes`
-- [ ] **AUTH-07**: Public routes are fully unauthenticated — no session check
+- [x] **AUTH-03**: Account locks after 10 failed login attempts within 15 minutes
+- [x] **AUTH-04**: `getSession()` server helper returns current authenticated user
+- [x] **AUTH-05**: `assertEditorScope(user, grade?, eventType?)` throws 403 on scope violation
+- [x] **AUTH-06**: Admins (`role='admin'`) can access all school data; editors are restricted by `editor_scopes`
+- [x] **AUTH-07**: Public routes are fully unauthenticated — no session check
 
 ### Event CRUD & Wizard
 
@@ -159,19 +159,19 @@
 | INFRA-03 | Phase 0 — Foundation | Complete |
 | INFRA-04 | Phase 0 — Foundation | Complete |
 | INFRA-05 | Phase 0 — Foundation | Complete |
-| DB-01 | Phase 1 — Database, RLS & Auth | Pending |
-| DB-02 | Phase 1 — Database, RLS & Auth | Pending |
-| DB-03 | Phase 1 — Database, RLS & Auth | Pending |
+| DB-01 | Phase 1 — Database, RLS & Auth | Complete |
+| DB-02 | Phase 1 — Database, RLS & Auth | Complete |
+| DB-03 | Phase 1 — Database, RLS & Auth | Complete |
 | DB-04 | Phase 1 — Database, RLS & Auth | Pending |
-| DB-05 | Phase 1 — Database, RLS & Auth | Pending |
-| DB-06 | Phase 1 — Database, RLS & Auth | Pending |
-| AUTH-01 | Phase 1 — Database, RLS & Auth | Pending |
+| DB-05 | Phase 1 — Database, RLS & Auth | Complete |
+| DB-06 | Phase 1 — Database, RLS & Auth | Complete |
+| AUTH-01 | Phase 1 — Database, RLS & Auth | Complete |
 | AUTH-02 | Phase 1 — Database, RLS & Auth | Pending |
-| AUTH-03 | Phase 1 — Database, RLS & Auth | Pending |
-| AUTH-04 | Phase 1 — Database, RLS & Auth | Pending |
-| AUTH-05 | Phase 1 — Database, RLS & Auth | Pending |
-| AUTH-06 | Phase 1 — Database, RLS & Auth | Pending |
-| AUTH-07 | Phase 1 — Database, RLS & Auth | Pending |
+| AUTH-03 | Phase 1 — Database, RLS & Auth | Complete |
+| AUTH-04 | Phase 1 — Database, RLS & Auth | Complete |
+| AUTH-05 | Phase 1 — Database, RLS & Auth | Complete |
+| AUTH-06 | Phase 1 — Database, RLS & Auth | Complete |
+| AUTH-07 | Phase 1 — Database, RLS & Auth | Complete |
 | WIZARD-01 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
 | WIZARD-02 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
 | WIZARD-03 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |

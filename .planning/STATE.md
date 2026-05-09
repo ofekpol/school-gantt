@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 1 context gathered
-last_updated: "2026-05-09T08:35:55.132Z"
+status: executing
+stopped_at: "Completed 01-00-PLAN.md (checkpoint:human-action — awaiting Supabase credentials)"
+last_updated: "2026-05-09T14:49:56.179Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 9
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 8
+  completed_plans: 4
   percent: 33
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** An admin can approve a staff-submitted event and it appears publicly across all views within 5 seconds.
-**Current focus:** Phase 00 — foundation
+**Current focus:** Phase 01 — database-rls-auth
 
 ## Current Position
 
-Phase: 1
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 01 (database-rls-auth) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
 Last activity: 2026-05-09
 
 Progress: [███░░░░░░░] 33%
@@ -60,6 +60,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 00-foundation P02 | 45 | 5 tasks | 19 files |
 | Phase 00-foundation P03 | 2 | 2 tasks | 2 files |
 | Phase 00-foundation P03 | 30 | 3 tasks | 3 files |
+| Phase 01-database-rls-auth P00 | 3 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,9 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: Job name 'Lint, Typecheck, Test, E2E' is the required GitHub status check name — renaming requires updating branch protection
 - [Phase 00-foundation]: D-04 confirmed: main branch protection active — CI green + 1 review required; direct push to main blocked
 - [Phase 00-foundation]: Node bumped to 22 LTS (from 20.11.0) — rolldown/Vitest 4 requires node:util styleText (Node>=20.12); 22 LTS is the safe floor
+- [Phase 01-database-rls-auth]: Vitest projects array chosen over separate config files — single config, two named project contexts (unit/jsdom + integration/node)
+- [Phase 01-database-rls-auth]: it.todo() used for test stubs — pending tests appear in coverage map without causing CI failures
+- [Phase 01-database-rls-auth]: skipIfNoTestDb guard in integration setup — tests skip gracefully when TEST_DATABASE_URL absent; TEST_DATABASE_URL left empty (Option C) until Plan 04 AUTH-03 lockout tests require it
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-09T08:35:55.113Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-database-rls-auth/01-CONTEXT.md
+Last session: 2026-05-09T14:49:56.171Z
+Stopped at: Completed 01-00-PLAN.md (checkpoint:human-action — awaiting Supabase credentials)
+Resume file: None
