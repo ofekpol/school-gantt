@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: "Completed 00-03: CI pipeline wired; Task 3 checkpoint (branch protection) requires human action"
-last_updated: "2026-05-08T23:55:04.040Z"
-last_activity: 2026-05-08
+stopped_at: "Completed 00-03: CI pipeline complete, branch protection active, Phase 0 done"
+last_updated: "2026-05-09T00:29:19.067Z"
+last_activity: 2026-05-09
 progress:
   total_phases: 9
   completed_phases: 1
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 Phase: 00 (foundation) — EXECUTING
 Plan: 3 of 3 in current phase
 Status: Phase complete — ready for verification
-Last activity: 2026-05-08
+Last activity: 2026-05-09
 
 Progress: [███░░░░░░░] 33%
 
@@ -59,6 +59,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 00-foundation P02 | 25 | 4 tasks | 19 files |
 | Phase 00-foundation P02 | 45 | 5 tasks | 19 files |
 | Phase 00-foundation P03 | 2 | 2 tasks | 2 files |
+| Phase 00-foundation P03 | 30 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 00-foundation]: D-03: CI triggers on pull_request (any branch) and push to main; feature-branch pushes without PR do not trigger CI
 - [Phase 00-foundation]: D-05: CI pipeline order is lint → typecheck → unit tests → build → e2e; added build step to catch Next.js production-only issues
 - [Phase 00-foundation]: Job name 'Lint, Typecheck, Test, E2E' is the required GitHub status check name — renaming requires updating branch protection
+- [Phase 00-foundation]: D-04 confirmed: main branch protection active — CI green + 1 review required; direct push to main blocked
+- [Phase 00-foundation]: Node bumped to 22 LTS (from 20.11.0) — rolldown/Vitest 4 requires node:util styleText (Node>=20.12); 22 LTS is the safe floor
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T23:55:04.034Z
-Stopped at: Completed 00-03: CI pipeline wired; Task 3 checkpoint (branch protection) requires human action
+Last session: 2026-05-09T00:29:19.061Z
+Stopped at: Completed 00-03: CI pipeline complete, branch protection active, Phase 0 done
 Resume file: None
