@@ -11,7 +11,7 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
 - Decimal phases (e.g. 2.1): Urgent insertions (marked INSERTED)
 
 - [x] **Phase 0: Foundation** - Repo scaffold, RTL toolchain, CI wired, shadcn RTL patches applied (completed 2026-05-08)
-- [ ] **Phase 1: Database, RLS & Auth** - All schema tables, RLS policies, Supabase Auth, seed script
+- [x] **Phase 1: Database, RLS & Auth** - All schema tables, RLS policies, Supabase Auth, seed script (completed 2026-05-10)
 - [ ] **Phase 2: Event CRUD & 7-Step Wizard** - Full wizard with autosave, draft dashboard, admin management pages
 - [ ] **Phase 3: Approval Workflow** - Admin queue, approve/reject, revision audit trail, edit-of-approved
 - [ ] **Phase 4: Filter Bar & Agenda View** - Shared FilterBar, mobile agenda with URL-synced filters
@@ -52,7 +52,7 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
 - [x] 01-01-PLAN.md — Drizzle schema + initial migration + RLS policies + ESLint restriction (DB-01, DB-02, DB-04)
 - [x] 01-02-PLAN.md — withSchool wrapper + apply migration + idempotent seed (DB-03, DB-05, DB-06)
 - [x] 01-03-PLAN.md — Supabase clients + getSession + assertEditorScope + composed middleware (AUTH-04..07)
-- [ ] 01-04-PLAN.md — Login (with lockout) + logout + reset-password routes + Resend SMTP relay (AUTH-01, AUTH-02, AUTH-03)
+- [x] 01-04-PLAN.md — Login (with lockout) + logout + reset-password routes + Resend SMTP relay (AUTH-01, AUTH-02, AUTH-03)
 
 ### Phase 2: Event CRUD & 7-Step Wizard
 **Goal**: A staff editor can create, autosave, resume, and submit an event for approval entirely through the UI
@@ -151,7 +151,7 @@ Phases execute in order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Foundation | 3/3 | Complete   | 2026-05-09 |
-| 1. Database, RLS & Auth | 4/5 | In Progress|  |
+| 1. Database, RLS & Auth | 5/5 | Complete   | 2026-05-10 |
 | 2. Event CRUD & 7-Step Wizard | 0/? | Not started | - |
 | 3. Approval Workflow | 0/? | Not started | - |
 | 4. Filter Bar & Agenda View | 0/? | Not started | - |

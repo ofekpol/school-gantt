@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "Completed 01-03-PLAN.md: auth helpers, middleware, public route group"
-last_updated: "2026-05-10T18:47:23.779Z"
+status: verifying
+stopped_at: "Completed 01-04-PLAN.md: auth routes (login, logout, reset-password)"
+last_updated: "2026-05-10T19:00:55.254Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 9
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
   percent: 33
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 
 Phase: 01 (database-rls-auth) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
 Progress: [███░░░░░░░] 33%
@@ -64,6 +64,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01-database-rls-auth P01 | 5 | 3 tasks | 11 files |
 | Phase 01-database-rls-auth P02 | 68 | 2 tasks | 11 files |
 | Phase 01-database-rls-auth P03 | 17 | 3 tasks | 14 files |
+| Phase 01-database-rls-auth P04 | 11 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,8 @@ Recent decisions affecting current work:
 - [Phase 01-database-rls-auth]: Cross-school staff lookup in lib/db/staff.ts (not lib/auth/) — preserves ESLint ban on service-role client outside lib/db/
 - [Phase 01-database-rls-auth]: server-only mocked as no-op in vitest unit test alias — real guard active in Next.js runtime; jsdom crashes without the mock
 - [Phase 01-database-rls-auth]: Middleware short-circuits on i18n redirects (3xx) before Supabase session refresh — avoids cookie mutation during locale redirects
+- [Phase 01-database-rls-auth]: vi.mock for next/headers + createSupabaseServerClient in integration tests isolates auth transport from DB logic without full Next.js server
+- [Phase 01-database-rls-auth]: RESEND_API_KEY=placeholder: reset-password route fully implemented; Resend SMTP relay config and email delivery deferred to Phase 8
 
 ### Pending Todos
 
@@ -115,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10T18:47:23.767Z
-Stopped at: Completed 01-03-PLAN.md: auth helpers, middleware, public route group
+Last session: 2026-05-10T19:00:55.243Z
+Stopped at: Completed 01-04-PLAN.md: auth routes (login, logout, reset-password)
 Resume file: None

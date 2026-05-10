@@ -26,7 +26,7 @@
 ### Authentication
 
 - [x] **AUTH-01**: Staff user can log in with email + password via Supabase Auth
-- [ ] **AUTH-02**: Staff user can request password reset; receives email via Resend
+- [x] **AUTH-02**: Staff user can request password reset; receives email via Resend
 - [x] **AUTH-03**: Account locks after 10 failed login attempts within 15 minutes
 - [x] **AUTH-04**: `getSession()` server helper returns current authenticated user
 - [x] **AUTH-05**: `assertEditorScope(user, grade?, eventType?)` throws 403 on scope violation
@@ -166,7 +166,7 @@
 | DB-05 | Phase 1 — Database, RLS & Auth | Complete |
 | DB-06 | Phase 1 — Database, RLS & Auth | Complete |
 | AUTH-01 | Phase 1 — Database, RLS & Auth | Complete |
-| AUTH-02 | Phase 1 — Database, RLS & Auth | Pending |
+| AUTH-02 | Phase 1 — Database, RLS & Auth | Complete |
 | AUTH-03 | Phase 1 — Database, RLS & Auth | Complete |
 | AUTH-04 | Phase 1 — Database, RLS & Auth | Complete |
 | AUTH-05 | Phase 1 — Database, RLS & Auth | Complete |
