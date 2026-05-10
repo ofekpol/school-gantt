@@ -20,6 +20,10 @@ export default defineConfig({
           setupFiles: ["./vitest.setup.ts"],
           include: ["test/unit/**/*.test.{ts,tsx}", "lib/**/*.test.{ts,tsx}"],
           exclude: ["test/e2e/**", "node_modules/**", ".next/**"],
+          // server-only throws in non-Next.js environments; mock it for unit tests
+          alias: {
+            "server-only": require.resolve("./test/__mocks__/server-only.ts"),
+          },
         },
       },
       {
