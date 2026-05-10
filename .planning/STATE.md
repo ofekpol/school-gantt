@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 01-00-PLAN.md: test scaffolding + credentials collected"
-last_updated: "2026-05-10T17:56:14.941Z"
-last_activity: 2026-05-09
+stopped_at: "Completed 01-02-PLAN.md: withSchool wrapper, migration, seed"
+last_updated: "2026-05-10T18:26:41.077Z"
+last_activity: 2026-05-10
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
   percent: 33
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 01 (database-rls-auth) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
-Last activity: 2026-05-09
+Last activity: 2026-05-10
 
 Progress: [███░░░░░░░] 33%
 
@@ -62,6 +62,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 00-foundation P03 | 30 | 3 tasks | 3 files |
 | Phase 01-database-rls-auth P00 | 3 | 2 tasks | 10 files |
 | Phase 01-database-rls-auth P01 | 5 | 3 tasks | 11 files |
+| Phase 01-database-rls-auth P02 | 68 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,9 @@ Recent decisions affecting current work:
 - [Phase 01-database-rls-auth]: staffUsers.id mirrors auth.users.id (no defaultRandom) — seed sets UUID explicitly from Supabase Auth
 - [Phase 01-database-rls-auth]: schoolIsolation pgPolicy defined once as shared const, referenced in 9 table callbacks — DRY RLS policy pattern
 - [Phase 01-database-rls-auth]: Migration named 0000_initial.sql (drizzle-kit default); 0001 reserved for next schema change. NOT yet applied — Plan 02 applies it.
+- [Phase 01-database-rls-auth]: withSchool uses SET LOCAL ROLE authenticated inside transaction — postgres bypassrls=true skips RLS; authenticated role has bypassrls=false so policies apply
+- [Phase 01-database-rls-auth]: FORCE ROW LEVEL SECURITY applied via 0001 migration — does not override bypassrls but required for non-bypassrls connections and correctness documentation
+- [Phase 01-database-rls-auth]: Seed uses withSchool for school-scoped inserts (schools table inserted directly, no RLS); dotenv loads .env.local explicitly in supabase-admin.ts due to CJS hoisting
 
 ### Pending Todos
 
@@ -106,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10T17:56:14.930Z
-Stopped at: Completed 01-00-PLAN.md: test scaffolding + credentials collected
+Last session: 2026-05-10T18:26:41.064Z
+Stopped at: Completed 01-02-PLAN.md: withSchool wrapper, migration, seed
 Resume file: None

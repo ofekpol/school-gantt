@@ -50,7 +50,7 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
 **Plans**: 5 plans
 - [x] 01-00-PLAN.md — Wave 0 test scaffolding + env-var checkpoint (DB-01..06, AUTH-01,03..07 stubs)
 - [x] 01-01-PLAN.md — Drizzle schema + initial migration + RLS policies + ESLint restriction (DB-01, DB-02, DB-04)
-- [ ] 01-02-PLAN.md — withSchool wrapper + apply migration + idempotent seed (DB-03, DB-05, DB-06)
+- [x] 01-02-PLAN.md — withSchool wrapper + apply migration + idempotent seed (DB-03, DB-05, DB-06)
 - [ ] 01-03-PLAN.md — Supabase clients + getSession + assertEditorScope + composed middleware (AUTH-04..07)
 - [ ] 01-04-PLAN.md — Login (with lockout) + logout + reset-password routes + Resend SMTP relay (AUTH-01, AUTH-02, AUTH-03)
 
