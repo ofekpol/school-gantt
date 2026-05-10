@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 01-02-PLAN.md: withSchool wrapper, migration, seed"
-last_updated: "2026-05-10T18:26:41.077Z"
+stopped_at: "Completed 01-03-PLAN.md: auth helpers, middleware, public route group"
+last_updated: "2026-05-10T18:47:23.779Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
   percent: 33
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 01 (database-rls-auth) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-05-10
 
@@ -63,6 +63,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01-database-rls-auth P00 | 3 | 2 tasks | 10 files |
 | Phase 01-database-rls-auth P01 | 5 | 3 tasks | 11 files |
 | Phase 01-database-rls-auth P02 | 68 | 2 tasks | 11 files |
+| Phase 01-database-rls-auth P03 | 17 | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,10 @@ Recent decisions affecting current work:
 - [Phase 01-database-rls-auth]: withSchool uses SET LOCAL ROLE authenticated inside transaction — postgres bypassrls=true skips RLS; authenticated role has bypassrls=false so policies apply
 - [Phase 01-database-rls-auth]: FORCE ROW LEVEL SECURITY applied via 0001 migration — does not override bypassrls but required for non-bypassrls connections and correctness documentation
 - [Phase 01-database-rls-auth]: Seed uses withSchool for school-scoped inserts (schools table inserted directly, no RLS); dotenv loads .env.local explicitly in supabase-admin.ts due to CJS hoisting
+- [Phase 01-database-rls-auth]: getSession() uses auth.getUser() not auth.getSession() — Pitfall 2: server-side JWT validation vs local cookie read
+- [Phase 01-database-rls-auth]: Cross-school staff lookup in lib/db/staff.ts (not lib/auth/) — preserves ESLint ban on service-role client outside lib/db/
+- [Phase 01-database-rls-auth]: server-only mocked as no-op in vitest unit test alias — real guard active in Next.js runtime; jsdom crashes without the mock
+- [Phase 01-database-rls-auth]: Middleware short-circuits on i18n redirects (3xx) before Supabase session refresh — avoids cookie mutation during locale redirects
 
 ### Pending Todos
 
@@ -110,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10T18:26:41.064Z
-Stopped at: Completed 01-02-PLAN.md: withSchool wrapper, migration, seed
+Last session: 2026-05-10T18:47:23.767Z
+Stopped at: Completed 01-03-PLAN.md: auth helpers, middleware, public route group
 Resume file: None
