@@ -14,6 +14,8 @@ An admin can approve a staff-submitted event and it appears publicly across all 
 
 - [x] Hebrew RTL layout across all views — *Validated in Phase 0: Foundation* (Next.js 15 + `<html dir="rtl" lang="he">`, shadcn Base UI components verified RTL-correct)
 - [x] WCAG/a11y toolchain in place — *Validated in Phase 0: Foundation* (axe-core via Playwright smoke test, CI enforces on every PR)
+- [x] Multi-tenant isolation: each school sees only its own data (Postgres RLS) — *Validated in Phase 1: Database/RLS/Auth* (`withSchool()` wrapper + `SET LOCAL ROLE authenticated`, 3 cross-school isolation tests passing)
+- [x] Auth lockout: 10 failed attempts / 15 min window — *Validated in Phase 1: Database/RLS/Auth* (DB-backed `locked_until`, 3 integration tests passing)
 
 ### Active
 
@@ -69,7 +71,7 @@ An admin can approve a staff-submitted event and it appears publicly across all 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Next.js App Router (A1/A2) | Full-stack TS, server components, route handlers | — Pending |
-| Supabase RLS for multi-tenancy (B1) | Single schema, no per-tenant DB, RLS on `school_id` | — Pending |
+| Supabase RLS for multi-tenancy (B1) | Single schema, no per-tenant DB, RLS on `school_id` | `withSchool()` + `SET LOCAL ROLE authenticated` required (bypassrls=true on postgres user) |
 | Custom SVG/Canvas Gantt (C1) | No off-shelf Gantt handles RTL + multi-grade spanning bars | — Pending |
 | CSS `@media print` for PDF (D1) | No server-side rendering needed; browser handles A3/A4 | — Pending |
 | Polling + 5 s Cache-Control (E1) | Simpler than websockets; meets ≤ 5 s freshness bar | — Pending |
@@ -99,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 — Phase 0: Foundation complete (toolchain + RTL + CI)*
+*Last updated: 2026-05-10 — Phase 1: Database/RLS/Auth complete (schema, migrations, withSchool wrapper, auth routes, lockout)*
