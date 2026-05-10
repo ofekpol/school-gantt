@@ -81,8 +81,8 @@ completed: 2026-05-09
 - **Duration:** 3 min
 - **Started:** 2026-05-09T14:46:00Z
 - **Completed:** 2026-05-09T14:49:11Z
-- **Tasks:** 2 of 3 completed (Task 0.3 is a human-action checkpoint — awaiting credentials)
-- **Files modified:** 10
+- **Tasks:** 3 of 3 completed
+- **Files modified:** 10 (+ .env.local created by user)
 
 ## Accomplishments
 - Replaced single jsdom Vitest config with projects array (unit: jsdom, integration: node)
@@ -95,7 +95,7 @@ completed: 2026-05-09
 
 1. **Task 0.1: vitest.config.ts dual-project + tsx devDep** - `746d3d3` (chore)
 2. **Task 0.2: Integration test setup + failing stubs** - `ba4195f` (test)
-3. **Task 0.3: Credential checkpoint** — AWAITING HUMAN ACTION (no commit — no prod code)
+3. **Task 0.3: Credential checkpoint** — COMPLETE (human action: .env.local created with all required keys)
 
 ## Files Created/Modified
 - `vitest.config.ts` - Replaced single jsdom config with projects array (unit + integration)
@@ -134,25 +134,21 @@ completed: 2026-05-09
 ## Issues Encountered
 - Parallel agents running concurrently modified package.json multiple times, resetting scripts. Fixed by re-applying additions on each iteration until committed atomically.
 
-## User Setup Required
+## User Setup Completed
 
-**External services require manual configuration.** Task 0.3 (blocking checkpoint) requests:
+**Task 0.3 (human-action checkpoint) is complete.** The user created `.env.local` with:
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — anon public key
+- `SUPABASE_SERVICE_ROLE_KEY` — service role key (secret)
+- `DATABASE_URL` — direct Postgres connection for Drizzle
+- `RESEND_API_KEY` — placeholder value (email delivery not yet needed)
+- `NEXT_PUBLIC_APP_URL` — app base URL
 
-1. Supabase Dashboard → Project Settings → API:
-   - `NEXT_PUBLIC_SUPABASE_URL` (Project URL)
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (anon public key)
-   - `SUPABASE_SERVICE_ROLE_KEY` (service_role key — secret)
-2. Supabase Dashboard → Project Settings → Database → Connection string → URI:
-   - `DATABASE_URL` (replace `[YOUR-PASSWORD]` with real DB password)
-3. TEST_DATABASE_URL decision (Option A: separate project / B: same project different schema / C: skip for now)
-4. Resend Dashboard → API Keys → `RESEND_API_KEY`
-5. `NEXT_PUBLIC_APP_URL=http://localhost:3000`
-6. Create `.env.local` from `.env.example` and paste values
-7. Run `pnpm install` so tsx and new deps are available
+**TEST_DATABASE_URL:** Left empty (Option C) — integration tests will skip gracefully until Plan 04 AUTH-03 lockout tests require it.
 
 ## Next Phase Readiness
 - Wave 0 scaffolding complete — test stubs exist for every requirement
-- Wave 1 (Plan 01: DB schema) can proceed once user confirms ".env.local ready" and `pnpm install` done
+- Wave 1 plans (01-01 through 01-04) can proceed — credentials are in place
 - TEST_DATABASE_URL blocker for Plan 04 AUTH-03 lockout tests — must be resolved before that plan executes
 
 ---
