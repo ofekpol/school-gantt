@@ -1,4 +1,8 @@
-import "dotenv/config";
+// Load .env.local first (Next.js convention), then fall back to .env
+// Required because tsx/vitest scripts don't use Next.js env loading
+import { config } from "dotenv";
+config({ path: ".env.local", override: false });
+config({ override: false });
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import { Pool } from "pg";

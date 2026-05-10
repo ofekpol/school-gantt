@@ -1,4 +1,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+// Load .env.local before checking env vars (required for tsx/vitest scripts)
+import { config } from "dotenv";
+config({ path: ".env.local", override: false });
+config({ override: false });
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
