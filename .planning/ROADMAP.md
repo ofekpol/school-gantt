@@ -64,7 +64,12 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
   3. The date picker rejects dates outside the active academic year
   4. An admin can create, edit, and deactivate staff users at `/admin/staff` and configure event types at `/admin/event-types`
   5. A concurrent edit on the same event version shows a toast warning instead of silently overwriting
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 02-00-PLAN.md — Wave-0 foundation: Zod schemas, lib/events/{crud,approval,queries}.ts, lib/db/staff.ts extensions, migration 0002 file, test stubs
+- [ ] 02-01-PLAN.md — Event REST API: POST/GET /events, GET/PATCH/DELETE /events/[id], POST /events/[id]/submit (WIZARD-01,02,05,06,08,09)
+- [ ] 02-02-PLAN.md — 7-step wizard UI + staff dashboard + i18n strings + unit/e2e tests (WIZARD-01..09)
+- [ ] 02-03-PLAN.md — Admin REST API: /admin/staff, /admin/event-types, /admin/years (ADMIN-01..03)
+- [ ] 02-04-PLAN.md — Admin UI pages + apply migration 0002 + admin e2e (ADMIN-01..03)
 **UI hint**: yes
 
 ### Phase 3: Approval Workflow
@@ -152,7 +157,7 @@ Phases execute in order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 0. Foundation | 3/3 | Complete   | 2026-05-09 |
 | 1. Database, RLS & Auth | 5/5 | Complete   | 2026-05-10 |
-| 2. Event CRUD & 7-Step Wizard | 0/? | Not started | - |
+| 2. Event CRUD & 7-Step Wizard | 0/5 | Not started | - |
 | 3. Approval Workflow | 0/? | Not started | - |
 | 4. Filter Bar & Agenda View | 0/? | Not started | - |
 | 5. Gantt View | 0/? | Not started | - |
