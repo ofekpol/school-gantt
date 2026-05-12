@@ -177,3 +177,61 @@ export async function getDefaultEventType(
   );
   return row ?? null;
 }
+
+export interface EventTypeListItem {
+  id: string;
+  key: string;
+  labelHe: string;
+  labelEn: string;
+  colorHex: string;
+  glyph: string;
+  sortOrder: number;
+}
+
+/**
+ * Returns the school's event-type palette ordered by sortOrder.
+ * Used by the wizard entry page so Step 3 can render the full chip list.
+ */
+export async function listEventTypes(
+  schoolId: string,
+): Promise<EventTypeListItem[]> {
+  return withSchool(schoolId, (tx) =>
+    tx
+      .select({
+        id: eventTypes.id,
+        key: eventTypes.key,
+        labelHe: eventTypes.labelHe,
+        labelEn: eventTypes.labelEn,
+        colorHex: eventTypes.colorHex,
+        glyph: eventTypes.glyph,
+        sortOrder: eventTypes.sortOrder,
+      })
+      .from(eventTypes)
+      .orderBy(asc(eventTypes.sortOrder)),
+  );
+}
+
+/**
+ * Returns the calling editor's draft row by id, or null when not owned or not found.
+ * Excludes soft-deleted rows.
+ */
+export async function getDraftForResume(
+  schoolId: string,
+  eventId: string,
+  staffUserId: string,
+): Promise<Record<string, unknown> | null> {
+  const [row] = await withSchool(schoolId, (tx) =>
+    tx
+      .select()
+      .from(events)
+      .where(
+        and(
+          eq(events.id, eventId),
+          eq(events.createdBy, staffUserId),
+          isNull(events.deletedAt),
+        ),
+      )
+      .limit(1),
+  );
+  return (row as Record<string, unknown>) ?? null;
+}

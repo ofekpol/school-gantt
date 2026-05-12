@@ -1,39 +1,19 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaffUser } from "@/lib/auth/session";
-import { withSchool } from "@/lib/db/client";
-import { events } from "@/lib/db/schema";
+import { getEditorDashboardEvents } from "@/lib/events/queries";
 
 /**
  * Staff dashboard — Server Component.
- * Shows editor's draft, pending, and rejected events (WIZARD-03, WIZARD-07).
- * Draft events have a "Continue" link to resume the wizard.
+ * Shows the editor's draft and pending events (WIZARD-03, WIZARD-07).
+ * Rejected events live on /dashboard/rejected (Phase 3).
+ * Data flows exclusively through lib/events/queries.ts (no raw withSchool here).
  */
 export default async function DashboardPage() {
   const user = await getStaffUser();
   if (!user) redirect("/");
 
-  const myEvents = await withSchool(user.schoolId, (tx) =>
-    tx
-      .select({
-        id: events.id,
-        title: events.title,
-        status: events.status,
-        startAt: events.startAt,
-        updatedAt: events.updatedAt,
-      })
-      .from(events)
-      .where(
-        and(
-          eq(events.createdBy, user.id),
-          eq(events.schoolId, user.schoolId),
-          isNull(events.deletedAt),
-          inArray(events.status, ["draft", "pending", "rejected"]),
-        ),
-      )
-      .orderBy(events.updatedAt),
-  );
+  const myEvents = await getEditorDashboardEvents(user.schoolId, user.id);
 
   return (
     <main className="p-6">
@@ -60,7 +40,9 @@ export default async function DashboardPage() {
               <div>
                 <p className="font-medium">{event.title || "(ללא שם)"}</p>
                 <p className="text-sm text-neutral-500">
-                  {new Date(event.startAt).toLocaleDateString("he-IL")}
+                  {event.startAt
+                    ? new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem" }).format(new Date(event.startAt))
+                    : ""}
                 </p>
               </div>
               <div className="flex items-center gap-3">
