@@ -1,3 +1,44 @@
 {
-  "_placeholder": "English strings — populated as features are built"
+  "_placeholder": "English strings — populated as features are built",
+  "admin": {
+    "staff": {
+      "title": "Staff Management",
+      "create": "Create User",
+      "email": "Email",
+      "fullName": "Full Name",
+      "role": "Role",
+      "roleAdmin": "Admin",
+      "roleEditor": "Editor",
+      "temporaryPassword": "Temporary Password",
+      "gradeScopes": "Allowed Grades",
+      "deactivate": "Deactivate",
+      "deactivated": "Deactivated",
+      "duplicateEmail": "Email address already exists",
+      "createError": "Creation error"
+    },
+    "eventTypes": {
+      "title": "Event Types",
+      "key": "Key",
+      "labelHe": "Hebrew Label",
+      "labelEn": "English Label",
+      "colorHex": "Color",
+      "glyph": "Glyph",
+      "sortOrder": "Sort Order",
+      "create": "Add Type",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "inUse": "Cannot delete — events are assigned to this type"
+    },
+    "year": {
+      "title": "Academic Year",
+      "label": "Label",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "create": "Create Year",
+      "setActive": "Set as Active Year",
+      "active": "Active"
+    }
+  }
 }

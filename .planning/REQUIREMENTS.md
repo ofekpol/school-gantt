@@ -35,15 +35,15 @@
 
 ### Event CRUD & Wizard
 
-- [ ] **WIZARD-01**: Staff editor can create a new event via 7-step wizard (all fields per PRD §6.2)
-- [ ] **WIZARD-02**: Wizard autosaves draft to server on every step (draft row created immediately on open)
-- [ ] **WIZARD-03**: Editor can close tab and resume draft from `/dashboard`
-- [ ] **WIZARD-04**: Date picker is bounded by active academic year dates
-- [ ] **WIZARD-05**: Grade multi-select respects editor's grade scopes (can't select grades outside scope)
-- [ ] **WIZARD-06**: Step 7 "Submit for approval" flips status from `draft` → `pending`
-- [ ] **WIZARD-07**: Dashboard shows editor's draft and pending events with status indicators
-- [ ] **WIZARD-08**: Editor can soft-delete their own draft events
-- [ ] **WIZARD-09**: Concurrent edit: `If-Match` / `version` check; toast warning on conflict (last-write-wins)
+- [x] **WIZARD-01**: Staff editor can create a new event via 7-step wizard (all fields per PRD §6.2)
+- [x] **WIZARD-02**: Wizard autosaves draft to server on every step (draft row created immediately on open)
+- [x] **WIZARD-03**: Editor can close tab and resume draft from `/dashboard`
+- [x] **WIZARD-04**: Date picker is bounded by active academic year dates
+- [x] **WIZARD-05**: Grade multi-select respects editor's grade scopes (can't select grades outside scope)
+- [x] **WIZARD-06**: Step 7 "Submit for approval" flips status from `draft` → `pending`
+- [x] **WIZARD-07**: Dashboard shows editor's draft and pending events with status indicators
+- [x] **WIZARD-08**: Editor can soft-delete their own draft events
+- [x] **WIZARD-09**: Concurrent edit: `If-Match` / `version` check; toast warning on conflict (last-write-wins)
 
 ### Approval Workflow
 
@@ -109,9 +109,9 @@
 
 ### Admin Management
 
-- [ ] **ADMIN-01**: Admin can manage staff users (create, edit, deactivate) at `/admin/staff`
-- [ ] **ADMIN-02**: Admin can configure event types (label, color, glyph, order) at `/admin/event-types`
-- [ ] **ADMIN-03**: Admin can configure the active academic year at `/admin/year`
+- [x] **ADMIN-01**: Admin can manage staff users (create, edit, deactivate) at `/admin/staff`
+- [x] **ADMIN-02**: Admin can configure event types (label, color, glyph, order) at `/admin/event-types`
+- [x] **ADMIN-03**: Admin can configure the active academic year at `/admin/year`
 
 ### Non-Functional
 
@@ -172,18 +172,18 @@
 | AUTH-05 | Phase 1 — Database, RLS & Auth | Complete |
 | AUTH-06 | Phase 1 — Database, RLS & Auth | Complete |
 | AUTH-07 | Phase 1 — Database, RLS & Auth | Complete |
-| WIZARD-01 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| WIZARD-02 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| WIZARD-03 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| WIZARD-04 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| WIZARD-05 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| WIZARD-06 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| WIZARD-07 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| WIZARD-08 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| WIZARD-09 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| ADMIN-01 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| ADMIN-02 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| ADMIN-03 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
+| WIZARD-01 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| WIZARD-02 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| WIZARD-03 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| WIZARD-04 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| WIZARD-05 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| WIZARD-06 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| WIZARD-07 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| WIZARD-08 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| WIZARD-09 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| ADMIN-01 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| ADMIN-02 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| ADMIN-03 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
 | APPROVAL-01 | Phase 3 — Approval Workflow | Pending |
 | APPROVAL-02 | Phase 3 — Approval Workflow | Pending |
 | APPROVAL-03 | Phase 3 — Approval Workflow | Pending |
