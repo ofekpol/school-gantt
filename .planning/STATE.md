@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: "Completed 01-04-PLAN.md: auth routes (login, logout, reset-password)"
-last_updated: "2026-05-10T19:42:11.048Z"
+stopped_at: "Completed 02-02-PLAN.md: Event CRUD + 7-step wizard UI"
+last_updated: "2026-05-12T06:07:17.729Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 9
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
   percent: 33
 ---
 
@@ -65,6 +65,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01-database-rls-auth P02 | 68 | 2 tasks | 11 files |
 | Phase 01-database-rls-auth P03 | 17 | 3 tasks | 14 files |
 | Phase 01-database-rls-auth P04 | 11 | 3 tasks | 5 files |
+| Phase 02-event-crud-7-step-wizard P02 | 18 | 6 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,8 @@ Recent decisions affecting current work:
 - [Phase 01-database-rls-auth]: Middleware short-circuits on i18n redirects (3xx) before Supabase session refresh — avoids cookie mutation during locale redirects
 - [Phase 01-database-rls-auth]: vi.mock for next/headers + createSupabaseServerClient in integration tests isolates auth transport from DB logic without full Next.js server
 - [Phase 01-database-rls-auth]: RESEND_API_KEY=placeholder: reset-password route fully implemented; Resend SMTP relay config and email delivery deferred to Phase 8
+- [Phase 02-event-crud-7-step-wizard]: Lazy proxy singleton for db and supabaseAdmin — enables pnpm build without credentials, throws only on first actual DB call
+- [Phase 02-event-crud-7-step-wizard]: Server Component wizard host page loads DB state; WizardShell is single Client Component boundary at wizard root
 
 ### Pending Todos
 
@@ -118,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10T19:00:55.243Z
-Stopped at: Completed 01-04-PLAN.md: auth routes (login, logout, reset-password)
+Last session: 2026-05-12T06:07:17.710Z
+Stopped at: Completed 02-02-PLAN.md: Event CRUD + 7-step wizard UI
 Resume file: None

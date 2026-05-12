@@ -12,7 +12,7 @@ Nine phases deliver a multi-tenant school event calendar from blank repo to prod
 
 - [x] **Phase 0: Foundation** - Repo scaffold, RTL toolchain, CI wired, shadcn RTL patches applied (completed 2026-05-08)
 - [x] **Phase 1: Database, RLS & Auth** - All schema tables, RLS policies, Supabase Auth, seed script (completed 2026-05-10)
-- [ ] **Phase 2: Event CRUD & 7-Step Wizard** - Full wizard with autosave, draft dashboard, admin management pages
+- [x] **Phase 2: Event CRUD & 7-Step Wizard** - Full wizard with autosave, draft dashboard, admin management pages (completed 2026-05-12)
 - [ ] **Phase 3: Approval Workflow** - Admin queue, approve/reject, revision audit trail, edit-of-approved
 - [ ] **Phase 4: Filter Bar & Agenda View** - Shared FilterBar, mobile agenda with URL-synced filters
 - [ ] **Phase 5: Gantt View** - Custom SVG/Canvas Gantt with zoom, sticky column, perf budget
@@ -152,7 +152,7 @@ Phases execute in order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 0. Foundation | 3/3 | Complete   | 2026-05-09 |
 | 1. Database, RLS & Auth | 5/5 | Complete   | 2026-05-10 |
-| 2. Event CRUD & 7-Step Wizard | 0/? | Not started | - |
+| 2. Event CRUD & 7-Step Wizard | 1/1 | Complete   | 2026-05-12 |
 | 3. Approval Workflow | 0/? | Not started | - |
 | 4. Filter Bar & Agenda View | 0/? | Not started | - |
 | 5. Gantt View | 0/? | Not started | - |
