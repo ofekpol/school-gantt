@@ -1,6 +1,6 @@
 import "server-only";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import { withSchool } from "@/lib/db/client";
+import { db, withSchool } from "@/lib/db/client";
 import {
   academicYears,
   editorScopes,
@@ -11,16 +11,14 @@ import {
 
 /**
  * Returns the active academic year for the school, or null if none is configured.
- * Checks schools.activeAcademicYearId (nullable FK) — see RESEARCH Pitfall 2.
+ * Uses db directly for schools query — schools table has no RLS.
  */
 export async function getActiveAcademicYear(schoolId: string) {
-  const [school] = await withSchool(schoolId, (tx) =>
-    tx
-      .select({ activeYearId: schools.activeAcademicYearId })
-      .from(schools)
-      .where(eq(schools.id, schoolId))
-      .limit(1),
-  );
+  const [school] = await db
+    .select({ activeYearId: schools.activeAcademicYearId })
+    .from(schools)
+    .where(eq(schools.id, schoolId))
+    .limit(1);
   if (!school?.activeYearId) return null;
   const activeYearId = school.activeYearId;
   const [year] = await withSchool(schoolId, (tx) =>
