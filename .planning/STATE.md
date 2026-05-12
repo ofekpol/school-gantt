@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 02-04-PLAN.md: admin UI pages (staff, event-types, year)"
-last_updated: "2026-05-12T18:58:07.649Z"
+stopped_at: "Completed 02-05-PLAN.md: gap-closure queries refactor + dead-code removal"
+last_updated: "2026-05-12T19:31:58.662Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 9
   completed_phases: 3
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 14
+  completed_plans: 14
   percent: 33
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 2 (Event CRUD & 7-Step Wizard) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-05-12
 
@@ -66,6 +66,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01-database-rls-auth P03 | 17 | 3 tasks | 14 files |
 | Phase 01-database-rls-auth P04 | 11 | 3 tasks | 5 files |
 | Phase 02-event-crud-7-step-wizard P04 | 45 | 3 tasks | 12 files |
+| Phase 02-event-crud-7-step-wizard P05 | 25 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,8 @@ Recent decisions affecting current work:
 - [Phase 01-database-rls-auth]: RESEND_API_KEY=placeholder: reset-password route fully implemented; Resend SMTP relay config and email delivery deferred to Phase 8
 - [Phase 02-event-crud-7-step-wizard]: redirect('/') not redirect('/login') in admin layout — typedRoutes rejects non-existent routes; consistent with staff layout pattern
 - [Phase 02-event-crud-7-step-wizard]: Admin page pattern: Server Component loads data via domain helper → Client Component handles mutations via fetch + router.refresh()
+- [Phase 02-event-crud-7-step-wizard]: Dashboard drops rejected status — getEditorDashboardEvents returns only draft+pending per Plan 00 must_have; rejected events deferred to Phase 3 /dashboard/rejected surface
+- [Phase 02-event-crud-7-step-wizard]: replaceEventGrades called post-transaction in updateDraft to avoid nested withSchool (Pitfall 5); two DB round-trips are acceptable for correctness
 
 ### Pending Todos
 
@@ -121,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-12T18:58:07.634Z
-Stopped at: Completed 02-04-PLAN.md: admin UI pages (staff, event-types, year)
+Last session: 2026-05-12T19:31:58.654Z
+Stopped at: Completed 02-05-PLAN.md: gap-closure queries refactor + dead-code removal
 Resume file: None

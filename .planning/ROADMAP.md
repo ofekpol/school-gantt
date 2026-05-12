@@ -157,7 +157,7 @@ Phases execute in order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 0. Foundation | 3/3 | Complete   | 2026-05-09 |
 | 1. Database, RLS & Auth | 5/5 | Complete   | 2026-05-10 |
-| 2. Event CRUD & 7-Step Wizard | 5/5 | Complete   | 2026-05-12 |
+| 2. Event CRUD & 7-Step Wizard | 6/6 | Complete   | 2026-05-12 |
 | 3. Approval Workflow | 0/? | Not started | - |
 | 4. Filter Bar & Agenda View | 0/? | Not started | - |
 | 5. Gantt View | 0/? | Not started | - |
