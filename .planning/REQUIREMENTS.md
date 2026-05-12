@@ -109,9 +109,9 @@
 
 ### Admin Management
 
-- [ ] **ADMIN-01**: Admin can manage staff users (create, edit, deactivate) at `/admin/staff`
-- [ ] **ADMIN-02**: Admin can configure event types (label, color, glyph, order) at `/admin/event-types`
-- [ ] **ADMIN-03**: Admin can configure the active academic year at `/admin/year`
+- [x] **ADMIN-01**: Admin can manage staff users (create, edit, deactivate) at `/admin/staff`
+- [x] **ADMIN-02**: Admin can configure event types (label, color, glyph, order) at `/admin/event-types`
+- [x] **ADMIN-03**: Admin can configure the active academic year at `/admin/year`
 
 ### Non-Functional
 
@@ -181,9 +181,9 @@
 | WIZARD-07 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
 | WIZARD-08 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
 | WIZARD-09 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
-| ADMIN-01 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| ADMIN-02 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
-| ADMIN-03 | Phase 2 — Event CRUD & 7-Step Wizard | Pending |
+| ADMIN-01 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| ADMIN-02 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
+| ADMIN-03 | Phase 2 — Event CRUD & 7-Step Wizard | Complete |
 | APPROVAL-01 | Phase 3 — Approval Workflow | Pending |
 | APPROVAL-02 | Phase 3 — Approval Workflow | Pending |
 | APPROVAL-03 | Phase 3 — Approval Workflow | Pending |
