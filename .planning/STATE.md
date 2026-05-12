@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 01-04-PLAN.md: auth routes (login, logout, reset-password)"
-last_updated: "2026-05-11T20:08:23.274Z"
-last_activity: 2026-05-11 -- Phase 2 execution started
+stopped_at: "Completed 02-04-PLAN.md: admin UI pages (staff, event-types, year)"
+last_updated: "2026-05-12T18:58:07.649Z"
+last_activity: 2026-05-12
 progress:
   total_phases: 9
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 13
-  completed_plans: 8
+  completed_plans: 13
   percent: 33
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-09)
 ## Current Position
 
 Phase: 2 (Event CRUD & 7-Step Wizard) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 2
-Last activity: 2026-05-11 -- Phase 2 execution started
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-05-12
 
 Progress: [███░░░░░░░] 33%
 
@@ -65,6 +65,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01-database-rls-auth P02 | 68 | 2 tasks | 11 files |
 | Phase 01-database-rls-auth P03 | 17 | 3 tasks | 14 files |
 | Phase 01-database-rls-auth P04 | 11 | 3 tasks | 5 files |
+| Phase 02-event-crud-7-step-wizard P04 | 45 | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,8 @@ Recent decisions affecting current work:
 - [Phase 01-database-rls-auth]: Middleware short-circuits on i18n redirects (3xx) before Supabase session refresh — avoids cookie mutation during locale redirects
 - [Phase 01-database-rls-auth]: vi.mock for next/headers + createSupabaseServerClient in integration tests isolates auth transport from DB logic without full Next.js server
 - [Phase 01-database-rls-auth]: RESEND_API_KEY=placeholder: reset-password route fully implemented; Resend SMTP relay config and email delivery deferred to Phase 8
+- [Phase 02-event-crud-7-step-wizard]: redirect('/') not redirect('/login') in admin layout — typedRoutes rejects non-existent routes; consistent with staff layout pattern
+- [Phase 02-event-crud-7-step-wizard]: Admin page pattern: Server Component loads data via domain helper → Client Component handles mutations via fetch + router.refresh()
 
 ### Pending Todos
 
@@ -118,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10T19:00:55.243Z
-Stopped at: Completed 01-04-PLAN.md: auth routes (login, logout, reset-password)
+Last session: 2026-05-12T18:58:07.634Z
+Stopped at: Completed 02-04-PLAN.md: admin UI pages (staff, event-types, year)
 Resume file: None
