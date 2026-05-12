@@ -16,9 +16,14 @@ export async function middleware(request: NextRequest) {
   if (response.status >= 300 && response.status < 400) return response;
 
   // Step 2: Supabase session refresh — writes cookies onto the same response
+  // Skip when env vars are absent (test environments without a live Supabase project)
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return response;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
