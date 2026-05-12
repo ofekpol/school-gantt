@@ -8,14 +8,29 @@ import { sql } from "drizzle-orm";
 import { Pool } from "pg";
 import * as schema from "./schema";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error("Missing DATABASE_URL env var");
+/**
+ * Lazy singleton DB pool and Drizzle client.
+ * Defers DATABASE_URL check to first use so Next.js production builds
+ * can collect page data for API routes without DATABASE_URL in the build env.
+ */
+let _db: NodePgDatabase<typeof schema> | null = null;
+
+function getDb(): NodePgDatabase<typeof schema> {
+  if (_db) return _db;
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error("Missing DATABASE_URL env var");
+  }
+  const pool = new Pool({ connectionString: databaseUrl, max: 10 });
+  _db = drizzle({ client: pool, schema });
+  return _db;
 }
 
-const pool = new Pool({ connectionString: databaseUrl, max: 10 });
-
-export const db: NodePgDatabase<typeof schema> = drizzle({ client: pool, schema });
+export const db: NodePgDatabase<typeof schema> = new Proxy({} as NodePgDatabase<typeof schema>, {
+  get(_target, prop) {
+    return getDb()[prop as keyof NodePgDatabase<typeof schema>];
+  },
+});
 
 export { supabaseAdmin } from "./supabase-admin";
 
