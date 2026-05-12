@@ -1,0 +1,32 @@
+import { z } from "zod";
+
+/**
+ * All-optional schema for PATCH autosave requests — allows partial saves at every wizard step.
+ * See RESEARCH Pitfall 1: never require all fields on PATCH (blocks wizard advance).
+ */
+export const EventDraftSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().optional(),
+  location: z.string().max(255).optional(),
+  startAt: z.string().datetime({ offset: true }).optional(),
+  endAt: z.string().datetime({ offset: true }).optional(),
+  allDay: z.boolean().optional(),
+  eventTypeId: z.string().uuid().optional(),
+  grades: z.array(z.number().int().min(7).max(12)).optional(),
+});
+
+export type EventDraftInput = z.infer<typeof EventDraftSchema>;
+
+/**
+ * Strict schema for POST /submit — all required fields must be present.
+ * Validated at the submit step (Step 7), not during autosave.
+ */
+export const EventSubmitSchema = z.object({
+  title: z.string().min(1).max(255),
+  startAt: z.string().datetime({ offset: true }),
+  endAt: z.string().datetime({ offset: true }),
+  eventTypeId: z.string().uuid(),
+  grades: z.array(z.number().int().min(7).max(12)).min(1),
+});
+
+export type EventSubmitInput = z.infer<typeof EventSubmitSchema>;

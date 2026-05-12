@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: "Completed 01-04-PLAN.md: auth routes (login, logout, reset-password)"
-last_updated: "2026-05-10T19:42:11.048Z"
-last_activity: 2026-05-10
+status: executing
+stopped_at: "Completed 02-05-PLAN.md: gap-closure queries refactor + dead-code removal"
+last_updated: "2026-05-12T20:03:24.164Z"
+last_activity: 2026-05-12
 progress:
   total_phases: 9
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  completed_phases: 3
+  total_plans: 14
+  completed_plans: 14
   percent: 33
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-09)
 
 **Core value:** An admin can approve a staff-submitted event and it appears publicly across all views within 5 seconds.
-**Current focus:** Phase 01 — database-rls-auth
+**Current focus:** Phase 2 — Event CRUD & 7-Step Wizard
 
 ## Current Position
 
-Phase: 2
+Phase: 3
 Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-05-10
+Status: Ready to execute
+Last activity: 2026-05-12
 
 Progress: [███░░░░░░░] 33%
 
@@ -65,6 +65,8 @@ Progress: [███░░░░░░░] 33%
 | Phase 01-database-rls-auth P02 | 68 | 2 tasks | 11 files |
 | Phase 01-database-rls-auth P03 | 17 | 3 tasks | 14 files |
 | Phase 01-database-rls-auth P04 | 11 | 3 tasks | 5 files |
+| Phase 02-event-crud-7-step-wizard P04 | 45 | 3 tasks | 12 files |
+| Phase 02-event-crud-7-step-wizard P05 | 25 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -105,6 +107,10 @@ Recent decisions affecting current work:
 - [Phase 01-database-rls-auth]: Middleware short-circuits on i18n redirects (3xx) before Supabase session refresh — avoids cookie mutation during locale redirects
 - [Phase 01-database-rls-auth]: vi.mock for next/headers + createSupabaseServerClient in integration tests isolates auth transport from DB logic without full Next.js server
 - [Phase 01-database-rls-auth]: RESEND_API_KEY=placeholder: reset-password route fully implemented; Resend SMTP relay config and email delivery deferred to Phase 8
+- [Phase 02-event-crud-7-step-wizard]: redirect('/') not redirect('/login') in admin layout — typedRoutes rejects non-existent routes; consistent with staff layout pattern
+- [Phase 02-event-crud-7-step-wizard]: Admin page pattern: Server Component loads data via domain helper → Client Component handles mutations via fetch + router.refresh()
+- [Phase 02-event-crud-7-step-wizard]: Dashboard drops rejected status — getEditorDashboardEvents returns only draft+pending per Plan 00 must_have; rejected events deferred to Phase 3 /dashboard/rejected surface
+- [Phase 02-event-crud-7-step-wizard]: replaceEventGrades called post-transaction in updateDraft to avoid nested withSchool (Pitfall 5); two DB round-trips are acceptable for correctness
 
 ### Pending Todos
 
@@ -118,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-10T19:00:55.243Z
-Stopped at: Completed 01-04-PLAN.md: auth routes (login, logout, reset-password)
+Last session: 2026-05-12T19:31:58.654Z
+Stopped at: Completed 02-05-PLAN.md: gap-closure queries refactor + dead-code removal
 Resume file: None

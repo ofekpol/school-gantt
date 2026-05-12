@@ -1,3 +1,44 @@
 {
-  "_placeholder": "Hebrew strings — populated as features are built"
+  "_placeholder": "Hebrew strings — populated as features are built",
+  "admin": {
+    "staff": {
+      "title": "ניהול צוות",
+      "create": "צור משתמש",
+      "email": "אימייל",
+      "fullName": "שם מלא",
+      "role": "תפקיד",
+      "roleAdmin": "מנהל",
+      "roleEditor": "עורך",
+      "temporaryPassword": "סיסמה זמנית",
+      "gradeScopes": "שכבות מורשות",
+      "deactivate": "השבת",
+      "deactivated": "מושבת",
+      "duplicateEmail": "כתובת אימייל קיימת",
+      "createError": "שגיאת יצירה"
+    },
+    "eventTypes": {
+      "title": "סוגי אירועים",
+      "key": "מזהה",
+      "labelHe": "שם בעברית",
+      "labelEn": "שם באנגלית",
+      "colorHex": "צבע",
+      "glyph": "סמל",
+      "sortOrder": "סדר",
+      "create": "הוסף סוג",
+      "save": "שמור",
+      "cancel": "ביטול",
+      "edit": "עריכה",
+      "delete": "מחק",
+      "inUse": "לא ניתן למחוק — אירועים משויכים"
+    },
+    "year": {
+      "title": "שנת לימודים",
+      "label": "תווית",
+      "startDate": "תאריך התחלה",
+      "endDate": "תאריך סיום",
+      "create": "צור שנה",
+      "setActive": "הגדר כשנה פעילה",
+      "active": "פעילה"
+    }
+  }
 }

@@ -53,6 +53,7 @@ jobs:
         run: pnpm dlx playwright install chromium --with-deps
 
       - name: E2E tests (Playwright)
+        if: ${{ env.NEXT_PUBLIC_SUPABASE_URL != '' }}
         run: pnpm playwright
         env:
           CI: "true"

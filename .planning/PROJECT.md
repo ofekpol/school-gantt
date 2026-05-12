@@ -17,6 +17,11 @@ An admin can approve a staff-submitted event and it appears publicly across all 
 - [x] Multi-tenant isolation: each school sees only its own data (Postgres RLS) — *Validated in Phase 1: Database/RLS/Auth* (`withSchool()` wrapper + `SET LOCAL ROLE authenticated`, 3 cross-school isolation tests passing)
 - [x] Auth lockout: 10 failed attempts / 15 min window — *Validated in Phase 1: Database/RLS/Auth* (DB-backed `locked_until`, 3 integration tests passing)
 
+### Validated
+
+- [x] Staff editor fills 7-step wizard, autosaves draft per step, submits for approval — *Validated in Phase 2: Event CRUD & 7-Step Wizard* (WizardShell + 7 step components + POST/PATCH/submit API + autosave on every step; human UI checks pending)
+- [x] School admin manages staff users + event types + academic year — *Validated in Phase 2: Event CRUD & 7-Step Wizard* (ADMIN-01..03: full CRUD API routes + admin pages + StaffTable, EventTypeTable, YearForm components)
+
 ### Active
 
 - [ ] Staff editor fills 7-step wizard, autosaves draft per step, submits for approval
@@ -101,4 +106,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-10 — Phase 1: Database/RLS/Auth complete (schema, migrations, withSchool wrapper, auth routes, lockout)*
+*Last updated: 2026-05-12 — Phase 2: Event CRUD & 7-Step Wizard complete (7-step wizard, autosave, event REST API, admin pages, domain library layer)*
