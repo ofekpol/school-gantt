@@ -1,11 +1,12 @@
 import "server-only";
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import {
   academicYears,
   editorScopes,
   eventGrades,
   events,
+  eventTypes,
   schools,
 } from "@/lib/db/schema";
 
@@ -157,4 +158,22 @@ export async function getEventForEditor(
   });
 
   return result;
+}
+
+/**
+ * Returns the lowest-sortOrder event_type for the school, or null if none exist.
+ * Used by the wizard entry page to pick a default event type without raw
+ * schema imports outside lib/.
+ */
+export async function getDefaultEventType(
+  schoolId: string,
+): Promise<{ id: string } | null> {
+  const [row] = await withSchool(schoolId, (tx) =>
+    tx
+      .select({ id: eventTypes.id })
+      .from(eventTypes)
+      .orderBy(asc(eventTypes.sortOrder))
+      .limit(1),
+  );
+  return row ?? null;
 }

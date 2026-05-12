@@ -37,6 +37,26 @@ export type UpdateDraftResult =
   | { status: "conflict" }
   | { status: "not_found" };
 
+/**
+ * Atomically replaces the event_grades rows for an event with the given list.
+ * Uses withSchool transaction so RLS is active and the delete+insert pair is atomic.
+ * Empty grades array deletes all rows and inserts none.
+ */
+export async function replaceEventGrades(
+  schoolId: string,
+  eventId: string,
+  grades: number[],
+): Promise<void> {
+  await withSchool(schoolId, async (tx) => {
+    await tx.delete(eventGrades).where(eq(eventGrades.eventId, eventId));
+    if (grades.length > 0) {
+      await tx.insert(eventGrades).values(
+        grades.map((grade) => ({ eventId, grade, schoolId })),
+      );
+    }
+  });
+}
+
 type EventUpdate = {
   version: number;
   updatedAt: Date;
@@ -62,7 +82,9 @@ export async function updateDraft(
   fields: Partial<EventDraftInput>,
   expectedVersion: number | null,
 ): Promise<UpdateDraftResult> {
-  return withSchool(schoolId, async (tx) => {
+  const { grades, ...eventFields } = fields;
+
+  const result = await withSchool(schoolId, async (tx) => {
     const [current] = await tx
       .select({
         version: events.version,
@@ -83,8 +105,6 @@ export async function updateDraft(
       return { status: "conflict" as const };
     }
 
-    const { grades, ...eventFields } = fields;
-
     const updateSet: EventUpdate = {
       version: current.version + 1,
       updatedAt: new Date(),
@@ -103,18 +123,16 @@ export async function updateDraft(
       .where(eq(events.id, eventId))
       .returning({ version: events.version });
 
-    // Bulk-replace grades atomically within the same transaction (RESEARCH Pitfall 6)
-    if (grades !== undefined) {
-      await tx.delete(eventGrades).where(eq(eventGrades.eventId, eventId));
-      if (grades.length > 0) {
-        await tx.insert(eventGrades).values(
-          grades.map((grade) => ({ eventId, grade, schoolId })),
-        );
-      }
-    }
-
     return { status: "ok" as const, version: updated.version };
   });
+
+  // Replace grades after the event update transaction completes.
+  // replaceEventGrades opens its own withSchool — nesting is not allowed (Pitfall 5).
+  if (result.status === "ok" && grades !== undefined) {
+    await replaceEventGrades(schoolId, eventId, grades);
+  }
+
+  return result;
 }
 
 /**
