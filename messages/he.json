@@ -69,5 +69,18 @@
       "resubmit": "ערוך ושלח שוב",
       "linkLabel": "אירועים שנדחו"
     }
+  },
+  "agenda": {
+    "subtitle": "סדר יום בית-ספרי",
+    "empty": "אין אירועים תואמים לסינון הנוכחי.",
+    "filter": {
+      "ariaLabel": "סינון אירועים",
+      "searchLabel": "חיפוש לפי שם",
+      "searchPlaceholder": "חיפוש אירוע…",
+      "gradesLabel": "סינון לפי שכבה",
+      "typesLabel": "סינון לפי סוג",
+      "apply": "החל",
+      "clear": "נקה"
+    }
   }
 }

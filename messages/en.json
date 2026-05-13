@@ -69,5 +69,18 @@
       "resubmit": "Edit & resubmit",
       "linkLabel": "Rejected events"
     }
+  },
+  "agenda": {
+    "subtitle": "School agenda",
+    "empty": "No events match the current filter.",
+    "filter": {
+      "ariaLabel": "Event filters",
+      "searchLabel": "Search by title",
+      "searchPlaceholder": "Search events…",
+      "gradesLabel": "Filter by grade",
+      "typesLabel": "Filter by event type",
+      "apply": "Apply",
+      "clear": "Clear"
+    }
   }
 }
