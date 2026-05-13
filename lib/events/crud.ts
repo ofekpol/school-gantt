@@ -35,7 +35,8 @@ export async function createDraft(
 export type UpdateDraftResult =
   | { status: "ok"; version: number }
   | { status: "conflict" }
-  | { status: "not_found" };
+  | { status: "not_found" }
+  | { status: "invalid_state" };
 
 /**
  * Atomically replaces the event_grades rows for an event with the given list.
@@ -98,6 +99,13 @@ export async function updateDraft(
     if (!current) return { status: "not_found" as const };
     if (!isAdmin && current.createdBy !== userId) {
       return { status: "not_found" as const };
+    }
+
+    // PRD §6.3 — pending events are awaiting admin decision and must not be
+    // mutated. Approved events are public; edits go through /revise (which
+    // produces a new pending row tied via parent_event_id).
+    if (!isAdmin && (current.status === "pending" || current.status === "approved")) {
+      return { status: "invalid_state" as const };
     }
 
     // Optimistic concurrency check (WIZARD-09)

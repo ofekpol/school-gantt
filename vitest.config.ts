@@ -35,6 +35,12 @@ export default defineConfig({
           include: ["test/integration/**/*.test.ts"],
           exclude: ["node_modules/**", ".next/**"],
           testTimeout: 15000,
+          // server-only throws at import time outside a Next.js server context;
+          // integration tests run in node and import lib/events/* modules that
+          // start with `import "server-only"`. Mock it like the unit project does.
+          alias: {
+            "server-only": require.resolve("./test/__mocks__/server-only.ts"),
+          },
         },
       },
     ],

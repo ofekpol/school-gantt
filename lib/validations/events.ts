@@ -30,3 +30,13 @@ export const EventSubmitSchema = z.object({
 });
 
 export type EventSubmitInput = z.infer<typeof EventSubmitSchema>;
+
+/**
+ * Reject reason payload — admin must explain rejection (PRD §6.3).
+ * Editor sees this on /dashboard/rejected.
+ */
+export const RejectSchema = z.object({
+  reason: z.string().min(1).max(2000),
+});
+
+export type RejectInput = z.infer<typeof RejectSchema>;
