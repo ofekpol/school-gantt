@@ -1,5 +1,69 @@
 {
   "_placeholder": "English strings — populated as features are built",
+  "a11y": {
+    "skipToContent": "Skip to content",
+    "closeDialog": "Close dialog",
+    "selectGrade": "Select grade",
+    "selectType": "Select event type",
+    "localeToggle": "Select language",
+    "localeHe": "עברית",
+    "localeEn": "English"
+  },
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "saving": "Saving…",
+    "loading": "Loading…",
+    "error": "Error",
+    "tryAgain": "Try again",
+    "unnamed": "(untitled)",
+    "more": "+{count} more",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "grades": {
+    "label_7": "7",
+    "label_8": "8",
+    "label_9": "9",
+    "label_10": "10",
+    "label_11": "11",
+    "label_12": "12"
+  },
+  "months": {
+    "1": "January",
+    "2": "February",
+    "3": "March",
+    "4": "April",
+    "5": "May",
+    "6": "June",
+    "7": "July",
+    "8": "August",
+    "9": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December",
+    "short_1": "Jan",
+    "short_2": "Feb",
+    "short_3": "Mar",
+    "short_4": "Apr",
+    "short_5": "May",
+    "short_6": "Jun",
+    "short_7": "Jul",
+    "short_8": "Aug",
+    "short_9": "Sep",
+    "short_10": "Oct",
+    "short_11": "Nov",
+    "short_12": "Dec"
+  },
+  "weekdays": {
+    "short_0": "Sun",
+    "short_1": "Mon",
+    "short_2": "Tue",
+    "short_3": "Wed",
+    "short_4": "Thu",
+    "short_5": "Fri",
+    "short_6": "Sat"
+  },
   "admin": {
     "staff": {
       "title": "Staff Management",
@@ -61,6 +125,16 @@
     }
   },
   "dashboard": {
+    "title": "Dashboard",
+    "newEvent": "New event",
+    "empty": "No events yet. Click \"New event\" to start.",
+    "resume": "Resume",
+    "status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
     "rejected": {
       "title": "Rejected events",
       "empty": "No rejected events.",
@@ -73,6 +147,8 @@
   "agenda": {
     "subtitle": "School agenda",
     "empty": "No events match the current filter.",
+    "noDetails": "No additional details.",
+    "location": "Location",
     "filter": {
       "ariaLabel": "Event filters",
       "searchLabel": "Search by title",
@@ -87,6 +163,14 @@
     "noActiveYear": "No active academic year has been configured.",
     "empty": "No approved events in the current year.",
     "zoomLabel": "Zoom level",
+    "gradesColumnLabel": "Grades",
+    "drawer": {
+      "date": "Date",
+      "type": "Type",
+      "grades": "Grades",
+      "location": "Location",
+      "description": "Details"
+    },
     "zoom": {
       "year": "Year",
       "term": "Term",
@@ -121,5 +205,44 @@
     "freshTokenTitle": "Subscription created",
     "freshTokenHint": "Copy the URL and paste it into Google Calendar (\"From URL\"). It's only visible now.",
     "errorGeneric": "Something went wrong"
+  },
+  "wizard": {
+    "step1": {
+      "title": "Date",
+      "errorRequired": "Please select a date",
+      "errorOutOfYear": "Date must fall within the active academic year"
+    },
+    "step2": {
+      "title": "Grades",
+      "errorRequired": "Please select at least one grade"
+    },
+    "step3": {
+      "title": "Event type",
+      "errorRequired": "Please select an event type"
+    },
+    "step4": {
+      "title": "Title",
+      "errorRequired": "Please enter a title",
+      "errorTooLong": "Title is too long (max 120 characters)"
+    },
+    "step5": {
+      "title": "Time",
+      "startLabel": "Start time",
+      "endLabel": "End time",
+      "allDay": "All-day",
+      "errorInverted": "End time must come after start time"
+    },
+    "step6": {
+      "title": "Responsible",
+      "errorRequired": "Please enter a responsible person",
+      "requirementsTitle": "Requirements",
+      "requirementsPlaceholder": "Notes, room, equipment…"
+    },
+    "step7": {
+      "title": "Review & submit",
+      "submit": "Submit for approval",
+      "submitting": "Submitting…",
+      "submitError": "Submission failed"
+    }
   }
 }

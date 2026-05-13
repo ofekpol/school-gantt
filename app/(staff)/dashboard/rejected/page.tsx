@@ -19,6 +19,7 @@ export default async function RejectedEventsPage() {
 
   const items = await getRejectedForEditor(user.schoolId, user.id);
   const t = await getTranslations("dashboard.rejected");
+  const tc = await getTranslations("common");
 
   const dateFmt = new Intl.DateTimeFormat("he-IL", {
     timeZone: "Asia/Jerusalem",
@@ -43,7 +44,7 @@ export default async function RejectedEventsPage() {
               className="rounded-lg border border-neutral-200 p-4 flex items-start justify-between gap-4"
             >
               <div className="flex-1">
-                <p className="font-medium">{item.title || "(ללא שם)"}</p>
+                <p className="font-medium">{item.title || tc("unnamed")}</p>
                 <p className="text-sm text-neutral-500">
                   {dateFmt.format(new Date(item.startAt))}
                 </p>

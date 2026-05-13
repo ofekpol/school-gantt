@@ -1,5 +1,69 @@
 {
   "_placeholder": "Hebrew strings — populated as features are built",
+  "a11y": {
+    "skipToContent": "דלג לתוכן",
+    "closeDialog": "סגור חלון",
+    "selectGrade": "בחר שכבה",
+    "selectType": "בחר סוג אירוע",
+    "localeToggle": "בחר שפה",
+    "localeHe": "עברית",
+    "localeEn": "English"
+  },
+  "common": {
+    "next": "הבא",
+    "back": "חזור",
+    "saving": "שומר…",
+    "loading": "טוען…",
+    "error": "שגיאה",
+    "tryAgain": "נסה שוב",
+    "unnamed": "(ללא שם)",
+    "more": "+{count} נוספים",
+    "yes": "כן",
+    "no": "לא"
+  },
+  "grades": {
+    "label_7": "ז׳",
+    "label_8": "ח׳",
+    "label_9": "ט׳",
+    "label_10": "י׳",
+    "label_11": "י״א",
+    "label_12": "י״ב"
+  },
+  "months": {
+    "1": "ינואר",
+    "2": "פברואר",
+    "3": "מרץ",
+    "4": "אפריל",
+    "5": "מאי",
+    "6": "יוני",
+    "7": "יולי",
+    "8": "אוגוסט",
+    "9": "ספטמבר",
+    "10": "אוקטובר",
+    "11": "נובמבר",
+    "12": "דצמבר",
+    "short_1": "ינו׳",
+    "short_2": "פבר׳",
+    "short_3": "מרץ",
+    "short_4": "אפר׳",
+    "short_5": "מאי",
+    "short_6": "יוני",
+    "short_7": "יולי",
+    "short_8": "אוג׳",
+    "short_9": "ספט׳",
+    "short_10": "אוק׳",
+    "short_11": "נוב׳",
+    "short_12": "דצמ׳"
+  },
+  "weekdays": {
+    "short_0": "א׳",
+    "short_1": "ב׳",
+    "short_2": "ג׳",
+    "short_3": "ד׳",
+    "short_4": "ה׳",
+    "short_5": "ו׳",
+    "short_6": "ש׳"
+  },
   "admin": {
     "staff": {
       "title": "ניהול צוות",
@@ -61,6 +125,16 @@
     }
   },
   "dashboard": {
+    "title": "לוח בקרה",
+    "newEvent": "אירוע חדש",
+    "empty": "אין אירועים עדיין. לחץ על \"אירוע חדש\" כדי להתחיל.",
+    "resume": "המשך",
+    "status": {
+      "draft": "טיוטה",
+      "pending": "ממתין לאישור",
+      "approved": "מאושר",
+      "rejected": "נדחה"
+    },
     "rejected": {
       "title": "אירועים שנדחו",
       "empty": "אין אירועים שנדחו.",
@@ -73,6 +147,8 @@
   "agenda": {
     "subtitle": "סדר יום בית-ספרי",
     "empty": "אין אירועים תואמים לסינון הנוכחי.",
+    "noDetails": "אין פרטים נוספים.",
+    "location": "מיקום",
     "filter": {
       "ariaLabel": "סינון אירועים",
       "searchLabel": "חיפוש לפי שם",
@@ -87,6 +163,14 @@
     "noActiveYear": "טרם הוגדרה שנת לימודים פעילה.",
     "empty": "אין אירועים מאושרים בשנה הנוכחית.",
     "zoomLabel": "רמת הגדלה",
+    "gradesColumnLabel": "שכבות",
+    "drawer": {
+      "date": "תאריך",
+      "type": "סוג",
+      "grades": "שכבות",
+      "location": "מיקום",
+      "description": "פרטים"
+    },
     "zoom": {
       "year": "שנה",
       "term": "סמסטר",
@@ -121,5 +205,44 @@
     "freshTokenTitle": "המנוי נוצר",
     "freshTokenHint": "העתק את הקישור והדבק ב-Google Calendar (\"From URL\"). הקישור גלוי רק עכשיו.",
     "errorGeneric": "אירעה שגיאה"
+  },
+  "wizard": {
+    "step1": {
+      "title": "תאריך",
+      "errorRequired": "יש לבחור תאריך",
+      "errorOutOfYear": "התאריך חייב להיות בתוך שנת הלימודים הפעילה"
+    },
+    "step2": {
+      "title": "כיתות",
+      "errorRequired": "יש לבחור כיתה אחת לפחות"
+    },
+    "step3": {
+      "title": "סוג אירוע",
+      "errorRequired": "יש לבחור סוג אירוע"
+    },
+    "step4": {
+      "title": "שם האירוע",
+      "errorRequired": "יש להזין שם אירוע",
+      "errorTooLong": "שם ארוך מדי (עד 120 תווים)"
+    },
+    "step5": {
+      "title": "שעות",
+      "startLabel": "שעת התחלה",
+      "endLabel": "שעת סיום",
+      "allDay": "כל היום",
+      "errorInverted": "שעת הסיום חייבת להיות אחרי שעת ההתחלה"
+    },
+    "step6": {
+      "title": "אחראי",
+      "errorRequired": "יש להזין שם אחראי",
+      "requirementsTitle": "דרישות וציוד",
+      "requirementsPlaceholder": "פרטים נוספים, חדר, ציוד…"
+    },
+    "step7": {
+      "title": "סיכום ושליחה",
+      "submit": "שלח לאישור",
+      "submitting": "שולח…",
+      "submitError": "שליחה נכשלה"
+    }
   }
 }

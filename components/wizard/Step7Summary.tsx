@@ -1,16 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { StepProps, EventType, WizardData } from "./WizardShell";
-
-const GRADE_LABELS: Record<number, string> = {
-  7: "ז׳",
-  8: "ח׳",
-  9: "ט׳",
-  10: "י׳",
-  11: "י״א",
-  12: "י״ב",
-};
 
 interface Step7Props extends StepProps {
   eventTypes: EventType[];
@@ -22,6 +14,12 @@ interface Step7Props extends StepProps {
  * WIZARD-06: clicking Submit calls onSubmit() which POSTs to /api/v1/events/:id/submit.
  */
 export function Step7Summary({ data, saving, eventTypes, onBack, onSubmit }: Step7Props) {
+  const t = useTranslations("wizard.step7");
+  const tc = useTranslations("common");
+  const tg = useTranslations("grades");
+  const ta = useTranslations("agenda");
+  const td = useTranslations("gantt.drawer");
+  const tw = useTranslations("wizard.step5");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,52 +31,58 @@ export function Step7Summary({ data, saving, eventTypes, onBack, onSubmit }: Ste
     try {
       await onSubmit();
     } catch {
-      setError("שגיאה בשליחה. נסה שוב.");
+      setError(t("submitError"));
       setSubmitting(false);
     }
   }
 
-  function formatTime(data: WizardData) {
-    if (data.allDay) return "כל היום";
-    const start = data.startAt?.slice(11, 16) ?? "";
-    const end = data.endAt?.slice(11, 16) ?? "";
+  function formatTime(d: WizardData) {
+    if (d.allDay) return tw("allDay");
+    const start = d.startAt?.slice(11, 16) ?? "";
+    const end = d.endAt?.slice(11, 16) ?? "";
     if (!start && !end) return "—";
     return `${start}–${end}`;
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">שלב 7 — סיכום ושליחה</h2>
+      <h2 className="text-xl font-semibold">{t("title")}</h2>
       <dl className="space-y-2 rounded-lg border border-neutral-200 p-4 text-sm">
-        <SummaryRow label="תאריך" value={data.date ?? "—"} />
+        <SummaryRow label={td("date")} value={data.date ?? "—"} />
         <SummaryRow
-          label="כיתות"
+          label={td("grades")}
           value={
-            (data.grades ?? []).map((g) => GRADE_LABELS[g] ?? String(g)).join(", ") || "—"
+            (data.grades ?? [])
+              .map((g) => tg(`label_${g}` as `label_${7 | 8 | 9 | 10 | 11 | 12}`))
+              .join(", ") || "—"
           }
         />
-        <SummaryRow label="סוג אירוע" value={eventType?.labelHe ?? "—"} />
-        <SummaryRow label="שם האירוע" value={data.title ?? "—"} />
-        <SummaryRow label="שעות" value={formatTime(data)} />
-        <SummaryRow label="אחראי" value={data.responsibleText ?? "—"} />
+        <SummaryRow label={td("type")} value={eventType?.labelHe ?? "—"} />
+        <SummaryRow label={td("description")} value={data.title ?? "—"} />
+        <SummaryRow label={tw("title")} value={formatTime(data)} />
+        <SummaryRow label={td("location")} value={data.responsibleText ?? "—"} />
         {data.requirementsText && (
-          <SummaryRow label="דרישות" value={data.requirementsText} />
+          <SummaryRow label={ta("location")} value={data.requirementsText} />
         )}
       </dl>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
       <div className="flex gap-2">
         <button
           onClick={onBack}
-          className="flex-1 rounded-md border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
+          className="flex-1 min-h-11 rounded-md border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
         >
-          חזור
+          {tc("back")}
         </button>
         <button
           onClick={handleSubmit}
           disabled={saving || submitting}
-          className="flex-1 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          className="flex-1 min-h-11 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
         >
-          {submitting ? "שולח..." : "שלח לאישור"}
+          {submitting ? t("submitting") : t("submit")}
         </button>
       </div>
     </div>
