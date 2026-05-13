@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { schools } from "@/lib/db/schema";
 
@@ -35,4 +35,21 @@ export async function getSchoolBySlug(
     .limit(1);
 
   return row ?? null;
+}
+
+/**
+ * Lists all schools, alphabetical by name. Used by the root landing page (`/`)
+ * so unauthenticated visitors can pick a school.
+ */
+export async function listSchools(): Promise<PublicSchoolRecord[]> {
+  return db
+    .select({
+      id: schools.id,
+      slug: schools.slug,
+      name: schools.name,
+      locale: schools.locale,
+      timezone: schools.timezone,
+    })
+    .from(schools)
+    .orderBy(asc(schools.name));
 }
