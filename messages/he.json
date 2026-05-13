@@ -39,6 +39,35 @@
       "create": "צור שנה",
       "setActive": "הגדר כשנה פעילה",
       "active": "פעילה"
+    },
+    "queue": {
+      "title": "תור אישורים",
+      "empty": "אין אירועים ממתינים לאישור.",
+      "submittedAt": "הוגש ב",
+      "submittedBy": "מגיש",
+      "eventType": "סוג אירוע",
+      "grades": "שכבות",
+      "startAt": "תאריך",
+      "approve": "אשר",
+      "reject": "דחה",
+      "rejectTitle": "דחיית האירוע",
+      "rejectReasonLabel": "סיבת הדחייה (נדרשת)",
+      "rejectReasonPlaceholder": "פרט מדוע האירוע נדחה — העורך יראה זאת",
+      "rejectConfirm": "אישור דחייה",
+      "cancel": "ביטול",
+      "errorRequired": "נא להזין סיבת דחייה",
+      "errorGeneric": "אירעה שגיאה",
+      "isRevision": "עדכון של אירוע מאושר"
+    }
+  },
+  "dashboard": {
+    "rejected": {
+      "title": "אירועים שנדחו",
+      "empty": "אין אירועים שנדחו.",
+      "reason": "סיבת הדחייה",
+      "decidedAt": "נדחה ב",
+      "resubmit": "ערוך ושלח שוב",
+      "linkLabel": "אירועים שנדחו"
     }
   }
 }

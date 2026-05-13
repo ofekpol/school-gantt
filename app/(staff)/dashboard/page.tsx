@@ -19,12 +19,20 @@ export default async function DashboardPage() {
     <main className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">לוח בקרה</h1>
-        <Link
-          href="/events/new"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-        >
-          אירוע חדש
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/rejected"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            אירועים שנדחו
+          </Link>
+          <Link
+            href="/events/new"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+          >
+            אירוע חדש
+          </Link>
+        </div>
       </div>
       {myEvents.length === 0 ? (
         <p className="text-neutral-500">

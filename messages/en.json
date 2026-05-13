@@ -39,6 +39,35 @@
       "create": "Create Year",
       "setActive": "Set as Active Year",
       "active": "Active"
+    },
+    "queue": {
+      "title": "Approval Queue",
+      "empty": "No events are waiting for approval.",
+      "submittedAt": "Submitted",
+      "submittedBy": "Submitter",
+      "eventType": "Event Type",
+      "grades": "Grades",
+      "startAt": "Date",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectTitle": "Reject event",
+      "rejectReasonLabel": "Rejection reason (required)",
+      "rejectReasonPlaceholder": "Explain why this event is rejected — the editor will see this",
+      "rejectConfirm": "Confirm rejection",
+      "cancel": "Cancel",
+      "errorRequired": "Please enter a rejection reason",
+      "errorGeneric": "Something went wrong",
+      "isRevision": "Revision of an approved event"
+    }
+  },
+  "dashboard": {
+    "rejected": {
+      "title": "Rejected events",
+      "empty": "No rejected events.",
+      "reason": "Rejection reason",
+      "decidedAt": "Rejected",
+      "resubmit": "Edit & resubmit",
+      "linkLabel": "Rejected events"
     }
   }
 }

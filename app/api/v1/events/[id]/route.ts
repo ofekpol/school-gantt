@@ -82,6 +82,12 @@ export async function PATCH(
   if (result.status === "conflict") {
     return NextResponse.json({ error: "version_conflict" }, { status: 409 });
   }
+  if (result.status === "invalid_state") {
+    return NextResponse.json(
+      { error: "invalid_state", hint: "Use POST /revise for approved events" },
+      { status: 409 },
+    );
+  }
   return NextResponse.json({ version: result.version }, { status: 200 });
 }
 
