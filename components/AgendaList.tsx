@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda";
 
 interface SerializedAgendaItem extends Omit<AgendaItem, "startAt" | "endAt"> {
@@ -43,6 +44,7 @@ const timeFmt = new Intl.DateTimeFormat("he-IL", {
  * Lighthouse mobile a11y.
  */
 export function AgendaList({ weeks, emptyLabel }: Props) {
+  const t = useTranslations("agenda");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (weeks.length === 0) {
@@ -124,7 +126,7 @@ export function AgendaList({ weeks, emptyLabel }: Props) {
                     >
                       {item.location && (
                         <p>
-                          <span className="font-medium">מיקום:</span>{" "}
+                          <span className="font-medium">{t("location")}:</span>{" "}
                           {item.location}
                         </p>
                       )}
@@ -132,7 +134,7 @@ export function AgendaList({ weeks, emptyLabel }: Props) {
                         <p className="whitespace-pre-wrap">{item.description}</p>
                       )}
                       {!item.location && !item.description && (
-                        <p className="text-neutral-400">אין פרטים נוספים.</p>
+                        <p className="text-neutral-400">{t("noDetails")}</p>
                       )}
                     </div>
                   )}

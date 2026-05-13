@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getStaffUser } from "@/lib/auth/session";
+import { AppHeader } from "@/components/AppHeader";
 import type { ReactNode } from "react";
 
 /**
@@ -10,5 +11,10 @@ import type { ReactNode } from "react";
 export default async function StaffLayout({ children }: { children: ReactNode }) {
   const user = await getStaffUser();
   if (!user) redirect("/");
-  return <>{children}</>;
+  return (
+    <>
+      <AppHeader title={user.fullName} subtitle={user.email} />
+      {children}
+    </>
+  );
 }

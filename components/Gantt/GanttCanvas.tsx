@@ -1,25 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda";
 import type { GanttBar, GanttMonth, ZoomLevel } from "@/lib/views/gantt";
 import { zoomScale } from "@/lib/views/gantt";
 import { EventDrawer } from "./EventDrawer";
-
-const MONTH_LABELS_HE = [
-  "ינו׳",
-  "פבר׳",
-  "מרץ",
-  "אפר׳",
-  "מאי",
-  "יוני",
-  "יולי",
-  "אוג׳",
-  "ספט׳",
-  "אוק׳",
-  "נוב׳",
-  "דצמ׳",
-];
 
 const ROW_HEIGHT_PX = 56;
 const HEADER_HEIGHT_PX = 32;
@@ -57,6 +43,8 @@ export function GanttCanvas({
   zoom,
   emptyLabel,
 }: Props) {
+  const tm = useTranslations("months");
+  const tg = useTranslations("gantt");
   const scale = zoomScale(zoom);
   const trackWidthPct = scale * 100;
 
@@ -115,7 +103,7 @@ export function GanttCanvas({
                   lineHeight: `${HEADER_HEIGHT_PX}px`,
                 }}
               >
-                {MONTH_LABELS_HE[m.monthIndex - 1]}
+                {tm(`short_${m.monthIndex}` as `short_${number}`)}
               </div>
             ))}
           </div>
@@ -164,7 +152,7 @@ export function GanttCanvas({
 
       {/* Sticky grade column (right side in RTL = inset-inline-end) */}
       <aside
-        aria-label="שכבות"
+        aria-label={tg("gradesColumnLabel")}
         className="absolute top-0 bottom-0 bg-white border-s border-neutral-200"
         style={{
           insetInlineEnd: 0,

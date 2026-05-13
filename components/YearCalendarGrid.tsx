@@ -1,21 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { CalendarMonth } from "@/lib/views/calendar";
-
-const MONTH_LABELS_HE = [
-  "ינואר",
-  "פברואר",
-  "מרץ",
-  "אפריל",
-  "מאי",
-  "יוני",
-  "יולי",
-  "אוגוסט",
-  "ספטמבר",
-  "אוקטובר",
-  "נובמבר",
-  "דצמבר",
-];
-
-const WEEKDAY_HE = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 
 interface Props {
   months: CalendarMonth[];
@@ -31,25 +17,30 @@ interface Props {
  * printed in black-and-white.
  */
 export function YearCalendarGrid({ months, yearLabel, schoolName }: Props) {
+  const tm = useTranslations("months");
+  const tw = useTranslations("weekdays");
+  const tc = useTranslations("common");
+
   return (
     <div className="year-calendar p-4">
       {months.map((m) => (
         <section
           key={`${m.year}-${m.monthIndex}`}
           className="calendar-month bg-white rounded-md border border-neutral-200 p-4 mb-6 print:mb-0 print:border-0 print:rounded-none"
+          aria-label={`${tm(String(m.monthIndex) as `${number}`)} ${m.year}`}
         >
           <header className="flex items-baseline justify-between mb-3 print:mb-2">
             <h2 className="text-lg font-bold">
-              {MONTH_LABELS_HE[m.monthIndex - 1]} {m.year}
+              {tm(String(m.monthIndex) as `${number}`)} {m.year}
             </h2>
             <p className="hidden print:block text-xs text-neutral-500">
               {schoolName} · {yearLabel}
             </p>
           </header>
           <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-neutral-500 mb-1">
-            {WEEKDAY_HE.map((d, i) => (
+            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="py-1">
-                {d}
+                {tw(`short_${i}` as `short_${0 | 1 | 2 | 3 | 4 | 5 | 6}`)}
               </div>
             ))}
           </div>
@@ -81,7 +72,7 @@ export function YearCalendarGrid({ months, yearLabel, schoolName }: Props) {
                         ))}
                         {day.events.length > 4 && (
                           <li className="text-[9px] text-neutral-500">
-                            +{day.events.length - 4}
+                            {tc("more", { count: day.events.length - 4 })}
                           </li>
                         )}
                       </ul>

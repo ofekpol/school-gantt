@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getStaffUser } from "@/lib/auth/session";
+import { AppHeader } from "@/components/AppHeader";
 import type { ReactNode } from "react";
 
 /**
@@ -12,5 +13,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const user = await getStaffUser();
   if (!user) redirect("/");
   if (user.role !== "admin") redirect("/dashboard");
-  return <div className="min-h-screen">{children}</div>;
+  return (
+    <div className="min-h-screen">
+      <AppHeader title={user.fullName} subtitle={user.email} />
+      {children}
+    </div>
+  );
 }
