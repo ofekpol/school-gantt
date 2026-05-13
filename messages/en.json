@@ -102,5 +102,24 @@
   "calendar": {
     "subtitle": "Printable yearly calendar",
     "noActiveYear": "No active academic year has been configured."
+  },
+  "profile": {
+    "title": "My profile",
+    "icalTitle": "iCal subscriptions",
+    "icalIntro": "Create a URL to sync events to Google Calendar, Apple Calendar, etc. Optional grade / event-type filters.",
+    "create": "New subscription",
+    "cancel": "Cancel",
+    "done": "Done",
+    "revoke": "Revoke",
+    "grades": "Grades",
+    "types": "Event types",
+    "empty": "No active subscriptions.",
+    "createdAt": "Created",
+    "emptyMeansAll": "Leaving unselected means \"all grades / all types\".",
+    "filterNone": "All events",
+    "filterSummary": "Grades: {grades} · {types} types",
+    "freshTokenTitle": "Subscription created",
+    "freshTokenHint": "Copy the URL and paste it into Google Calendar (\"From URL\"). It's only visible now.",
+    "errorGeneric": "Something went wrong"
   }
 }

@@ -102,5 +102,24 @@
   "calendar": {
     "subtitle": "לוח שנה מודפס",
     "noActiveYear": "טרם הוגדרה שנת לימודים פעילה."
+  },
+  "profile": {
+    "title": "הפרופיל שלי",
+    "icalTitle": "מנויי יומן (iCal)",
+    "icalIntro": "צור כתובת URL לסנכרון אירועים עם Google Calendar, Apple Calendar ועוד. ניתן לסנן לפי שכבה וסוג אירוע.",
+    "create": "צור מנוי חדש",
+    "cancel": "ביטול",
+    "done": "סיום",
+    "revoke": "בטל מנוי",
+    "grades": "שכבות",
+    "types": "סוגי אירועים",
+    "empty": "אין מנויים פעילים.",
+    "createdAt": "נוצר ב",
+    "emptyMeansAll": "ללא סימון = כל השכבות / כל הסוגים.",
+    "filterNone": "כל האירועים",
+    "filterSummary": "שכבות: {grades} · {types} סוגים",
+    "freshTokenTitle": "המנוי נוצר",
+    "freshTokenHint": "העתק את הקישור והדבק ב-Google Calendar (\"From URL\"). הקישור גלוי רק עכשיו.",
+    "errorGeneric": "אירעה שגיאה"
   }
 }
