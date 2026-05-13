@@ -82,5 +82,21 @@
       "apply": "Apply",
       "clear": "Clear"
     }
+  },
+  "gantt": {
+    "noActiveYear": "No active academic year has been configured.",
+    "empty": "No approved events in the current year.",
+    "zoomLabel": "Zoom level",
+    "zoom": {
+      "year": "Year",
+      "term": "Term",
+      "month": "Month"
+    }
+  },
+  "home": {
+    "title": "School Gantt Chart System",
+    "subtitle": "Choose a school to view its event calendar.",
+    "viewGantt": "Gantt",
+    "viewAgenda": "Agenda"
   }
 }
