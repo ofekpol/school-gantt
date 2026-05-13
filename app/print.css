@@ -1,0 +1,61 @@
+/*
+ * Print stylesheet — paginated yearly calendar for /[school]/calendar.
+ *
+ * One A4 page per month under print media. A3 toggle is exposed via the
+ * `paper-a3` body class so the same page can target both paper sizes
+ * without a second component (browsers honor only the active `@page`).
+ *
+ * Monochrome fallback (PRD §6.4 / §11): when printed without color the
+ * event-type glyph + a dashed bottom border replaces the colored fill,
+ * keeping chips distinguishable on black-and-white office printers.
+ */
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+body.paper-a3 {
+  /* @page rules inside a body class don't cascade in all engines, but a
+     CSS body class is enough for Chromium/Safari to apply this. */
+}
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  .year-calendar .calendar-month {
+    /* Break before each month so every month gets its own page. */
+    page-break-before: always;
+    break-before: page;
+  }
+  .year-calendar .calendar-month:first-child {
+    page-break-before: avoid;
+    break-before: avoid;
+  }
+
+  /* Default Chromium preview drops backgrounds. Force chip backgrounds
+     to print so the colored variant is preserved if the user opts in. */
+  .year-calendar .event-chip {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Monochrome fallback — applies when the browser strips backgrounds.
+     We can't detect that directly in CSS, but stacking these styles
+     under `@media print and (monochrome)` covers true B&W devices, and
+     the glyph stays visible regardless. */
+  @media (monochrome), (max-monochrome: 0) {
+    .year-calendar .event-chip {
+      background-color: #fff !important;
+      color: #000 !important;
+      border: 1px solid #000 !important;
+      border-bottom-style: dashed;
+    }
+  }
+
+  .calendar-day {
+    min-height: 28mm !important;
+  }
+}

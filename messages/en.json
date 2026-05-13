@@ -98,5 +98,9 @@
     "subtitle": "Choose a school to view its event calendar.",
     "viewGantt": "Gantt",
     "viewAgenda": "Agenda"
+  },
+  "calendar": {
+    "subtitle": "Printable yearly calendar",
+    "noActiveYear": "No active academic year has been configured."
   }
 }
