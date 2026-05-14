@@ -96,8 +96,9 @@ jobs:
       - name: Unit + integration tests (Vitest)
         # seed.test.ts and auth.test.ts depend on `pnpm seed`, which calls
         # supabaseAdmin.auth.admin.createUser — needs a real Supabase project,
-        # not available in CI without secrets. Exclude them here.
-        run: pnpm test --exclude 'test/integration/seed.test.ts' --exclude 'test/integration/auth.test.ts'
+        # not available in CI without secrets. Exclude them via vitest CLI.
+        # `--` forwards args past pnpm to the underlying `vitest run`.
+        run: pnpm test -- --exclude 'test/integration/seed.test.ts' --exclude 'test/integration/auth.test.ts'
 
       - name: Build
         run: pnpm build
