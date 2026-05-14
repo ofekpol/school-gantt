@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll, vi } from "vitest";
+import { execSync } from "node:child_process";
 import { eq } from "drizzle-orm";
 import { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -25,6 +26,14 @@ vi.mock("@/lib/supabase/server", () => ({
 // Import after mocks are set up.
 const { POST: loginPOST } = await import("@/app/api/v1/auth/login/route");
 const { createSupabaseServerClient } = await import("@/lib/supabase/server");
+
+beforeAll(() => {
+  if (skipIfNoSeed) return;
+  execSync("pnpm seed", {
+    env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL },
+    stdio: "inherit",
+  });
+}, 60_000);
 
 function makeReq(body: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/v1/auth/login", {
