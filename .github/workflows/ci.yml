@@ -19,6 +19,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: school_gantt_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/school_gantt_test
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,7 +60,14 @@ jobs:
       - name: Typecheck (tsc --noEmit)
         run: pnpm tsc --noEmit
 
-      - name: Unit tests (Vitest)
+      - name: Apply database migrations
+        run: |
+          for f in db/migrations/*.sql; do
+            echo "▶ $f"
+            psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Unit + integration tests (Vitest)
         run: pnpm test
 
       - name: Build
