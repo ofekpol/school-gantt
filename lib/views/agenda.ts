@@ -51,12 +51,19 @@ export async function getAgendaForSchool(
     ];
 
     if (filters.grades && filters.grades.length > 0) {
-      const gradeList = filters.grades;
+      // Drizzle's `sql` tag unwraps a JS array into separate positional params,
+      // so `ANY(${gradeList})` becomes `ANY((10))` — Postgres then tries to
+      // parse the integer as an array literal and rejects it (22P02). Build
+      // `IN (...)` with one positional param per element instead.
+      const gradeParams = sql.join(
+        filters.grades.map((g) => sql`${g}`),
+        sql`, `,
+      );
       conditions.push(
         sql`EXISTS (
           SELECT 1 FROM event_grades eg
           WHERE eg.event_id = ${events.id}
-            AND eg.grade = ANY(${gradeList})
+            AND eg.grade IN (${gradeParams})
         )`,
       );
     }
