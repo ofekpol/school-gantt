@@ -61,12 +61,12 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!testDb || !testPool) return;
-  // Cleanup: delete child rows that lack ON DELETE CASCADE before deleting schools
+  // Tests insert into staff_users / events / event_revisions / etc. whose FKs to
+  // schools lack ON DELETE CASCADE. TRUNCATE ... CASCADE wipes the whole tenant
+  // tree in one shot; postgres (superuser) bypasses RLS so this works without
+  // needing app.school_id to be set.
   await testDb.execute(
-    sql`DELETE FROM event_types WHERE school_id IN (${testSchoolA}::uuid, ${testSchoolB}::uuid)`,
-  );
-  await testDb.execute(
-    sql`DELETE FROM schools WHERE id IN (${testSchoolA}::uuid, ${testSchoolB}::uuid)`,
+    sql`TRUNCATE TABLE schools RESTART IDENTITY CASCADE`,
   );
   await testPool.end();
 });
