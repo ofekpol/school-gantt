@@ -170,9 +170,9 @@ function parseIsoDate(iso: string): Date {
   return new Date(Date.UTC(y, m - 1, d));
 }
 
-export type ZoomLevel = "year" | "term" | "month";
+export type ZoomLevel = "week" | "year" | "term" | "month";
 
-export const ZOOM_LEVELS: ZoomLevel[] = ["year", "term", "month"];
+export const ZOOM_LEVELS: ZoomLevel[] = ["week", "year", "term", "month"];
 
 /**
  * Maps a zoom preset to a horizontal scale multiplier applied to the
@@ -181,6 +181,8 @@ export const ZOOM_LEVELS: ZoomLevel[] = ["year", "term", "month"];
  */
 export function zoomScale(zoom: ZoomLevel): number {
   switch (zoom) {
+    case "week":
+      return 1;
     case "year":
       return 1;
     case "term":
@@ -191,6 +193,7 @@ export function zoomScale(zoom: ZoomLevel): number {
 }
 
 export function parseZoom(raw: string | undefined): ZoomLevel {
-  if (raw === "term" || raw === "month") return raw;
-  return "year";
+  if (raw === "week" || raw === "term" || raw === "month" || raw === "year")
+    return raw;
+  return "week"; // default to weekly view per new design
 }

@@ -9,7 +9,7 @@ interface Props {
   zoom: ZoomLevel;
 }
 
-const LEVELS: ZoomLevel[] = ["year", "term", "month"];
+const LEVELS: ZoomLevel[] = ["week", "year", "term", "month"];
 
 export function ZoomToggle({ zoom }: Props) {
   const t = useTranslations("gantt");
@@ -20,7 +20,7 @@ export function ZoomToggle({ zoom }: Props) {
 
   function setZoom(next: ZoomLevel) {
     const params = new URLSearchParams(searchParams.toString());
-    if (next === "year") params.delete("zoom");
+    if (next === "week") params.delete("zoom");
     else params.set("zoom", next);
     const qs = params.toString();
     startTransition(() => {
