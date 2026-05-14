@@ -52,11 +52,16 @@ export async function getAgendaForSchool(
 
     if (filters.grades && filters.grades.length > 0) {
       const gradeList = filters.grades;
+      // Drizzle does not serialize a JS number array as a Postgres typed array
+      // when embedded in a raw sql template — `ANY($n)` where $n is a plain
+      // scalar value is rejected by Postgres. Use IN with individually
+      // parameterized values instead; all values are pre-validated integers
+      // 7–12 by the caller (parseGradeList) so the list is small and bounded.
       conditions.push(
         sql`EXISTS (
           SELECT 1 FROM event_grades eg
           WHERE eg.event_id = ${events.id}
-            AND eg.grade = ANY(${gradeList})
+            AND eg.grade IN (${sql.join(gradeList.map((g) => sql`${g}`), sql`, `)})
         )`,
       );
     }

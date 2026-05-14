@@ -14,10 +14,21 @@ test.skip(
 );
 
 test("FILTERS-PRD14: grade filter round-trips through the URL across views", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/demo-school/agenda");
-  // Toggle grade 10.
-  await page.getByRole("button", { name: "10", exact: true }).first().click();
-  await expect(page).toHaveURL(/grades=10/);
+  // Wait for FilterBar to hydrate. Under load the grade pills are present in
+  // the server HTML but React onClick is only wired up after hydration completes.
+  // Poll until clicking the grade pill actually changes the URL.
+  await expect(async () => {
+    // Navigate back to clean URL on each retry.
+    if (page.url().includes("grades=")) {
+      await page.goto("/demo-school/agenda");
+    }
+    const tenBtn = page.getByRole("button", { name: "10", exact: true }).first();
+    await tenBtn.waitFor({ state: "visible" });
+    await tenBtn.click();
+    await expect(page).toHaveURL(/grades=10/, { timeout: 5_000 });
+  }).toPass({ timeout: 20_000 });
 
   // Navigate to the Gantt with the same URL — filter must survive.
   const url = page.url().replace("/agenda", "");

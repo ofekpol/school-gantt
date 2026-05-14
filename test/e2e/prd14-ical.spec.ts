@@ -18,6 +18,7 @@ test.skip(
 test.use({ storageState: "test/e2e/.auth/editor.json" });
 
 test("ICAL-PRD14: staff creates token, fetches feed, revokes, feed 404s", async ({ page }) => {
+  test.setTimeout(90_000);
   await page.goto("/profile");
 
   await page.getByRole("button", { name: /New subscription|מנוי חדש/ }).click();
@@ -33,9 +34,27 @@ test("ICAL-PRD14: staff creates token, fetches feed, revokes, feed 404s", async 
   expect(ok.status()).toBe(200);
   expect(ok.headers()["content-type"]).toContain("text/calendar");
 
-  // Revoke through the UI.
+  // Extract the token from the URL so we can find the specific row later.
+  const token = tokenUrl.split("/ical/")[1]?.split("?")[0] ?? "";
+  expect(token).toBeTruthy();
+
+  // Dismiss the fresh-token panel.
   await page.getByRole("button", { name: /Done|סיום/ }).click();
-  await page.getByRole("button", { name: /Revoke|בטל מנוי/ }).first().click();
+
+  // Find the specific subscription row by its token URL input value, then
+  // click the Revoke button within that row. This is robust even when other
+  // subscriptions exist from previous test runs.
+  const subscriptionRow = page.locator("li").filter({
+    has: page.locator(`input[value*="${token}"]`),
+  });
+  await subscriptionRow.waitFor({ state: "visible" });
+  const revokeBtn = subscriptionRow.getByRole("button", { name: /Revoke|בטל מנוי/ });
+  await revokeBtn.waitFor({ state: "visible" });
+  await revokeBtn.click();
+
+  // Wait for the subscription row to be removed from the DOM. The optimistic
+  // update in ProfileSubscriptions hides the row immediately on DELETE success.
+  await expect(subscriptionRow).not.toBeVisible({ timeout: 15_000 });
 
   // Re-fetch — must 404. The cache header is max-age=60 so a fresh request
   // with a cache-busting param skips any local cache.

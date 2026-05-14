@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -37,20 +37,16 @@ export function FilterBar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
-
   const [q, setQ] = useState(searchQuery);
   // Keep local search input in sync if URL changes externally (e.g. back btn).
   useEffect(() => setQ(searchQuery), [searchQuery]);
 
   function commit(next: URLSearchParams) {
     const queryString = next.toString();
-    startTransition(() => {
-      router.replace(
-        (queryString ? `${pathname}?${queryString}` : pathname) as never,
-        { scroll: false },
-      );
-    });
+    router.replace(
+      (queryString ? `${pathname}?${queryString}` : pathname) as never,
+      { scroll: false },
+    );
   }
 
   function toggleGrade(g: number) {

@@ -45,14 +45,33 @@ export async function updateAcademicYear(
   id: string,
   input: Partial<AcademicYearInput>,
 ): Promise<{ updated: boolean }> {
+  const fieldUpdate = {
+    ...(input.label !== undefined && { label: input.label }),
+    ...(input.startDate !== undefined && { startDate: input.startDate }),
+    ...(input.endDate !== undefined && { endDate: input.endDate }),
+  };
+
+  // When only setActive is supplied (no other fields to update), skip the
+  // UPDATE statement to avoid Drizzle's "No values to set" error and just
+  // verify the row exists before activating it.
+  if (Object.keys(fieldUpdate).length === 0) {
+    if (!input.setActive) return { updated: false };
+    const [row] = await withSchool(schoolId, (tx) =>
+      tx
+        .select({ id: academicYears.id })
+        .from(academicYears)
+        .where(eq(academicYears.id, id))
+        .limit(1),
+    );
+    if (!row) return { updated: false };
+    await setActiveYear(schoolId, id);
+    return { updated: true };
+  }
+
   const rows = await withSchool(schoolId, (tx) =>
     tx
       .update(academicYears)
-      .set({
-        ...(input.label !== undefined && { label: input.label }),
-        ...(input.startDate !== undefined && { startDate: input.startDate }),
-        ...(input.endDate !== undefined && { endDate: input.endDate }),
-      })
+      .set(fieldUpdate)
       .where(eq(academicYears.id, id))
       .returning({ id: academicYears.id }),
   );

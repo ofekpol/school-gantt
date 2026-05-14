@@ -83,17 +83,34 @@ export function WizardShell({
 
   const save = useCallback(
     async (patch: WizardData): Promise<string> => {
+      // Defer draft creation until eventTypeId is known (Step 3).
+      // POST /api/v1/events requires eventTypeId — steps 1 and 2 buffer locally.
+      if (!eventId && !patch.eventTypeId) {
+        return "";
+      }
       setSaving(true);
       try {
         if (!eventId) {
           const res = await fetch("/api/v1/events", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(patch),
+            body: JSON.stringify({ eventTypeId: patch.eventTypeId }),
           });
           if (!res.ok) throw new Error("Failed to create draft");
           const json = (await res.json()) as { id: string };
           setEventId(json.id);
+          // Immediately PATCH with all buffered data so nothing is lost.
+          const buffered: WizardData = { ...patch };
+          delete buffered.eventTypeId;
+          const hasBuffered = Object.keys(buffered).length > 0;
+          if (hasBuffered) {
+            const patchRes = await fetch(`/api/v1/events/${json.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(buffered),
+            });
+            if (!patchRes.ok) throw new Error("Failed to save buffered draft data");
+          }
           return json.id;
         } else {
           const res = await fetch(`/api/v1/events/${eventId}`, {

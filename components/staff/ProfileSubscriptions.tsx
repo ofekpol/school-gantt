@@ -43,6 +43,8 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
   // The token returned by POST is the only time we see it in cleartext;
   // surface it here until the user clicks "done".
   const [freshToken, setFreshToken] = useState<{ id: string; token: string } | null>(null);
+  // Optimistically removed subscription IDs so the row disappears immediately on revoke.
+  const [revokedIds, setRevokedIds] = useState<Set<string>>(new Set());
 
   function toggle<T>(set: Set<T>, value: T): Set<T> {
     const next = new Set(set);
@@ -82,8 +84,14 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
       method: "DELETE",
     });
     setBusy(false);
-    if (res.ok) router.refresh();
-    else setError(t("errorGeneric"));
+    if (res.ok) {
+      // Optimistically remove the row immediately so the UI updates without
+      // waiting for the Next.js router.refresh() round-trip.
+      setRevokedIds((prev) => new Set(prev).add(id));
+      router.refresh();
+    } else {
+      setError(t("errorGeneric"));
+    }
   }
 
   function urlFor(token: string): string {
@@ -91,7 +99,7 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
     return `${window.location.origin}/ical/${token}`;
   }
 
-  const active = initial.filter((s) => s.revokedAt === null);
+  const active = initial.filter((s) => s.revokedAt === null && !revokedIds.has(s.id));
 
   return (
     <div>
