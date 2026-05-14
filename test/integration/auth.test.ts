@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, beforeAll, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { skipIfNoTestDb, testDb } from "./setup";
+import { skipIfNoSeed, testDb } from "./setup";
 import { staffUsers } from "@/lib/db/schema";
 
 const ADMIN_EMAIL = "admin@demo-school.test";
@@ -47,7 +47,7 @@ function makeSupabaseMock(authSuccess: boolean): SupabaseClient {
   } as unknown as SupabaseClient;
 }
 
-describe.skipIf(skipIfNoTestDb)("AUTH-01: login with email + password", () => {
+describe.skipIf(skipIfNoSeed)("AUTH-01: login with email + password", () => {
   beforeAll(async () => {
     // Seed must have been applied to TEST_DATABASE_URL before running these tests.
     await testDb!
@@ -90,7 +90,7 @@ describe.skipIf(skipIfNoTestDb)("AUTH-01: login with email + password", () => {
   });
 });
 
-describe.skipIf(skipIfNoTestDb)("AUTH-03: lockout after 10 failed attempts", () => {
+describe.skipIf(skipIfNoSeed)("AUTH-03: lockout after 10 failed attempts", () => {
   beforeEach(async () => {
     await testDb!
       .update(staffUsers)
