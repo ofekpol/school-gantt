@@ -6,11 +6,17 @@ config({ override: false });
 import { afterAll, beforeAll } from "vitest";
 import { Pool } from "pg";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
-import { sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 export const skipIfNoTestDb = !TEST_DATABASE_URL;
+
+// Some integration tests (seed.test.ts, auth.test.ts) require `pnpm seed` to
+// have run against TEST_DATABASE_URL — and seed calls supabaseAdmin.auth.admin.createUser,
+// so it needs a real Supabase project. Gate those suites on SUPABASE_TEST_PROJECT=1.
+// CI doesn't set it → those suites skip; local dev sets it after `pnpm seed`.
+export const skipIfNoSeed =
+  skipIfNoTestDb || process.env.SUPABASE_TEST_PROJECT !== "1";
 
 const testPool = TEST_DATABASE_URL
   ? new Pool({ connectionString: TEST_DATABASE_URL, max: 5 })
@@ -61,12 +67,5 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!testDb || !testPool) return;
-  // Cleanup: delete child rows that lack ON DELETE CASCADE before deleting schools
-  await testDb.execute(
-    sql`DELETE FROM event_types WHERE school_id IN (${testSchoolA}::uuid, ${testSchoolB}::uuid)`,
-  );
-  await testDb.execute(
-    sql`DELETE FROM schools WHERE id IN (${testSchoolA}::uuid, ${testSchoolB}::uuid)`,
-  );
   await testPool.end();
 });

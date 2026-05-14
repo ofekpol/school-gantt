@@ -2,9 +2,9 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { execSync } from "node:child_process";
 import { eq, and } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
-import { testDb, skipIfNoTestDb } from "./setup";
+import { testDb, skipIfNoSeed } from "./setup";
 
-describe.skipIf(skipIfNoTestDb)("DB-06: seed creates canonical bootstrap", () => {
+describe.skipIf(skipIfNoSeed)("DB-06: seed creates canonical bootstrap", () => {
   beforeAll(() => {
     // Run seed against TEST_DATABASE_URL — creates/updates auth users in configured Supabase project.
     // Timeout is high because Supabase auth.admin.createUser makes network calls per user (8 users).

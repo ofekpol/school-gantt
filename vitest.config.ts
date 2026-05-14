@@ -35,6 +35,10 @@ export default defineConfig({
           include: ["test/integration/**/*.test.ts"],
           exclude: ["node_modules/**", ".next/**"],
           testTimeout: 15000,
+          // Integration tests share one TEST_DATABASE_URL and the canonical
+          // school IDs (testSchoolA/B). Running files in parallel causes one
+          // file's writes to race with another's reads. Serialize file runs.
+          fileParallelism: false,
           // server-only throws at import time outside a Next.js server context;
           // integration tests run in node and import lib/events/* modules that
           // start with `import "server-only"`. Mock it like the unit project does.

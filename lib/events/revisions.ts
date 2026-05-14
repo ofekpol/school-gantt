@@ -162,24 +162,15 @@ export async function getRejectedForEditor(
   schoolId: string,
   staffUserId: string,
 ): Promise<RejectedEventRow[]> {
-  return withSchool(schoolId, (tx) =>
-    tx
+  return withSchool(schoolId, async (tx) => {
+    const rows = await tx
       .select({
         id: events.id,
         title: events.title,
         startAt: events.startAt,
         endAt: events.endAt,
         eventTypeId: events.eventTypeId,
-        reason: sql<string>`(
-          SELECT er.reason FROM event_revisions er
-          WHERE er.event_id = ${events.id} AND er.decision = 'rejected'
-          ORDER BY er.created_at DESC LIMIT 1
-        )`.as("reason"),
-        decidedAt: sql<Date>`(
-          SELECT er.created_at FROM event_revisions er
-          WHERE er.event_id = ${events.id} AND er.decision = 'rejected'
-          ORDER BY er.created_at DESC LIMIT 1
-        )`.as("decided_at"),
+        updatedAt: events.updatedAt,
       })
       .from(events)
       .where(
@@ -189,6 +180,48 @@ export async function getRejectedForEditor(
           isNull(events.deletedAt),
         ),
       )
-      .orderBy(desc(sql`decided_at`)),
-  );
+      .orderBy(desc(events.updatedAt));
+
+    if (rows.length === 0) return [];
+
+    const revisions = await tx
+      .select({
+        eventId: eventRevisions.eventId,
+        reason: eventRevisions.reason,
+        createdAt: eventRevisions.createdAt,
+      })
+      .from(eventRevisions)
+      .where(
+        and(
+          inArray(
+            eventRevisions.eventId,
+            rows.map((r) => r.id),
+          ),
+          eq(eventRevisions.decision, "rejected"),
+        ),
+      )
+      .orderBy(desc(eventRevisions.createdAt));
+
+    const latestRejectionByEvent = new Map<string, (typeof revisions)[number]>();
+    for (const revision of revisions) {
+      if (!latestRejectionByEvent.has(revision.eventId)) {
+        latestRejectionByEvent.set(revision.eventId, revision);
+      }
+    }
+
+    return rows
+      .map((row) => {
+        const revision = latestRejectionByEvent.get(row.id);
+        return {
+          id: row.id,
+          title: row.title,
+          startAt: row.startAt,
+          endAt: row.endAt,
+          eventTypeId: row.eventTypeId,
+          reason: revision?.reason ?? "",
+          decidedAt: revision?.createdAt ?? row.updatedAt,
+        };
+      })
+      .sort((a, b) => b.decidedAt.getTime() - a.decidedAt.getTime());
+  });
 }
