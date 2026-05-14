@@ -16,3 +16,5 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 scripts/
 .claude/
+test/e2e/.auth/
+לוח גאנט.docx
