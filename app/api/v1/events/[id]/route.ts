@@ -33,6 +33,9 @@ export async function PATCH(
 ): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (user.role === "viewer" || user.status !== "active") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
 
@@ -97,6 +100,9 @@ export async function DELETE(
 ): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (user.role === "viewer" || user.status !== "active") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const result = await softDelete(user.schoolId, id, user.id);

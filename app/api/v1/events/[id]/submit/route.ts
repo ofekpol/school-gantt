@@ -13,7 +13,7 @@ export async function POST(
 
   const { id } = await params;
   try {
-    if (user.status !== "active") {
+    if (user.role === "viewer" || user.status !== "active") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     // PRD §6.3 — admin-created events bypass the queue and are auto-approved.

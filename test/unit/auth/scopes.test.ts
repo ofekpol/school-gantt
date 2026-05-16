@@ -27,6 +27,26 @@ describe("AUTH-06: admins bypass scope checks", () => {
   });
 });
 
+describe("AUTH-07: viewer and inactive users are blocked", () => {
+  it("viewer role → throws 403 without making DB calls", async () => {
+    const viewer = { id: "u3", schoolId: "s1", role: "viewer" as const, status: "active" as const };
+    await expect(assertEditorScope(viewer, 10)).rejects.toMatchObject({ status: 403 });
+    expect(withSchoolMock).not.toHaveBeenCalled();
+  });
+
+  it("editor with status='pending' → throws 403", async () => {
+    const pending = { id: "u4", schoolId: "s1", role: "editor" as const, status: "pending" as const };
+    await expect(assertEditorScope(pending, 10)).rejects.toMatchObject({ status: 403 });
+    expect(withSchoolMock).not.toHaveBeenCalled();
+  });
+
+  it("editor with status='deactivated' → throws 403", async () => {
+    const deactivated = { id: "u5", schoolId: "s1", role: "editor" as const, status: "deactivated" as const };
+    await expect(assertEditorScope(deactivated, 10)).rejects.toMatchObject({ status: 403 });
+    expect(withSchoolMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("AUTH-05: assertEditorScope throws 403 on violation", () => {
   it("editor without grade scope: throws 403 when grade=11", async () => {
     // mock withSchool to invoke its callback with a tx that returns []

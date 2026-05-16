@@ -182,6 +182,7 @@ export async function listStaffUsers(
     fullName: string;
     role: "editor" | "admin" | "viewer";
     deactivatedAt: Date | null;
+    status: "pending" | "active" | "deactivated";
   }>
 > {
   const rows = await withSchool(schoolId, (tx) =>
@@ -192,6 +193,7 @@ export async function listStaffUsers(
         fullName: staffUsers.fullName,
         role: staffUsers.role,
         deactivatedAt: staffUsers.deactivatedAt,
+        status: staffUsers.status,
       })
       .from(staffUsers),
   );
