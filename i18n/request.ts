@@ -8,7 +8,7 @@ import {
 
 /**
  * next-intl 3 request handler — resolves the active locale from the
- * NEXT_LOCALE cookie (set by the LocaleToggle), falling back to Hebrew.
+ * NEXT_LOCALE cookie when valid, falling back to Hebrew.
  *
  * Loaded automatically because next.config.ts wires
  * `createNextIntlPlugin('./i18n/request.ts')`.

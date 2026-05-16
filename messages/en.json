@@ -22,12 +22,12 @@
     "no": "No"
   },
   "grades": {
-    "label_7": "7",
-    "label_8": "8",
-    "label_9": "9",
-    "label_10": "10",
-    "label_11": "11",
-    "label_12": "12"
+    "label_7": "ז",
+    "label_8": "ח",
+    "label_9": "ט",
+    "label_10": "י",
+    "label_11": "יא",
+    "label_12": "יב"
   },
   "months": {
     "1": "January",

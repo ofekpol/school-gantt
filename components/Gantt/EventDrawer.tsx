@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda";
+import { formatGradeLabel } from "@/lib/grades";
 
 interface Props {
   event: AgendaItem | null;
@@ -131,7 +132,7 @@ export function EventDrawer({ event, onClose }: Props) {
                       background: "var(--sg-surface-2)", border: "1px solid var(--sg-hairline)",
                       borderRadius: 6, padding: "2px 10px",
                     }}>
-                      {g}
+                      {formatGradeLabel(g)}
                     </span>
                   ))}
                 </div>

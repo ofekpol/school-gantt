@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { formatGradeLabel } from "@/lib/grades";
 
 interface StaffRow {
   id: string;
@@ -107,7 +108,7 @@ export function StaffTable({ initialStaff }: Props) {
             <div className="flex flex-wrap gap-2 mt-1">
               {ALL_GRADES.map((g) => (
                 <label key={g} className="flex items-center gap-1">
-                  <input type="checkbox" name={`grade-${g}`} /> {g}
+                  <input type="checkbox" name={`grade-${g}`} /> {formatGradeLabel(g)}
                 </label>
               ))}
             </div>

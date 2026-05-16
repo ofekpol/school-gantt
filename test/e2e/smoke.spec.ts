@@ -20,14 +20,9 @@ test("skip-to-content link is the first tab stop", async ({ page }) => {
   await expect(skipLink).toBeFocused();
 });
 
-test("locale toggle switches he ↔ en", async ({ page }) => {
+test("locale toggle is not shown in Hebrew-only mode", async ({ page }) => {
   await page.goto("/");
-  // Switch to English via the LocaleToggle radio buttons.
-  await page.getByRole("radio", { name: "English" }).click();
-  await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
-  // Switch back to Hebrew.
-  await page.getByRole("radio", { name: "עברית" }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "he");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.getByRole("radiogroup", { name: /שפה|language/i })).toHaveCount(0);
 });

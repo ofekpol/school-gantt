@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda";
+import { formatGradeList } from "@/lib/grades";
 
 interface SerializedAgendaItem extends Omit<AgendaItem, "startAt" | "endAt"> {
   startAt: Date | string;
@@ -113,7 +114,7 @@ export function AgendaList({ weeks, emptyLabel }: Props) {
                         </span>
                         {item.grades.length > 0 && (
                           <span className="ms-2">
-                            · {item.grades.join(", ")}
+                            · {formatGradeList(item.grades)}
                           </span>
                         )}
                       </p>

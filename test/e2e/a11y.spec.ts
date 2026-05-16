@@ -52,9 +52,8 @@ for (const route of PUBLIC_ROUTES) {
   });
 }
 
-test("a11y: locale toggle remains accessible after switching to English", async ({ page }) => {
+test("a11y: Hebrew-only home chrome has no serious/critical issues", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("radio", { name: "English" }).click();
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa"])
     .analyze();

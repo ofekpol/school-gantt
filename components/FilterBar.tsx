@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ZoomLevel } from "@/lib/views/gantt";
-import { HEBREW_GRADE_LABELS } from "@/lib/views/gantt-weekly";
+import { formatGradeLabel } from "@/lib/grades";
 
 export interface FilterBarEventType {
   key: string;
@@ -113,7 +113,7 @@ export function FilterBar({
                   ...(on ? chipOn : chipOff),
                 }}
               >
-                {HEBREW_GRADE_LABELS[g] ?? g}
+                {formatGradeLabel(g)}
               </button>
             );
           })}

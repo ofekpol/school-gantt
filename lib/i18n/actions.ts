@@ -5,9 +5,8 @@ import { revalidatePath } from "next/cache";
 import { LOCALE_COOKIE, isLocale, type Locale } from "@/lib/i18n/config";
 
 /**
- * Server action used by LocaleToggle. Persists the chosen locale in the
- * NEXT_LOCALE cookie (1-year TTL) and revalidates the current path so
- * next-intl re-reads the cookie via i18n/request.ts.
+ * Persists a locale in the NEXT_LOCALE cookie and revalidates the current
+ * path so next-intl re-reads the cookie via i18n/request.ts.
  */
 export async function setLocale(locale: Locale, returnPath: string): Promise<void> {
   if (!isLocale(locale)) return;

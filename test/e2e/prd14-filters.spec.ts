@@ -24,7 +24,7 @@ test("FILTERS-PRD14: grade filter round-trips through the URL across views", asy
     if (page.url().includes("grades=")) {
       await page.goto("/demo-school/agenda");
     }
-    const tenBtn = page.getByRole("button", { name: "10", exact: true }).first();
+    const tenBtn = page.getByRole("button", { name: "י", exact: true }).first();
     await tenBtn.waitFor({ state: "visible" });
     await tenBtn.click();
     await expect(page).toHaveURL(/grades=10/, { timeout: 5_000 });
@@ -33,6 +33,6 @@ test("FILTERS-PRD14: grade filter round-trips through the URL across views", asy
   // Navigate to the Gantt with the same URL — filter must survive.
   const url = page.url().replace("/agenda", "");
   await page.goto(url);
-  const tenPill = page.getByRole("button", { name: "10", exact: true }).first();
+  const tenPill = page.getByRole("button", { name: "י", exact: true }).first();
   await expect(tenPill).toHaveAttribute("aria-pressed", "true");
 });

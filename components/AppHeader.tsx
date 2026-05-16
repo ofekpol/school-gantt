@@ -1,5 +1,3 @@
-import { LocaleToggle } from "@/components/LocaleToggle";
-
 interface Props {
   title?: string;
   subtitle?: string;
@@ -7,9 +5,8 @@ interface Props {
 }
 
 /**
- * Shared app header — title/subtitle on the start side, slot + locale
- * toggle on the end side. Used by route-group layouts so locale is
- * switchable from every authenticated and public page.
+ * Shared app header — title/subtitle on the start side and an optional
+ * action slot on the end side.
  */
 export function AppHeader({ title, subtitle, rightSlot }: Props) {
   return (
@@ -22,7 +19,6 @@ export function AppHeader({ title, subtitle, rightSlot }: Props) {
       </div>
       <div className="flex items-center gap-3 shrink-0">
         {rightSlot}
-        <LocaleToggle />
       </div>
     </div>
   );

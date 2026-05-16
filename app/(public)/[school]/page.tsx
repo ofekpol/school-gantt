@@ -8,7 +8,6 @@ import { buildWeeklyModel, parseWeekParam } from "@/lib/views/gantt-weekly";
 import { FilterBar } from "@/components/FilterBar";
 import { GanttCanvas } from "@/components/Gantt/GanttCanvas";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
-import { LocaleToggle } from "@/components/LocaleToggle";
 
 /** PRD §11 — public freshness ≤ 5 s after admin approval. */
 export const revalidate = 5;
@@ -126,7 +125,6 @@ export default async function GanttPage({ params, searchParams }: PageProps) {
           }}>
             {year.label}
           </div>
-          <LocaleToggle />
         </div>
       </header>
 

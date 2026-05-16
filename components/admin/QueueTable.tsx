@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { formatGradeList } from "@/lib/grades";
 
 export interface QueueItem {
   id: string;
@@ -107,7 +108,7 @@ export function QueueTable({ initial }: Props) {
                 <dt className="font-medium">{t("startAt")}</dt>
                 <dd>{dateFmt.format(new Date(item.startAt))}</dd>
                 <dt className="font-medium">{t("grades")}</dt>
-                <dd>{item.grades.join(", ") || "—"}</dd>
+                <dd>{formatGradeList(item.grades) || "—"}</dd>
                 <dt className="font-medium">{t("submittedBy")}</dt>
                 <dd>{item.submitterName || "—"}</dd>
                 <dt className="font-medium">{t("submittedAt")}</dt>

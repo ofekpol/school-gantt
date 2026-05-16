@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda";
 import type { GanttBar, GanttMonth, ZoomLevel } from "@/lib/views/gantt";
 import { zoomScale } from "@/lib/views/gantt";
-import { HEBREW_GRADE_LABELS } from "@/lib/views/gantt-weekly";
+import { formatGradeLabel } from "@/lib/grades";
 import { EventDrawer } from "./EventDrawer";
 
 const ROW_HEIGHT_PX = 72;
@@ -159,12 +159,12 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
               fontFamily: "var(--sg-font-display)", fontSize: 22, fontWeight: 600,
               lineHeight: 1, color: "var(--sg-ink)",
             }}>
-              {HEBREW_GRADE_LABELS[g] ?? g}
+              {formatGradeLabel(g)}
             </div>
             <div style={{
               fontFamily: "var(--sg-font-mono)", fontSize: 10, color: "var(--sg-ink-soft)", marginTop: 3,
             }}>
-              שכבת {g}
+              שכבת {formatGradeLabel(g)}
             </div>
           </div>
         ))}

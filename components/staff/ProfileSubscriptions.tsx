@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { formatGradeLabel, formatGradeList } from "@/lib/grades";
 
 interface Subscription {
   id: string;
@@ -141,7 +142,7 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
                         : "bg-white border-neutral-300 text-neutral-700"
                     }`}
                   >
-                    {g}
+                    {formatGradeLabel(g)}
                   </button>
                 );
               })}
@@ -216,7 +217,7 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
                   {sub.filterGrades.length === 0 && sub.filterEventTypes.length === 0
                     ? t("filterNone")
                     : t("filterSummary", {
-                        grades: sub.filterGrades.join(", ") || "—",
+                        grades: formatGradeList(sub.filterGrades) || "—",
                         types: String(sub.filterEventTypes.length),
                       })}
                 </p>
