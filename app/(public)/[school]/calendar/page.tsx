@@ -80,6 +80,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps) 
           }))}
           selectedGrades={grades}
           selectedTypes={types}
+          zoom="year"
           searchQuery={q}
         />
       </div>

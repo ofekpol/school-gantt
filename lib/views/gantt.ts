@@ -170,27 +170,30 @@ function parseIsoDate(iso: string): Date {
   return new Date(Date.UTC(y, m - 1, d));
 }
 
-export type ZoomLevel = "year" | "term" | "month";
+export type ZoomLevel = "week" | "month" | "term" | "year";
 
-export const ZOOM_LEVELS: ZoomLevel[] = ["year", "term", "month"];
+export const ZOOM_LEVELS: ZoomLevel[] = ["week", "month", "term", "year"];
 
 /**
  * Maps a zoom preset to a horizontal scale multiplier applied to the
  * timeline track. `year` fits the full Sept..Jul span in the viewport;
  * deeper zoom widens the track so each month gets more pixels.
+ * `week` is handled by GanttWeekly — this value is not used for it.
  */
 export function zoomScale(zoom: ZoomLevel): number {
   switch (zoom) {
-    case "year":
-      return 1;
-    case "term":
-      return 3;
+    case "week":
+      return 11; // fallback — week view handled separately
     case "month":
       return 11;
+    case "term":
+      return 3;
+    case "year":
+      return 1;
   }
 }
 
 export function parseZoom(raw: string | undefined): ZoomLevel {
-  if (raw === "term" || raw === "month") return raw;
+  if (raw === "week" || raw === "month" || raw === "term") return raw;
   return "year";
 }
