@@ -2,12 +2,15 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 /**
- * Supabase session refresh. Locale is handled by i18n/request.ts via the
- * NEXT_LOCALE cookie — no path-prefix routing, so all routes stay clean
- * regardless of the active locale.
+ * Auth gate + Supabase session refresh.
+ * All routes require authentication except the PUBLIC_PATHS allowlist.
+ * Locale is handled by i18n/request.ts via the NEXT_LOCALE cookie —
+ * no path-prefix routing, so all routes stay clean regardless of locale.
  */
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  let response = NextResponse.next({
+    request: { headers: request.headers },
+  });
 
   // Skip Supabase setup in test envs without the keys.
   if (
@@ -39,14 +42,34 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // getUser() validates JWT and refreshes if needed. Errors are silent —
-  // public routes pass through.
-  await supabase.auth.getUser();
+  // getUser() validates JWT and refreshes the session if needed.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+
+  // Public allowlist — no auth required
+  const PUBLIC_PATHS = [
+    "/auth/login",
+    "/auth/callback",
+    "/auth/pending",
+    "/auth/deactivated",
+    "/invite/",
+    "/ical/",
+  ];
+
+  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+
+  if (!isPublic && !user) {
+    const loginUrl = new URL("/auth/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
   return response;
 }
 
 export const config = {
-  // Skip static assets and self-managed auth endpoints.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/v1/auth/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
