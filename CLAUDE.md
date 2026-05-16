@@ -160,7 +160,7 @@ Never commit these.
 - For every new feature: create a new branch (`git checkout -b feature/<desc>`), work on that branch, then merge to `main` when implementation is complete (`git checkout main && git merge feature/<desc>`)
 - Verify `pnpm build` passes before merging
 - Keep commits atomic per logical change
-- **Do not use git worktrees** — work directly in the main project directory (`C:\Users\ofekp\Projects\Personal\NeedAName`). Never spawn agents with `isolation: "worktree"`.
+- Never spawn agents with `isolation: "worktree"`.
 
 ## Testing Targets
 
