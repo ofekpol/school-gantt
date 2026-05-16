@@ -123,11 +123,15 @@ export async function updateStaffUser(
     const updates: Partial<{
       fullName: string;
       role: "editor" | "admin" | "viewer";
+      status: "pending" | "active" | "deactivated";
       deactivatedAt: Date;
     }> = {};
     if (fields.fullName !== undefined) updates.fullName = fields.fullName;
     if (fields.role !== undefined) updates.role = fields.role;
-    if (fields.deactivated) updates.deactivatedAt = new Date();
+    if (fields.deactivated) {
+      updates.deactivatedAt = new Date();
+      updates.status = "deactivated";
+    }
 
     if (Object.keys(updates).length > 0) {
       await tx.update(staffUsers).set(updates).where(eq(staffUsers.id, staffUserId));

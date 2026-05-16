@@ -9,8 +9,8 @@ vi.mock("@/lib/db/client", () => ({
 
 import { assertEditorScope } from "@/lib/auth/scopes";
 
-const editor = { id: "u1", schoolId: "s1", role: "editor" as const };
-const admin = { id: "u2", schoolId: "s1", role: "admin" as const };
+const editor = { id: "u1", schoolId: "s1", role: "editor" as const, status: "active" as const };
+const admin = { id: "u2", schoolId: "s1", role: "admin" as const, status: "active" as const };
 
 beforeEach(() => {
   withSchoolMock.mockReset();

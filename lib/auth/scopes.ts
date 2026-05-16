@@ -7,6 +7,7 @@ export interface StaffUser {
   id: string;
   schoolId: string;
   role: "editor" | "admin" | "viewer";
+  status: "pending" | "active" | "deactivated";
 }
 
 /**
@@ -20,7 +21,8 @@ export async function assertEditorScope(
   eventType?: string,
 ): Promise<void> {
   if (user.role === "admin") return;
-  if (user.role === "viewer") throw new Response("Forbidden: viewers cannot edit", { status: 403 });
+  if (user.role === "viewer") throw new Response("Forbidden", { status: 403 });
+  if (user.status !== "active") throw new Response("Forbidden", { status: 403 });
 
   if (grade !== undefined) {
     const rows = await withSchool(user.schoolId, (tx) =>

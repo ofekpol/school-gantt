@@ -26,6 +26,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (user.role === "viewer" || user.status !== "active") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = CreateBodySchema.safeParse(body);
   if (!parsed.success) {
