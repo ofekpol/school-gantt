@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import { staffInvites } from "@/lib/db/schema";
 
@@ -62,7 +62,13 @@ export async function markInviteUsed(token: string, usedBy: string): Promise<voi
   await db
     .update(staffInvites)
     .set({ usedAt: new Date(), usedBy })
-    .where(eq(staffInvites.token, token));
+    .where(
+      and(
+        eq(staffInvites.token, token),
+        isNull(staffInvites.usedAt),
+        sql`${staffInvites.expiresAt} > now()`,
+      ),
+    );
 }
 
 export async function listInvitesForSchool(schoolId: string): Promise<InviteRecord[]> {

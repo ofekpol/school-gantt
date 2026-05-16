@@ -2,11 +2,12 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import { supabaseAdmin } from "@/lib/db/supabase-admin";
-import { editorScopes, staffUsers } from "@/lib/db/schema";
+import { editorScopes, schools, staffUsers } from "@/lib/db/schema";
 
 export interface StaffUserRecord {
   id: string;
   schoolId: string;
+  schoolSlug?: string | null;
   role: "editor" | "admin" | "viewer";
   status: "pending" | "active" | "deactivated";
   email: string;
@@ -29,54 +30,41 @@ export async function getStaffUserByAuthId(authId: string): Promise<StaffUserRec
     .select({
       id: staffUsers.id,
       schoolId: staffUsers.schoolId,
+      schoolSlug: schools.slug,
       role: staffUsers.role,
       status: staffUsers.status,
       email: staffUsers.email,
       fullName: staffUsers.fullName,
     })
     .from(staffUsers)
+    .leftJoin(schools, eq(staffUsers.schoolId, schools.id))
     .where(eq(staffUsers.id, authId))
     .limit(1);
 
   if (!row) return null;
-  return row;
+  if (!row.schoolId) return null;
+  return row as StaffUserRecord;
 }
 
-/**
- * Creates a new staff user by:
- * 1. Calling supabaseAdmin.auth.admin.createUser to register the auth user.
- * 2. Inserting a staff_users row with the returned auth.users.id.
- * 3. Inserting editor_scopes rows for any grade or event-type scopes provided.
- *
- * The auth user id equals staff_users.id (FK convention from Phase 1 schema).
- */
-export async function createStaffUser(params: {
+export async function createStaffUserFromInvite(params: {
+  authUserId: string;
   schoolId: string;
   email: string;
   fullName: string;
   role: "editor" | "admin" | "viewer";
-  temporaryPassword: string;
   gradeScopes?: number[];
   eventTypeScopes?: string[];
 }): Promise<{ id: string }> {
-  const { data, error } = await supabaseAdmin.auth.admin.createUser({
-    email: params.email,
-    password: params.temporaryPassword,
-    email_confirm: true,
-  });
-  if (error || !data.user) {
-    throw new Error(error?.message ?? "auth_create_failed");
-  }
-  const authId = data.user.id;
-
   await withSchool(params.schoolId, async (tx) => {
     await tx.insert(staffUsers).values({
-      id: authId,
+      id: params.authUserId,
       schoolId: params.schoolId,
       email: params.email,
       fullName: params.fullName,
       role: params.role,
+      status: "active",
     });
+
     const scopeRows: Array<{
       staffUserId: string;
       schoolId: string;
@@ -84,24 +72,25 @@ export async function createStaffUser(params: {
       scopeValue: string;
     }> = [
       ...(params.gradeScopes ?? []).map((g) => ({
-        staffUserId: authId,
+        staffUserId: params.authUserId,
         schoolId: params.schoolId,
         scopeKind: "grade" as const,
         scopeValue: String(g),
       })),
       ...(params.eventTypeScopes ?? []).map((k) => ({
-        staffUserId: authId,
+        staffUserId: params.authUserId,
         schoolId: params.schoolId,
         scopeKind: "event_type" as const,
         scopeValue: k,
       })),
     ];
+
     if (scopeRows.length > 0) {
       await tx.insert(editorScopes).values(scopeRows);
     }
   });
 
-  return { id: authId };
+  return { id: params.authUserId };
 }
 
 /**

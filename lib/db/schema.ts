@@ -74,9 +74,7 @@ export const staffUsers = pgTable(
   "staff_users",
   {
     id: uuid().primaryKey(), // NO defaultRandom — receives auth.users.id from seed
-    schoolId: uuid("school_id")
-      .notNull()
-      .references(() => schools.id),
+    schoolId: uuid("school_id").references(() => schools.id),
     email: varchar({ length: 255 }).notNull().unique(),
     fullName: text("full_name").notNull(),
     role: roleEnum().notNull().default("editor"),

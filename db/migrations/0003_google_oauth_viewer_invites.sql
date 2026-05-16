@@ -11,7 +11,11 @@ END $$;
 ALTER TABLE "staff_users"
   ADD COLUMN "status" "staff_status" NOT NULL DEFAULT 'active';
 
--- 4. staff_invites — pre-configured invite links
+-- 4. Make school_id nullable (pending users have no school yet)
+ALTER TABLE "staff_users"
+  ALTER COLUMN "school_id" DROP NOT NULL;
+
+-- 5. staff_invites — pre-configured invite links
 CREATE TABLE "staff_invites" (
   "id"                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "token"             uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -34,7 +38,7 @@ CREATE POLICY "school_isolation" ON "staff_invites"
   WITH CHECK (school_id = NULLIF(current_setting('app.school_id', TRUE), '')::uuid);
 CREATE INDEX "staff_invites_school_idx" ON "staff_invites"("school_id");
 
--- 5. pending_registrations — no RLS, service-role only
+-- 6. pending_registrations — no RLS, service-role only
 CREATE TABLE "pending_registrations" (
   "id"               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "auth_user_id"     uuid NOT NULL UNIQUE,

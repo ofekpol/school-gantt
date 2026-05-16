@@ -14,6 +14,7 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   if (!user) redirect("/auth/login");
   if (user.status === "pending") redirect("/auth/pending");
   if (user.status === "deactivated") redirect("/auth/deactivated");
+  if (user.role === "viewer") redirect(user.schoolSlug ? `/${user.schoolSlug}` : "/auth/pending");
   return (
     <>
       <AppHeader title={user.fullName} subtitle={user.email} />

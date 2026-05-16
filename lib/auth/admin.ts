@@ -9,6 +9,7 @@ export function assertAdmin(
   user: StaffUserRecord | null,
 ): asserts user is StaffUserRecord & { role: "admin"; schoolId: string } {
   if (!user) throw new Response("Unauthorized", { status: 401 });
+  if (!user.schoolId) throw new Response("Forbidden", { status: 403 });
   if (user.status !== "active") throw new Response("Forbidden", { status: 403 });
   if (user.role !== "admin") throw new Response("Forbidden", { status: 403 });
 }

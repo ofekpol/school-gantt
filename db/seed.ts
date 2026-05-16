@@ -5,7 +5,6 @@ import * as schema from "@/lib/db/schema";
 
 const SCHOOL_SLUG = "demo-school";
 const ADMIN_EMAIL = "admin@demo-school.test";
-const ADMIN_PASSWORD = "ChangeMe123!"; // Local dev only
 
 // 6 grade-supervisor editors (grades 7-12)
 const GRADE_EDITORS = [
@@ -37,14 +36,13 @@ const EVENT_TYPES = [
   { key: "general", labelHe: "כללי", labelEn: "General", colorHex: "#aec7e8", glyph: "G", sortOrder: 11 },
 ];
 
-async function ensureAuthUser(email: string, password: string): Promise<string> {
+async function ensureAuthUser(email: string): Promise<string> {
   // listUsers paginated; sufficient for small seed.
   const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
   const found = existing.users.find((u) => u.email === email);
   if (found) return found.id;
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
-    password,
     email_confirm: true,
   });
   if (error ?? !data.user) throw new Error(`createUser ${email}: ${error?.message ?? "unknown"}`);
@@ -102,7 +100,7 @@ async function main() {
     }
 
     // 4. Admin auth user (outside tx — Supabase Auth is a separate system)
-    const adminAuthId = await ensureAuthUser(ADMIN_EMAIL, ADMIN_PASSWORD);
+    const adminAuthId = await ensureAuthUser(ADMIN_EMAIL);
     await tx
       .insert(schema.staffUsers)
       .values({
@@ -119,7 +117,7 @@ async function main() {
 
     // 5. Grade editors + scopes
     for (const ge of GRADE_EDITORS) {
-      const authId = await ensureAuthUser(ge.email, ADMIN_PASSWORD);
+      const authId = await ensureAuthUser(ge.email);
       await tx
         .insert(schema.staffUsers)
         .values({
@@ -145,7 +143,7 @@ async function main() {
     }
 
     // 6. Counselor + event_type scope
-    const counselorAuthId = await ensureAuthUser(COUNSELOR.email, ADMIN_PASSWORD);
+    const counselorAuthId = await ensureAuthUser(COUNSELOR.email);
     await tx
       .insert(schema.staffUsers)
       .values({

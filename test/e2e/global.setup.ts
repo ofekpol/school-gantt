@@ -14,6 +14,8 @@ import path from "path";
  *   Editor: grade10@demo-school.test / ChangeMe123!
  */
 async function globalSetup(config: FullConfig) {
+  if (process.env.ADMIN_E2E !== "1") return;
+
   const baseURL = config.projects[0].use.baseURL ?? "http://localhost:3000";
   const authDir = path.join(process.cwd(), "test/e2e/.auth");
 
@@ -53,10 +55,9 @@ interface SaveAuthOptions {
 }
 
 /**
- * Calls POST /api/v1/auth/login in a fresh browser context so that Supabase
- * SSR sets the session cookies on the response. Saves the resulting cookie
- * jar to disk as a Playwright storage-state file and returns the serialized
- * state for reuse.
+ * Legacy password-auth helper. It is only reachable when ADMIN_E2E=1; the
+ * Google OAuth migration requires replacing this with an OAuth-aware test
+ * fixture before those browser tests can be re-enabled.
  */
 async function saveAuthState({
   browser,
