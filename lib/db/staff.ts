@@ -8,6 +8,7 @@ export interface StaffUserRecord {
   id: string;
   schoolId: string;
   role: "editor" | "admin" | "viewer";
+  status: "pending" | "active" | "deactivated";
   email: string;
   fullName: string;
 }
@@ -29,6 +30,7 @@ export async function getStaffUserByAuthId(authId: string): Promise<StaffUserRec
       id: staffUsers.id,
       schoolId: staffUsers.schoolId,
       role: staffUsers.role,
+      status: staffUsers.status,
       email: staffUsers.email,
       fullName: staffUsers.fullName,
     })

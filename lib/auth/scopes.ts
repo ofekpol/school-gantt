@@ -6,7 +6,7 @@ import { editorScopes } from "@/lib/db/schema";
 export interface StaffUser {
   id: string;
   schoolId: string;
-  role: "editor" | "admin";
+  role: "editor" | "admin" | "viewer";
 }
 
 /**
@@ -20,6 +20,7 @@ export async function assertEditorScope(
   eventType?: string,
 ): Promise<void> {
   if (user.role === "admin") return;
+  if (user.role === "viewer") throw new Response("Forbidden: viewers cannot edit", { status: 403 });
 
   if (grade !== undefined) {
     const rows = await withSchool(user.schoolId, (tx) =>
