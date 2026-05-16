@@ -100,3 +100,76 @@
   transform: scaleX(-1);
 }
 /* ---- end shadcn/ui RTL patches ---- */
+
+/* ============================================================
+   School-Gantt design tokens — calm institutional / editorial
+   Hebrew RTL. Display serif + UI sans + mono date stamps.
+============================================================ */
+
+:root {
+  /* Surfaces */
+  --sg-bg:           oklch(0.985 0.004 80);
+  --sg-bg-deep:      oklch(0.97 0.005 80);
+  --sg-surface:      oklch(1 0 0);
+  --sg-surface-2:    oklch(0.982 0.004 80);
+  --sg-hairline:     oklch(0.91 0.006 80);
+  --sg-hairline-2:   oklch(0.95 0.005 80);
+
+  /* Ink */
+  --sg-ink:          oklch(0.20 0.012 60);
+  --sg-ink-mute:     oklch(0.45 0.010 60);
+  --sg-ink-soft:     oklch(0.62 0.008 60);
+  --sg-ink-ghost:    oklch(0.78 0.006 60);
+
+  /* Accent — editor's grade highlight */
+  --sg-accent:       oklch(0.52 0.13 252);
+  --sg-accent-soft:  oklch(0.92 0.04 252);
+  --sg-accent-ink:   oklch(0.32 0.12 252);
+
+  /* Status */
+  --sg-draft:        oklch(0.65 0.008 60);
+  --sg-pending:      oklch(0.62 0.13 70);
+  --sg-approved:     oklch(0.55 0.12 152);
+  --sg-rejected:     oklch(0.58 0.18 25);
+
+  /* Typography */
+  --sg-font-display: var(--font-display, "Frank Ruhl Libre", Georgia, serif);
+  --sg-font-ui:      var(--font-ui, "Heebo", system-ui, sans-serif);
+  --sg-font-mono:    var(--font-mono, "IBM Plex Mono", "SF Mono", monospace);
+
+  /* Geometry */
+  --sg-radius-sm: 4px;
+  --sg-radius:    8px;
+  --sg-radius-lg: 14px;
+
+  /* 11 event-type colors */
+  --et-pedagogical: oklch(0.58 0.12 245);
+  --et-social:      oklch(0.66 0.16 25);
+  --et-exam:        oklch(0.52 0.14 22);
+  --et-trip:        oklch(0.55 0.12 150);
+  --et-specTour:    oklch(0.58 0.10 200);
+  --et-shlach:      oklch(0.55 0.09 110);
+  --et-vacation:    oklch(0.72 0.13 80);
+  --et-parents:     oklch(0.55 0.13 305);
+  --et-bagrut:      oklch(0.42 0.16 18);
+  --et-counseling:  oklch(0.60 0.10 330);
+  --et-other:       oklch(0.62 0.010 60);
+}
+
+/* ---- Skeleton loader animation ---- */
+@keyframes sg-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.sg-skel {
+  background: linear-gradient(
+    90deg,
+    var(--sg-hairline-2) 0%,
+    color-mix(in oklch, var(--sg-hairline-2) 50%, white) 50%,
+    var(--sg-hairline-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: sg-shimmer 1.4s ease-in-out infinite;
+  border-radius: 4px;
+}

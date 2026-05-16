@@ -69,6 +69,7 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
         }))}
         selectedGrades={grades}
         selectedTypes={types}
+        zoom="year"
         searchQuery={q}
       />
       <AgendaList weeks={weeks} emptyLabel={t("empty")} />

@@ -11,7 +11,7 @@ interface Props {
 
 const dateFmt = new Intl.DateTimeFormat("he-IL", {
   timeZone: "Asia/Jerusalem",
-  dateStyle: "full",
+  dateStyle: "long",
 });
 const timeFmt = new Intl.DateTimeFormat("he-IL", {
   timeZone: "Asia/Jerusalem",
@@ -24,94 +24,168 @@ export function EventDrawer({ event, onClose }: Props) {
   const ta = useTranslations("a11y");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Close on Escape; focus the close button on open for keyboard a11y.
   useEffect(() => {
     if (!event) return;
     closeButtonRef.current?.focus();
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [event, onClose]);
 
   if (!event) return null;
 
+  const startDate = new Date(event.startAt);
+  const endDate = new Date(event.endAt);
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="event-drawer-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40"
+      style={{
+        position: "fixed", inset: 0, zIndex: 50,
+        display: "flex", alignItems: "flex-end",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.35)",
+      }}
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl shadow-xl p-5 max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 460,
+          background: "var(--sg-surface)",
+          borderRadius: "14px 14px 0 0",
+          boxShadow: "0 -8px 40px rgba(0,0,0,0.12)",
+          maxHeight: "85vh",
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+          fontFamily: "var(--sg-font-ui)",
+        }}
       >
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <span
-              aria-hidden="true"
-              className="inline-block size-3 shrink-0 rounded-full border border-neutral-300"
-              style={{ backgroundColor: event.eventTypeColor }}
-            />
-            <h2 id="event-drawer-title" className="text-lg font-semibold truncate">
-              {event.title}
-            </h2>
+        {/* Tinted header */}
+        <div style={{
+          padding: 18,
+          background: `color-mix(in oklch, ${event.eventTypeColor} 16%, white)`,
+          borderBottom: `4px solid ${event.eventTypeColor}`,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <span style={{
+              width: 30, height: 30, borderRadius: 6, flexShrink: 0,
+              background: event.eventTypeColor, color: "white",
+              display: "grid", placeItems: "center", fontSize: 14,
+            }}>
+              {event.eventTypeGlyph}
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 600, color: "var(--sg-ink-mute)",
+              letterSpacing: "0.04em", textTransform: "uppercase",
+              fontFamily: "var(--sg-font-mono)",
+            }}>
+              {event.eventTypeLabelHe}
+            </span>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={onClose}
+              aria-label={ta("closeDialog")}
+              style={{
+                marginInlineStart: "auto",
+                width: 28, height: 28, display: "grid", placeItems: "center",
+                border: "1px solid var(--sg-hairline)", borderRadius: 6,
+                background: "rgba(255,255,255,0.6)", cursor: "pointer",
+                fontSize: 14, color: "var(--sg-ink-mute)",
+              }}
+            >
+              ✕
+            </button>
           </div>
+          <h2
+            id="event-drawer-title"
+            style={{
+              fontFamily: "var(--sg-font-display)", fontSize: 22, fontWeight: 600,
+              lineHeight: 1.15, margin: 0, color: "var(--sg-ink)",
+            }}
+          >
+            {event.title}
+          </h2>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 14, overflowY: "auto", flex: 1 }}>
+          <DetailRow label={t("date")} value={dateFmt.format(startDate)} />
+          {!event.allDay && (
+            <DetailRow
+              label="שעות"
+              value={`${timeFmt.format(startDate)} – ${timeFmt.format(endDate)}`}
+            />
+          )}
+          {event.grades.length > 0 && (
+            <DetailRow
+              label={t("grades")}
+              value={
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {event.grades.map((g) => (
+                    <span key={g} style={{
+                      fontFamily: "var(--sg-font-display)", fontSize: 16, fontWeight: 600,
+                      background: "var(--sg-surface-2)", border: "1px solid var(--sg-hairline)",
+                      borderRadius: 6, padding: "2px 10px",
+                    }}>
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              }
+            />
+          )}
+          {event.location && <DetailRow label={t("location")} value={event.location} />}
+          {event.description && <DetailRow label={t("description")} value={event.description} />}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          display: "flex", gap: 8, padding: 14,
+          borderTop: "1px solid var(--sg-hairline)",
+          background: "var(--sg-surface-2)",
+        }}>
           <button
-            ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            aria-label={ta("closeDialog")}
-            className="min-h-11 min-w-11 text-neutral-500 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              height: 32, padding: "0 14px",
+              borderRadius: 8, border: "1px solid var(--sg-hairline)",
+              background: "transparent", color: "var(--sg-ink-mute)",
+              fontSize: 13, fontWeight: 500, cursor: "pointer",
+            }}
           >
-            ✕
+            סגור
           </button>
         </div>
-        <dl className="space-y-2 text-sm">
-          <div>
-            <dt className="text-neutral-500">{t("date")}</dt>
-            <dd>
-              {dateFmt.format(new Date(event.startAt))}
-              {!event.allDay && (
-                <>
-                  {" · "}
-                  {timeFmt.format(new Date(event.startAt))}
-                  {" – "}
-                  {timeFmt.format(new Date(event.endAt))}
-                </>
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-neutral-500">{t("type")}</dt>
-            <dd className="flex items-center gap-1">
-              <span aria-hidden="true">{event.eventTypeGlyph}</span>
-              {event.eventTypeLabelHe}
-            </dd>
-          </div>
-          {event.grades.length > 0 && (
-            <div>
-              <dt className="text-neutral-500">{t("grades")}</dt>
-              <dd>{event.grades.join(", ")}</dd>
-            </div>
-          )}
-          {event.location && (
-            <div>
-              <dt className="text-neutral-500">{t("location")}</dt>
-              <dd>{event.location}</dd>
-            </div>
-          )}
-          {event.description && (
-            <div>
-              <dt className="text-neutral-500">{t("description")}</dt>
-              <dd className="whitespace-pre-wrap">{event.description}</dd>
-            </div>
-          )}
-        </dl>
       </div>
+    </div>
+  );
+}
+
+interface DetailRowProps {
+  label: string;
+  value: React.ReactNode;
+}
+
+function DetailRow({ label, value }: DetailRowProps) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 12, alignItems: "baseline" }}>
+      <dt style={{
+        fontSize: 11, color: "var(--sg-ink-soft)", letterSpacing: "0.04em",
+        fontFamily: "var(--sg-font-display)", fontWeight: 500,
+      }}>
+        {label}
+      </dt>
+      <dd style={{ fontSize: 14, fontWeight: 500, color: "var(--sg-ink)", margin: 0 }}>
+        {typeof value === "string"
+          ? <span style={{ whiteSpace: "pre-wrap" }}>{value}</span>
+          : value}
+      </dd>
     </div>
   );
 }
