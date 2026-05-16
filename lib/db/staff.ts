@@ -7,7 +7,7 @@ import { editorScopes, staffUsers } from "@/lib/db/schema";
 export interface StaffUserRecord {
   id: string;
   schoolId: string;
-  role: "editor" | "admin";
+  role: "editor" | "admin" | "viewer";
   email: string;
   fullName: string;
 }
@@ -37,7 +37,7 @@ export async function getStaffUserByAuthId(authId: string): Promise<StaffUserRec
     .limit(1);
 
   if (!row) return null;
-  return row as StaffUserRecord;
+  return row;
 }
 
 /**
@@ -52,7 +52,7 @@ export async function createStaffUser(params: {
   schoolId: string;
   email: string;
   fullName: string;
-  role: "editor" | "admin";
+  role: "editor" | "admin" | "viewer";
   temporaryPassword: string;
   gradeScopes?: number[];
   eventTypeScopes?: string[];
@@ -111,7 +111,7 @@ export async function updateStaffUser(
   staffUserId: string,
   fields: {
     fullName?: string;
-    role?: "editor" | "admin";
+    role?: "editor" | "admin" | "viewer";
     deactivated?: boolean;
     gradeScopes?: number[];
     eventTypeScopes?: string[];
@@ -120,7 +120,7 @@ export async function updateStaffUser(
   await withSchool(schoolId, async (tx) => {
     const updates: Partial<{
       fullName: string;
-      role: "editor" | "admin";
+      role: "editor" | "admin" | "viewer";
       deactivatedAt: Date;
     }> = {};
     if (fields.fullName !== undefined) updates.fullName = fields.fullName;
@@ -174,7 +174,7 @@ export async function listStaffUsers(
     id: string;
     email: string;
     fullName: string;
-    role: "editor" | "admin";
+    role: "editor" | "admin" | "viewer";
     deactivatedAt: Date | null;
   }>
 > {

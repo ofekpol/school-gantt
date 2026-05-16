@@ -9,7 +9,7 @@ interface StaffRow {
   id: string;
   email: string;
   fullName: string;
-  role: "editor" | "admin";
+  role: "editor" | "admin" | "viewer";
   deactivatedAt: Date | string | null;
 }
 

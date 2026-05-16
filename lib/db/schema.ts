@@ -18,7 +18,8 @@ import {
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export const roleEnum = pgEnum("role", ["editor", "admin"]);
+export const roleEnum = pgEnum("role", ["editor", "admin", "viewer"]);
+export const staffStatusEnum = pgEnum("staff_status", ["pending", "active", "deactivated"]);
 export const eventStatusEnum = pgEnum("event_status", [
   "draft",
   "pending",
@@ -81,6 +82,7 @@ export const staffUsers = pgTable(
     role: roleEnum().notNull().default("editor"),
     lockedUntil: timestamp("locked_until", { withTimezone: true }),
     loginAttempts: integer("login_attempts").notNull().default(0),
+    status: staffStatusEnum().notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
   },
@@ -109,6 +111,31 @@ export const editorScopes = pgTable(
       t.scopeValue,
     ),
     index("editor_scopes_staff_user_idx").on(t.staffUserId),
+  ],
+);
+
+export const staffInvites = pgTable(
+  "staff_invites",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    token: uuid().defaultRandom().notNull().unique(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id, { onDelete: "cascade" }),
+    role: roleEnum().notNull().default("editor"),
+    gradeScopes: integer("grade_scopes").array().notNull().default(sql`'{}'::integer[]`),
+    eventTypeScopes: text("event_type_scopes").array().notNull().default(sql`'{}'::text[]`),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => staffUsers.id, { onDelete: "restrict" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    usedBy: uuid("used_by").references(() => staffUsers.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    schoolIsolation,
+    index("staff_invites_school_idx").on(t.schoolId),
   ],
 );
 
@@ -246,3 +273,15 @@ export const auditLog = pgTable(
     index("audit_log_school_at_idx").on(t.schoolId, t.at),
   ],
 );
+
+export const pendingRegistrations = pgTable("pending_registrations", {
+  id: uuid().defaultRandom().primaryKey(),
+  authUserId: uuid("auth_user_id").notNull().unique(),
+  email: varchar({ length: 255 }).notNull().unique(),
+  fullName: text("full_name").notNull().default(""),
+  googleAvatarUrl: text("google_avatar_url"),
+  requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  reviewedBy: uuid("reviewed_by").references(() => staffUsers.id),
+  reviewOutcome: varchar("review_outcome", { length: 16 }),
+});
