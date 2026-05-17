@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { sql } from "drizzle-orm";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { db, supabaseAdmin, withSchool } from "@/lib/db/client";
 import * as schema from "@/lib/db/schema";
 
@@ -36,6 +37,19 @@ const EVENT_TYPES = [
   { key: "general", labelHe: "כללי", labelEn: "General", colorHex: "#aec7e8", glyph: "G", sortOrder: 11 },
 ];
 
+type Database = NodePgDatabase<typeof schema>;
+
+export interface SeedOptions {
+  /**
+   * Resolves an email to the staff_users.id to use. In production this is the
+   * Supabase auth.users.id (via ensureAuthUser). In CI/tests it can be any
+   * deterministic UUID — staff_users.id has no DB-level FK to auth.users.
+   */
+  ensureStaffUserId: (email: string) => Promise<string>;
+  /** Optional injection point for the Drizzle client (tests). Defaults to the production singleton. */
+  database?: Database;
+}
+
 async function ensureAuthUser(email: string): Promise<string> {
   // listUsers paginated; sufficient for small seed.
   const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
@@ -49,9 +63,17 @@ async function ensureAuthUser(email: string): Promise<string> {
   return data.user.id;
 }
 
-async function main() {
+/**
+ * Seeds the canonical demo-school bootstrap into the DB pointed at by `opts.database`
+ * (defaults to the production singleton). All Supabase Auth interaction is delegated
+ * to `opts.ensureStaffUserId` so CI/tests can run the full DB seed without a real
+ * Supabase Auth project.
+ */
+export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
+  const database = opts.database ?? db;
+
   // 1. School — no RLS on schools table; insert directly
-  const [school] = await db
+  const [school] = await database
     .insert(schema.schools)
     .values({
       slug: SCHOOL_SLUG,
@@ -99,8 +121,8 @@ async function main() {
         });
     }
 
-    // 4. Admin auth user (outside tx — Supabase Auth is a separate system)
-    const adminAuthId = await ensureAuthUser(ADMIN_EMAIL);
+    // 4. Admin staff user
+    const adminAuthId = await opts.ensureStaffUserId(ADMIN_EMAIL);
     await tx
       .insert(schema.staffUsers)
       .values({
@@ -116,9 +138,12 @@ async function main() {
       });
 
     // 5. Grade editors + scopes
+    // RETURNING resolves to the *existing* row's id on email-conflict, so
+    // editor_scopes always references a valid staff_users.id even when the
+    // caller-supplied id differs from a pre-existing row.
     for (const ge of GRADE_EDITORS) {
-      const authId = await ensureAuthUser(ge.email);
-      await tx
+      const authId = await opts.ensureStaffUserId(ge.email);
+      const [row] = await tx
         .insert(schema.staffUsers)
         .values({
           id: authId,
@@ -130,11 +155,12 @@ async function main() {
         .onConflictDoUpdate({
           target: schema.staffUsers.email,
           set: { schoolId: school.id, fullName: sql`excluded.full_name` },
-        });
+        })
+        .returning({ id: schema.staffUsers.id });
       await tx
         .insert(schema.editorScopes)
         .values({
-          staffUserId: authId,
+          staffUserId: row.id,
           schoolId: school.id,
           scopeKind: "grade",
           scopeValue: String(ge.grade),
@@ -143,8 +169,8 @@ async function main() {
     }
 
     // 6. Counselor + event_type scope
-    const counselorAuthId = await ensureAuthUser(COUNSELOR.email);
-    await tx
+    const counselorAuthId = await opts.ensureStaffUserId(COUNSELOR.email);
+    const [counselorRow] = await tx
       .insert(schema.staffUsers)
       .values({
         id: counselorAuthId,
@@ -156,12 +182,13 @@ async function main() {
       .onConflictDoUpdate({
         target: schema.staffUsers.email,
         set: { schoolId: school.id, fullName: sql`excluded.full_name` },
-      });
+      })
+      .returning({ id: schema.staffUsers.id });
 
     await tx
       .insert(schema.editorScopes)
       .values({
-        staffUserId: counselorAuthId,
+        staffUserId: counselorRow.id,
         schoolId: school.id,
         scopeKind: "event_type",
         scopeValue: COUNSELOR.eventTypeKey,
@@ -169,11 +196,25 @@ async function main() {
       .onConflictDoNothing();
   });
 
-  console.log(`Seed complete: school=${school.slug} admin=${ADMIN_EMAIL}`);
+  return { schoolId: school.id };
+}
+
+async function main() {
+  const { schoolId } = await seedDb({ ensureStaffUserId: ensureAuthUser });
+  console.log(`Seed complete: schoolId=${schoolId} admin=${ADMIN_EMAIL}`);
   process.exit(0);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Only auto-run when invoked as a script (`tsx db/seed.ts`), not when imported.
+const invokedAsScript =
+  typeof process !== "undefined" &&
+  Array.isArray(process.argv) &&
+  process.argv[1] !== undefined &&
+  /[\\/]db[\\/]seed\.ts$/.test(process.argv[1]);
+
+if (invokedAsScript) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

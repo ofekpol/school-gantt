@@ -94,9 +94,9 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;"
 
       - name: Unit + integration tests (Vitest)
-        # SUPABASE_TEST_PROJECT is intentionally unset → seed.test.ts and
-        # auth.test.ts self-skip (they need a real Supabase Auth project,
-        # not available in CI without secrets).
+        # All integration suites run against the ephemeral Postgres above.
+        # seed.test.ts calls the exported seedDb() with a deterministic
+        # UUID stub for staff_users.id, so no Supabase Auth project is needed.
         run: pnpm test
 
       - name: Build

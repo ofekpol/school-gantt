@@ -1,18 +1,30 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
-import { testDb, skipIfNoSeed } from "./setup";
+import { seedDb } from "@/db/seed";
+import { testDb, skipIfNoTestDb } from "./setup";
 
-describe.skipIf(skipIfNoSeed)("DB-06: seed creates canonical bootstrap", () => {
-  beforeAll(() => {
-    // Run seed against TEST_DATABASE_URL — creates/updates auth users in configured Supabase project.
-    // Timeout is high because Supabase auth.admin.createUser makes network calls per user (8 users).
-    execSync("pnpm seed", {
-      env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL },
-      stdio: "inherit",
-    });
-  }, 60_000);
+// Deterministic UUID per email — stable across runs so re-seeding upserts the
+// same staff_users row (the email-conflict path keeps the original id, and
+// editor_scopes references must resolve).
+function deterministicUuid(email: string): string {
+  const h = createHash("sha256").update(email).digest("hex");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
+}
+
+async function runSeed() {
+  if (!testDb) throw new Error("testDb is null — TEST_DATABASE_URL not set");
+  return seedDb({
+    database: testDb,
+    ensureStaffUserId: async (email) => deterministicUuid(email),
+  });
+}
+
+describe.skipIf(skipIfNoTestDb)("DB-06: seed creates canonical bootstrap", () => {
+  beforeAll(async () => {
+    await runSeed();
+  }, 30_000);
 
   it("creates exactly one school with slug 'demo-school'", async () => {
     const rows = await testDb!
@@ -96,10 +108,7 @@ describe.skipIf(skipIfNoSeed)("DB-06: seed creates canonical bootstrap", () => {
       .select()
       .from(schema.staffUsers)
       .where(eq(schema.staffUsers.schoolId, school.id));
-    execSync("pnpm seed", {
-      env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL },
-      stdio: "pipe",
-    });
+    await runSeed();
     const afterUsers = await testDb!
       .select()
       .from(schema.staffUsers)
