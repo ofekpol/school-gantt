@@ -150,19 +150,10 @@
     "newEvent": "אירוע חדש",
     "empty": "אין אירועים עדיין. לחץ על \"אירוע חדש\" כדי להתחיל.",
     "resume": "המשך",
+    "edit": "ערוך",
     "status": {
       "draft": "טיוטה",
-      "pending": "ממתין לאישור",
-      "approved": "מאושר",
-      "rejected": "נדחה"
-    },
-    "rejected": {
-      "title": "אירועים שנדחו",
-      "empty": "אין אירועים שנדחו.",
-      "reason": "סיבת הדחייה",
-      "decidedAt": "נדחה ב",
-      "resubmit": "ערוך ושלח שוב",
-      "linkLabel": "אירועים שנדחו"
+      "approved": "פורסם"
     }
   },
   "agenda": {
@@ -260,10 +251,10 @@
       "requirementsPlaceholder": "פרטים נוספים, חדר, ציוד…"
     },
     "step7": {
-      "title": "סיכום ושליחה",
-      "submit": "שלח לאישור",
-      "submitting": "שולח…",
-      "submitError": "שליחה נכשלה"
+      "title": "סיכום ופרסום",
+      "submit": "פרסם אירוע",
+      "submitting": "מפרסם…",
+      "submitError": "הפרסום נכשל"
     }
   }
 }

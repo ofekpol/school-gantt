@@ -150,19 +150,10 @@
     "newEvent": "New event",
     "empty": "No events yet. Click \"New event\" to start.",
     "resume": "Resume",
+    "edit": "Edit",
     "status": {
       "draft": "Draft",
-      "pending": "Pending",
-      "approved": "Approved",
-      "rejected": "Rejected"
-    },
-    "rejected": {
-      "title": "Rejected events",
-      "empty": "No rejected events.",
-      "reason": "Rejection reason",
-      "decidedAt": "Rejected",
-      "resubmit": "Edit & resubmit",
-      "linkLabel": "Rejected events"
+      "approved": "Published"
     }
   },
   "agenda": {
@@ -260,10 +251,10 @@
       "requirementsPlaceholder": "Notes, room, equipment…"
     },
     "step7": {
-      "title": "Review & submit",
-      "submit": "Submit for approval",
-      "submitting": "Submitting…",
-      "submitError": "Submission failed"
+      "title": "Review & publish",
+      "submit": "Publish event",
+      "submitting": "Publishing…",
+      "submitError": "Publish failed"
     }
   }
 }
