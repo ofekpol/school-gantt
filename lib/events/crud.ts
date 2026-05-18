@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { withSchool } from "@/lib/db/client";
-import { eventGrades, events } from "@/lib/db/schema";
+import { eventGrades, eventRevisions, events } from "@/lib/db/schema";
 import type { EventDraftInput } from "@/lib/validations/events";
 
 /**
@@ -35,8 +35,7 @@ export async function createDraft(
 export type UpdateDraftResult =
   | { status: "ok"; version: number }
   | { status: "conflict" }
-  | { status: "not_found" }
-  | { status: "invalid_state" };
+  | { status: "not_found" };
 
 /**
  * Atomically replaces the event_grades rows for an event with the given list.
@@ -101,13 +100,6 @@ export async function updateDraft(
       return { status: "not_found" as const };
     }
 
-    // PRD §6.3 — pending events are awaiting admin decision and must not be
-    // mutated. Approved events are public; edits go through /revise (which
-    // produces a new pending row tied via parent_event_id).
-    if (!isAdmin && (current.status === "pending" || current.status === "approved")) {
-      return { status: "invalid_state" as const };
-    }
-
     // Optimistic concurrency check (WIZARD-09)
     if (expectedVersion !== null && current.version !== expectedVersion) {
       return { status: "conflict" as const };
@@ -130,6 +122,16 @@ export async function updateDraft(
       .set(updateSet)
       .where(eq(events.id, eventId))
       .returning({ version: events.version });
+
+    if (current.status === "approved") {
+      await tx.insert(eventRevisions).values({
+        eventId,
+        schoolId,
+        snapshot: current as unknown as Record<string, unknown>,
+        submittedBy: userId,
+        decision: "edited",
+      });
+    }
 
     return { status: "ok" as const, version: updated.version };
   });
