@@ -38,6 +38,14 @@ async function globalSetup(config: FullConfig) {
       outputPath: path.join(authDir, "editor.json"),
     });
 
+    await saveAuthState({
+      browser,
+      baseURL,
+      email: "viewer@demo-school.test",
+      password: "ChangeMe123!",
+      outputPath: path.join(authDir, "viewer.json"),
+    });
+
     // Ensure the demo school has an active academic year so that wizard,
     // Gantt page, and approval tests can create events.
     await ensureActiveYear({ browser, baseURL, adminStorageState: adminState });
