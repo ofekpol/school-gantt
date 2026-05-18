@@ -23,12 +23,6 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <div className="flex items-center gap-3">
           <Link
-            href="/dashboard/rejected"
-            className="text-sm text-blue-600 hover:underline"
-          >
-            {t("rejected.linkLabel")}
-          </Link>
-          <Link
             href="/events/new"
             className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
           >
@@ -60,12 +54,12 @@ export default async function DashboardPage() {
                   status={event.status}
                   label={t(`status.${event.status}` as `status.${typeof event.status}`)}
                 />
-                {event.status === "draft" && (
+                {(event.status === "draft" || event.status === "approved") && (
                   <Link
                     href={`/events/new?resumeId=${event.id}`}
                     className="text-sm text-blue-600 hover:underline"
                   >
-                    {t("resume")}
+                    {event.status === "draft" ? t("resume") : t("edit")}
                   </Link>
                 )}
               </div>
@@ -80,9 +74,7 @@ export default async function DashboardPage() {
 function StatusBadge({ status, label }: { status: string; label: string }) {
   const styles: Record<string, string> = {
     draft: "bg-neutral-100 text-neutral-700",
-    pending: "bg-yellow-100 text-yellow-800",
     approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
   };
   return (
     <span
