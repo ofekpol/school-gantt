@@ -181,6 +181,46 @@ export async function updateStaffUser(
   }
 }
 
+export async function getStaffUserByEmail(
+  email: string,
+): Promise<{ id: string; status: "pending" | "active" | "deactivated"; loginAttempts: number; lockedUntil: Date | null } | null> {
+  const [row] = await db
+    .select({
+      id: staffUsers.id,
+      status: staffUsers.status,
+      loginAttempts: staffUsers.loginAttempts,
+      lockedUntil: staffUsers.lockedUntil,
+    })
+    .from(staffUsers)
+    .where(eq(staffUsers.email, email))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function incrementLoginAttempts(
+  staffUserId: string,
+  currentAttempts: number,
+): Promise<void> {
+  const newAttempts = currentAttempts + 1;
+  const lockedUntil =
+    newAttempts >= 10 ? new Date(Date.now() + 15 * 60 * 1000) : null;
+
+  await db
+    .update(staffUsers)
+    .set({
+      loginAttempts: newAttempts,
+      ...(lockedUntil ? { lockedUntil } : {}),
+    })
+    .where(eq(staffUsers.id, staffUserId));
+}
+
+export async function resetLoginAttempts(staffUserId: string): Promise<void> {
+  await db
+    .update(staffUsers)
+    .set({ loginAttempts: 0, lockedUntil: null })
+    .where(eq(staffUsers.id, staffUserId));
+}
+
 /**
  * Lists all staff users for a school, ordered by creation date.
  * Uses withSchool so RLS filters to the correct school.
