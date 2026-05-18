@@ -209,7 +209,7 @@ export async function incrementLoginAttempts(
     .update(staffUsers)
     .set({
       loginAttempts: newAttempts,
-      ...(lockedUntil ? { lockedUntil } : {}),
+      lockedUntil,
     })
     .where(eq(staffUsers.id, staffUserId));
 }
