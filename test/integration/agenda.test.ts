@@ -2,14 +2,10 @@ import { randomUUID } from "node:crypto";
 import { describe, it, expect, beforeAll } from "vitest";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
-import {
-  approveEvent,
-  autoApproveAsAdmin,
-} from "@/lib/events/approval";
+import { publishEvent } from "@/lib/events/approval";
 import { createDraft, updateDraft } from "@/lib/events/crud";
 import { getAgendaForSchool, groupByWeek } from "@/lib/views/agenda";
 import { getSchoolBySlug } from "@/lib/db/schools";
-import { submitForApproval } from "@/lib/events/approval";
 import { testDb, skipIfNoTestDb, testSchoolA, testSchoolB } from "./setup";
 
 /**
@@ -57,7 +53,6 @@ async function eventTypeFor(schoolId: string): Promise<{ id: string; key: string
 async function makeApprovedEvent(opts: {
   schoolId: string;
   editorId: string;
-  adminId: string;
   eventTypeId: string;
   title: string;
   startAt: Date;
@@ -78,8 +73,7 @@ async function makeApprovedEvent(opts: {
     },
     null,
   );
-  await submitForApproval(opts.schoolId, id, opts.editorId);
-  await approveEvent(opts.schoolId, id, opts.adminId);
+  await publishEvent(opts.schoolId, id, opts.editorId);
   return id;
 }
 
@@ -97,20 +91,17 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-01: getSchoolBySlug resolves test school
 
 describe.skipIf(skipIfNoTestDb)("AGENDA-02: only approved, non-deleted events appear", () => {
   let editorId: string;
-  let adminId: string;
   let typeId: string;
 
   beforeAll(async () => {
     editorId = (await ensureStaff(testSchoolA, "agenda-editor@test", "editor")).id;
-    adminId = (await ensureStaff(testSchoolA, "agenda-admin@test", "admin")).id;
     typeId = (await eventTypeFor(testSchoolA)).id;
   });
 
-  it("hides drafts and pending events; surfaces approved ones", async () => {
+  it("hides drafts; surfaces approved ones", async () => {
     const approvedId = await makeApprovedEvent({
       schoolId: testSchoolA,
       editorId,
-      adminId,
       eventTypeId: typeId,
       title: "AGENDA approved event",
       startAt: new Date("2026-05-20T08:00:00+03:00"),
@@ -126,29 +117,17 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-02: only approved, non-deleted events ap
       { title: "AGENDA draft (hidden)" },
       null,
     );
-    const { id: pendingId } = await createDraft(testSchoolA, editorId, typeId);
-    await updateDraft(
-      testSchoolA,
-      pendingId,
-      editorId,
-      false,
-      { title: "AGENDA pending (hidden)" },
-      null,
-    );
-    await submitForApproval(testSchoolA, pendingId, editorId);
 
     const rows = await getAgendaForSchool(testSchoolA, {});
     const ids = rows.map((r) => r.id);
     expect(ids).toContain(approvedId);
     expect(ids).not.toContain(draftId);
-    expect(ids).not.toContain(pendingId);
   });
 
-  it("hides soft-deleted approved events (parent_event_id swap on revision approval)", async () => {
+  it("hides soft-deleted approved events", async () => {
     const v1Id = await makeApprovedEvent({
       schoolId: testSchoolA,
       editorId,
-      adminId,
       eventTypeId: typeId,
       title: "AGENDA v1",
       startAt: new Date("2026-05-21T08:00:00+03:00"),
@@ -168,19 +147,16 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-02: only approved, non-deleted events ap
 
 describe.skipIf(skipIfNoTestDb)("AGENDA-03: filter by grade", () => {
   let editorId: string;
-  let adminId: string;
   let typeId: string;
   let g10Id: string;
   let g11Id: string;
 
   beforeAll(async () => {
     editorId = (await ensureStaff(testSchoolA, "agenda-editor@test", "editor")).id;
-    adminId = (await ensureStaff(testSchoolA, "agenda-admin@test", "admin")).id;
     typeId = (await eventTypeFor(testSchoolA)).id;
     g10Id = await makeApprovedEvent({
       schoolId: testSchoolA,
       editorId,
-      adminId,
       eventTypeId: typeId,
       title: "AGENDA grade 10",
       startAt: new Date("2026-05-22T08:00:00+03:00"),
@@ -190,7 +166,6 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-03: filter by grade", () => {
     g11Id = await makeApprovedEvent({
       schoolId: testSchoolA,
       editorId,
-      adminId,
       eventTypeId: typeId,
       title: "AGENDA grade 11",
       startAt: new Date("2026-05-23T08:00:00+03:00"),
@@ -210,7 +185,6 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-03: filter by grade", () => {
     const multiId = await makeApprovedEvent({
       schoolId: testSchoolA,
       editorId,
-      adminId,
       eventTypeId: typeId,
       title: "AGENDA multi 10+11",
       startAt: new Date("2026-05-24T08:00:00+03:00"),
@@ -225,23 +199,23 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-03: filter by grade", () => {
 });
 
 describe.skipIf(skipIfNoTestDb)("AGENDA-04: filter by event type and search", () => {
-  let adminId: string;
+  let editorId: string;
   let typeId: string;
   let typeKey: string;
 
   beforeAll(async () => {
-    adminId = (await ensureStaff(testSchoolA, "agenda-admin@test", "admin")).id;
+    editorId = (await ensureStaff(testSchoolA, "agenda-editor@test", "editor")).id;
     const t = await eventTypeFor(testSchoolA);
     typeId = t.id;
     typeKey = t.key;
   });
 
   it("?types=<key> filters to that event type only", async () => {
-    const { id: keepId } = await createDraft(testSchoolA, adminId, typeId);
+    const { id: keepId } = await createDraft(testSchoolA, editorId, typeId);
     await updateDraft(
       testSchoolA,
       keepId,
-      adminId,
+      editorId,
       true,
       {
         title: "AGENDA typed match",
@@ -251,18 +225,18 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-04: filter by event type and search", ()
       },
       null,
     );
-    await autoApproveAsAdmin(testSchoolA, keepId, adminId);
+    await publishEvent(testSchoolA, keepId, editorId);
 
     const rows = await getAgendaForSchool(testSchoolA, { types: [typeKey] });
     expect(rows.map((r) => r.id)).toContain(keepId);
   });
 
   it("?q=<text> matches case-insensitively within title", async () => {
-    const { id } = await createDraft(testSchoolA, adminId, typeId);
+    const { id } = await createDraft(testSchoolA, editorId, typeId);
     await updateDraft(
       testSchoolA,
       id,
-      adminId,
+      editorId,
       true,
       {
         title: "טיול לכנרת 2026",
@@ -272,7 +246,7 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-04: filter by event type and search", ()
       },
       null,
     );
-    await autoApproveAsAdmin(testSchoolA, id, adminId);
+    await publishEvent(testSchoolA, id, editorId);
 
     const hits = await getAgendaForSchool(testSchoolA, { q: "כנרת" });
     expect(hits.map((r) => r.id)).toContain(id);
@@ -285,12 +259,10 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-04: filter by event type and search", ()
 describe.skipIf(skipIfNoTestDb)("AGENDA-05: cross-school isolation", () => {
   it("school B's approved events do not leak into school A's agenda", async () => {
     const editor = await ensureStaff(testSchoolB, "agenda-editor-b@test", "editor");
-    const admin = await ensureStaff(testSchoolB, "agenda-admin-b@test", "admin");
     const type = await eventTypeFor(testSchoolB);
     const id = await makeApprovedEvent({
       schoolId: testSchoolB,
       editorId: editor.id,
-      adminId: admin.id,
       eventTypeId: type.id,
       title: "AGENDA school-B-only",
       startAt: new Date("2026-05-27T08:00:00+03:00"),
