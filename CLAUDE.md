@@ -1,7 +1,7 @@
 # School Gantt Chart System
 
 Multi-tenant school event calendar. Each school is a tenant isolated by Postgres RLS.
-Staff editors submit events through a 7-step wizard → admin approves → appears on 4 public views.
+Staff editors submit events through a 7-step wizard → publish directly → appears on 4 public views. No admin approval required.
 
 ## Tech Stack
 
@@ -33,13 +33,13 @@ pnpm playwright test  # Playwright e2e suite
 app/
   (public)/[school]/           — Gantt (index), /calendar, /agenda
   (staff)/                     — /dashboard, /events/new, /events/[id]/edit, /profile
-  (admin)/admin/               — /queue, /staff, /event-types, /year
+  (admin)/admin/               — /staff, /event-types, /year
   api/v1/                      — REST route handlers
   ical/[token]/route.ts        — text/calendar feed (unauthenticated, token-gated)
 lib/
   db/                          — Drizzle schema, RLS client wrapper
   auth/                        — Session helpers, scope checks
-  events/                      — Domain logic: create, submit, approve, reject, revisions
+  events/                      — Domain logic: create, publish, edit, revisions
   ical/                        — VEVENT serializer + filter resolver
   views/                       — Event → Gantt / calendar / agenda projections
   datetime.ts                  — Timezone helpers (Asia/Jerusalem)
@@ -77,15 +77,17 @@ An ESLint rule bans importing it outside `lib/db/`.
 All status transitions go through `lib/events/approval.ts`. Never set `events.status` directly.
 
 ```
-draft → pending   (editor submits via Step 7)
-pending → approved (admin approves)
-pending → rejected (admin rejects with reason)
-rejected → pending (editor revises + resubmits)
-approved + edit   → approved (v1, public) + new pending revision (v2, hidden)
-admin creates/edits → auto-approved
+draft → approved  (editor publishes via Step 7 — "פרסם אירוע")
+approved → approved (editor edits in-place via PATCH or wizard resume)
 ```
 
-Every transition writes a row to `event_revisions`. Deletes set `deleted_at` (soft delete).
+The `pending` and `rejected` enum values exist in the DB schema but are never produced.
+Every transition writes a row to `event_revisions`:
+
+- `decision='published'` — new draft → approved
+- `decision='edited'` — PATCH or re-publish of approved event
+
+Deletes set `deleted_at` (soft delete).
 
 ## Auth
 
@@ -123,7 +125,7 @@ academic_years    id, school_id, label, start_date, end_date
 staff_users       id, school_id, email, full_name, role ∈ {editor,admin}, locked_until
 editor_scopes     id, staff_user_id, scope_kind ∈ {grade,event_type}, scope_value
 event_types       id, school_id, key, label_he, label_en, color_hex, glyph, sort_order
-events            id, school_id, status ∈ {draft,pending,approved,rejected}, version, deleted_at, ...
+events            id, school_id, status ∈ {draft,approved}, version, deleted_at, ...
 event_grades      event_id, grade  (composite PK)
 event_revisions   id, event_id, snapshot JSONB, submitted_by, decided_by, decision, reason
 ical_subscriptions id, staff_user_id, token, filter_grades, filter_event_types, revoked_at
@@ -166,14 +168,14 @@ Never commit these.
 
 - Unit + integration: Vitest, ≥ 80% coverage on new code
 - Integration: real Postgres — RLS positive access + cross-school denial
-- E2E: full wizard flow, approval flow, all 4 public views, iCal subscribe + revoke
+- E2E: full wizard flow, publish flow, all 4 public views, iCal subscribe + revoke
 - Perf: Gantt ≤ 2 s with 1 k events; iCal ≤ 500 ms
 
 ## Non-Functional Bars (hard)
 
 - Gantt: ≤ 2 s first paint with 1 k events
 - iCal feed: ≤ 500 ms response
-- Public view freshness: ≤ 5 s after admin approves (polling + 5 s `Cache-Control`)
+- Public view freshness: ≤ 5 s after editor publishes (polling + 5 s `Cache-Control`)
 - WCAG 2.1 AA — axe-core zero serious/critical issues
 - Color + glyph encoding (color-blind safe)
 - Print-legible on A3/A4 monochrome (`@media print`)
@@ -183,9 +185,9 @@ Never commit these.
 
 **School Gantt Chart System**
 
-Multi-tenant school event calendar where each school is an isolated tenant (Postgres RLS). Staff editors submit events through a 7-step wizard → school admin approves or rejects → events appear on 4 synchronized public views (Gantt chart, printable yearly calendar, mobile agenda, per-user iCal feed). Unauthenticated public viewers (students, parents, teachers) browse without accounts.
+Multi-tenant school event calendar where each school is an isolated tenant (Postgres RLS). Staff editors submit events through a 7-step wizard → publish directly (no admin approval) → events appear on 4 synchronized public views (Gantt chart, printable yearly calendar, mobile agenda, per-user iCal feed). Unauthenticated public viewers (students, parents, teachers) browse without accounts.
 
-**Core Value:** An admin can approve a staff-submitted event and it appears publicly across all views within 5 seconds.
+**Core Value:** An editor can publish an event and it appears publicly across all views within 5 seconds.
 
 ### Constraints
 
@@ -194,7 +196,7 @@ Multi-tenant school event calendar where each school is an isolated tenant (Post
 - **DB safety:** Every query touching school data must use `db.withSchool(schoolId, fn)`. ESLint rule bans raw service client outside `lib/db/`
 - **Security:** Parameterized SQL only; no SQL string interpolation; `supabaseAdmin` only inside `lib/db/`
 - **Auth lockout:** 10 failed attempts / 15 min window
-- **Performance:** Gantt ≤ 2 s first paint (1k events); iCal ≤ 500 ms; public view freshness ≤ 5 s after approval
+- **Performance:** Gantt ≤ 2 s first paint (1k events); iCal ≤ 500 ms; public view freshness ≤ 5 s after publish
 - **Coverage:** ≥ 80% on new code; integration tests use real Postgres (no mocks)
 - **Code style:** Functions < 50 lines; files < 400 lines; no `any`; `snake_case` DB → `camelCase` frontend transformed at API layer
 <!-- GSD:project-end -->
