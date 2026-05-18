@@ -6,7 +6,7 @@ import { editorScopes, schools, staffUsers } from "@/lib/db/schema";
 
 export interface StaffUserRecord {
   id: string;
-  schoolId: string;
+  schoolId: string | null;
   schoolSlug?: string | null;
   role: "editor" | "admin" | "viewer";
   status: "pending" | "active" | "deactivated";
@@ -42,7 +42,6 @@ export async function getStaffUserByAuthId(authId: string): Promise<StaffUserRec
     .limit(1);
 
   if (!row) return null;
-  if (!row.schoolId) return null;
   return row as StaffUserRecord;
 }
 
@@ -91,6 +90,30 @@ export async function createStaffUserFromInvite(params: {
   });
 
   return { id: params.authUserId };
+}
+
+/**
+ * Creates a staff_users row for a user who registered via email/password.
+ * schoolId is null — an admin assigns the school later.
+ * Called from /auth/confirm after Supabase verifies the signup OTP.
+ * Idempotent: onConflictDoNothing prevents duplicate-key errors on retry.
+ */
+export async function createStaffUserFromEmailSignup(params: {
+  authUserId: string;
+  email: string;
+  fullName: string;
+}): Promise<void> {
+  await db
+    .insert(staffUsers)
+    .values({
+      id: params.authUserId,
+      schoolId: null,
+      email: params.email,
+      fullName: params.fullName,
+      role: "editor",
+      status: "active",
+    })
+    .onConflictDoNothing();
 }
 
 /**
