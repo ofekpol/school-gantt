@@ -67,8 +67,8 @@ export interface DashboardEvent {
 }
 
 /**
- * Returns the calling editor's non-deleted draft and pending events,
- * ordered most-recently-updated first (WIZARD-07).
+ * Returns the calling editor's non-deleted draft and approved events,
+ * ordered most-recently-updated first.
  */
 export async function getEditorDashboardEvents(
   schoolId: string,
@@ -89,7 +89,7 @@ export async function getEditorDashboardEvents(
       .where(
         and(
           eq(events.createdBy, staffUserId),
-          inArray(events.status, ["draft", "pending"]),
+          inArray(events.status, ["draft", "approved"]),
           isNull(events.deletedAt),
         ),
       )
