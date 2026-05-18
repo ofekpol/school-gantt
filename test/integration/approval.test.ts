@@ -5,7 +5,7 @@ import * as schema from "@/lib/db/schema";
 import { publishEvent } from "@/lib/events/approval";
 import { getRevisionsForEvent } from "@/lib/events/revisions";
 import { createDraft, updateDraft } from "@/lib/events/crud";
-import { testDb, skipIfNoTestDb, testSchoolA, testSchoolB } from "./setup";
+import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA, testSchoolB } from "./setup";
 
 async function ensureEditor(schoolId: string, email: string, role: "editor" | "admin") {
   const existing = await testDb!
@@ -34,6 +34,7 @@ describe.skipIf(skipIfNoTestDb)("PUBLISH-01: publishEvent transitions draft → 
   let editorId: string;
   let eventTypeId: string;
   beforeAll(async () => {
+    if (shouldSkip()) return;
     const editor = await ensureEditor(testSchoolA, "publish-editor@test", "editor");
     editorId = editor.id;
     eventTypeId = await eventTypeFor(testSchoolA);
@@ -63,6 +64,7 @@ describe.skipIf(skipIfNoTestDb)("PUBLISH-02: publishEvent on already-approved ev
   let editorId: string;
   let eventTypeId: string;
   beforeAll(async () => {
+    if (shouldSkip()) return;
     const editor = await ensureEditor(testSchoolA, "publish-editor@test", "editor");
     editorId = editor.id;
     eventTypeId = await eventTypeFor(testSchoolA);
@@ -87,6 +89,7 @@ describe.skipIf(skipIfNoTestDb)("PUBLISH-03: updateDraft allows editing approved
   let editorId: string;
   let eventTypeId: string;
   beforeAll(async () => {
+    if (shouldSkip()) return;
     const editor = await ensureEditor(testSchoolA, "publish-editor@test", "editor");
     editorId = editor.id;
     eventTypeId = await eventTypeFor(testSchoolA);

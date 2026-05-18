@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import { seedDb } from "@/db/seed";
-import { testDb, skipIfNoTestDb } from "./setup";
+import { testDb, skipIfNoTestDb, shouldSkip } from "./setup";
 
 // Deterministic UUID per email — stable across runs so re-seeding upserts the
 // same staff_users row (the email-conflict path keeps the original id, and
@@ -23,6 +23,7 @@ async function runSeed() {
 
 describe.skipIf(skipIfNoTestDb)("DB-06: seed creates canonical bootstrap", () => {
   beforeAll(async () => {
+    if (shouldSkip()) return;
     await runSeed();
   }, 30_000);
 

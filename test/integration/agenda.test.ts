@@ -6,7 +6,7 @@ import { publishEvent } from "@/lib/events/approval";
 import { createDraft, updateDraft } from "@/lib/events/crud";
 import { getAgendaForSchool, groupByWeek } from "@/lib/views/agenda";
 import { getSchoolBySlug } from "@/lib/db/schools";
-import { testDb, skipIfNoTestDb, testSchoolA, testSchoolB } from "./setup";
+import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA, testSchoolB } from "./setup";
 
 /**
  * Phase 4 — public agenda integration tests.
@@ -94,6 +94,7 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-02: only approved, non-deleted events ap
   let typeId: string;
 
   beforeAll(async () => {
+    if (shouldSkip()) return;
     editorId = (await ensureStaff(testSchoolA, "agenda-editor@test", "editor")).id;
     typeId = (await eventTypeFor(testSchoolA)).id;
   });
@@ -152,6 +153,7 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-03: filter by grade", () => {
   let g11Id: string;
 
   beforeAll(async () => {
+    if (shouldSkip()) return;
     editorId = (await ensureStaff(testSchoolA, "agenda-editor@test", "editor")).id;
     typeId = (await eventTypeFor(testSchoolA)).id;
     g10Id = await makeApprovedEvent({
@@ -204,6 +206,7 @@ describe.skipIf(skipIfNoTestDb)("AGENDA-04: filter by event type and search", ()
   let typeKey: string;
 
   beforeAll(async () => {
+    if (shouldSkip()) return;
     editorId = (await ensureStaff(testSchoolA, "agenda-editor@test", "editor")).id;
     const t = await eventTypeFor(testSchoolA);
     typeId = t.id;

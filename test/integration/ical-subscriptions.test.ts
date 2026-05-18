@@ -11,6 +11,7 @@ import {
 import {
   testDb,
   skipIfNoTestDb,
+  shouldSkip,
   testSchoolA,
   testSchoolB,
 } from "./setup";
@@ -43,6 +44,7 @@ async function ensureStaff(
 describe.skipIf(skipIfNoTestDb)("ICAL-01: create + list subscriptions", () => {
   let editorId: string;
   beforeAll(async () => {
+    if (shouldSkip()) return;
     editorId = await ensureStaff(testSchoolA, "ical-editor-a@test");
   });
 
