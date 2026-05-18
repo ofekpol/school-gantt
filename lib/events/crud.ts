@@ -90,6 +90,13 @@ export async function updateDraft(
         version: events.version,
         createdBy: events.createdBy,
         status: events.status,
+        title: events.title,
+        description: events.description,
+        location: events.location,
+        startAt: events.startAt,
+        endAt: events.endAt,
+        allDay: events.allDay,
+        eventTypeId: events.eventTypeId,
       })
       .from(events)
       .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
