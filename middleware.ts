@@ -53,6 +53,8 @@ export async function middleware(request: NextRequest) {
   const PUBLIC_PATHS = [
     "/auth/login",
     "/auth/callback",
+    "/auth/confirm",
+    "/auth/register",
     "/auth/pending",
     "/auth/deactivated",
     "/invite/",
