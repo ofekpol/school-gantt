@@ -58,11 +58,11 @@ export function rethrowWithDatabaseHint(error: unknown, context: string): never 
 
   let hint: string | null = null;
   if (code === "ENOTFOUND") {
-    hint = `could not resolve ${hostname}. Check DATABASE_URL in .env.local and confirm the Supabase project is active.`;
+    hint = `could not resolve ${hostname}. If this is a Supabase direct database host, it may be IPv6-only; use the Supabase pooler connection string in DATABASE_URL, or run from an IPv6-capable network. Also confirm the project ref is correct and the project is active.`;
   } else if (code === "ECONNREFUSED") {
     hint = `connection refused by ${hostname}. Check that the database is reachable and accepts direct connections.`;
   } else if (code === "ETIMEDOUT" || code === "ENETUNREACH") {
-    hint = `could not reach ${hostname}. Check network access or use the Supabase pooler connection string.`;
+    hint = `could not reach ${hostname}. Check network access or use the Supabase pooler connection string in DATABASE_URL.`;
   } else if (code === "28P01") {
     hint = "database authentication failed. Check the username/password in DATABASE_URL.";
   } else if (code === "3D000") {

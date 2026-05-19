@@ -11,7 +11,7 @@ Copy `.env.example` to `.env.local` and fill these in:
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | client + middleware |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | client auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service-role key (admin operations) | `lib/db/supabase-admin.ts` only |
-| `DATABASE_URL` | Direct Postgres connection (used by Drizzle migrations + the `db` pool) | `lib/db/client.ts` |
+| `DATABASE_URL` | Postgres connection, preferably Supabase pooler for IPv4-only local/runtime networks (used by Drizzle migrations + the `db` pool) | `lib/db/client.ts` |
 | `TEST_DATABASE_URL` | Separate Postgres for integration tests; tests skip if absent | `test/integration/setup.ts` |
 | `RESEND_API_KEY` | Resend API key for approval notifications | `lib/email/approval.ts` |
 | `NEXT_PUBLIC_APP_URL` | Public base URL (e.g. `https://school-gantt.example`) | reset-password email link |
@@ -24,7 +24,9 @@ Never commit `.env.local`. The `.env.example` file is the canonical list of expe
 2. In **Authentication → Email**, disable "Confirm email" for local dev OR set up SMTP for production.
 3. Copy the project URL + anon key into `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 4. Copy the service-role key into `SUPABASE_SERVICE_ROLE_KEY` (server-only — never expose).
-5. Copy the direct Postgres URL (Project Settings → Database → Connection String → URI) into `DATABASE_URL`.
+5. Copy a Postgres URL into `DATABASE_URL`:
+   - Prefer **Project Settings → Database → Connection pooling → URI** for local development and IPv4-only hosts. Supabase direct DB hosts are often IPv6-only.
+   - Direct URLs from **Connection String → URI** are fine only when the runtime has IPv6 connectivity.
 
 ## 3. Migrations
 
