@@ -43,6 +43,7 @@ export function Step2Grades({ data, saving, allowedGrades, onNext, onBack }: Ste
             <button
               key={g}
               type="button"
+              data-grade={g}
               onClick={() => toggle(g)}
               aria-pressed={active}
               className={`min-h-11 min-w-11 rounded-full border px-4 py-2 text-sm font-medium transition-colors
