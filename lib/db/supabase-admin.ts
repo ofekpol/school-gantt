@@ -1,8 +1,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 // Load .env.local before checking env vars (required for tsx/vitest scripts)
 import { config } from "dotenv";
-config({ path: ".env.local", override: false });
-config({ override: false });
+config({ path: ".env.local", override: false, quiet: true });
+config({ override: false, quiet: true });
 
 /**
  * Service-role Supabase client. Bypasses RLS.
