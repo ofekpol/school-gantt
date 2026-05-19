@@ -54,7 +54,7 @@ export interface SeedOptions {
   database?: Database;
 }
 
-async function ensureAuthUser(email: string): Promise<string> {
+async function ensureAuthUser(email: string, password?: string): Promise<string> {
   // listUsers paginated; sufficient for small seed.
   const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
   const found = existing.users.find((u) => u.email === email);
@@ -62,7 +62,7 @@ async function ensureAuthUser(email: string): Promise<string> {
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
     email_confirm: true,
-    password: "ChangeMe123!",
+    ...(password ? { password } : {}),
   });
   if (error ?? !data.user) throw new Error(`createUser ${email}: ${error?.message ?? "unknown"}`);
   return data.user.id;
@@ -221,7 +221,10 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
 }
 
 async function main() {
-  const { schoolId } = await seedDb({ ensureStaffUserId: ensureAuthUser });
+  const { schoolId } = await seedDb({
+    ensureStaffUserId: (email) =>
+      ensureAuthUser(email, email === VIEWER.email ? "ChangeMe123!" : undefined),
+  });
   console.log(`Seed complete: schoolId=${schoolId} admin=${ADMIN_EMAIL}`);
   process.exit(0);
 }
