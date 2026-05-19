@@ -224,8 +224,8 @@ describe.skipIf(skipIfNoTestDb)(
     });
 
     it("updateDraft with grade 10 succeeds and stores the grade", async () => {
-      const startAt = new Date("2026-06-15T09:00:00Z");
-      const endAt = new Date("2026-06-15T16:00:00Z");
+      const startAt = "2026-06-15T09:00:00.000Z";
+      const endAt = "2026-06-15T16:00:00.000Z";
 
       const result = await updateDraft(
         testSchoolA,
@@ -272,8 +272,8 @@ describe.skipIf(skipIfNoTestDb)(
       eventId = draft.id;
       eventVersion = draft.version;
 
-      const startAt = new Date("2026-06-20T09:00:00Z");
-      const endAt = new Date("2026-06-20T16:00:00Z");
+      const startAt = "2026-06-20T09:00:00.000Z";
+      const endAt = "2026-06-20T16:00:00.000Z";
       const updated = await updateDraft(
         testSchoolA,
         eventId,
