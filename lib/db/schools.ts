@@ -1,6 +1,6 @@
 import "server-only";
 import { asc, eq } from "drizzle-orm";
-import { db } from "@/lib/db/client";
+import { db, rethrowWithDatabaseHint } from "@/lib/db/client";
 import { schools } from "@/lib/db/schema";
 
 export interface PublicSchoolRecord {
@@ -22,17 +22,22 @@ export interface PublicSchoolRecord {
 export async function getSchoolBySlug(
   slug: string,
 ): Promise<PublicSchoolRecord | null> {
-  const [row] = await db
-    .select({
-      id: schools.id,
-      slug: schools.slug,
-      name: schools.name,
-      locale: schools.locale,
-      timezone: schools.timezone,
-    })
-    .from(schools)
-    .where(eq(schools.slug, slug))
-    .limit(1);
+  let row: PublicSchoolRecord | undefined;
+  try {
+    [row] = await db
+      .select({
+        id: schools.id,
+        slug: schools.slug,
+        name: schools.name,
+        locale: schools.locale,
+        timezone: schools.timezone,
+      })
+      .from(schools)
+      .where(eq(schools.slug, slug))
+      .limit(1);
+  } catch (error) {
+    rethrowWithDatabaseHint(error, "Failed to load school");
+  }
 
   return row ?? null;
 }
@@ -42,14 +47,18 @@ export async function getSchoolBySlug(
  * so unauthenticated visitors can pick a school.
  */
 export async function listSchools(): Promise<PublicSchoolRecord[]> {
-  return db
-    .select({
-      id: schools.id,
-      slug: schools.slug,
-      name: schools.name,
-      locale: schools.locale,
-      timezone: schools.timezone,
-    })
-    .from(schools)
-    .orderBy(asc(schools.name));
+  try {
+    return await db
+      .select({
+        id: schools.id,
+        slug: schools.slug,
+        name: schools.name,
+        locale: schools.locale,
+        timezone: schools.timezone,
+      })
+      .from(schools)
+      .orderBy(asc(schools.name));
+  } catch (error) {
+    rethrowWithDatabaseHint(error, "Failed to list schools");
+  }
 }

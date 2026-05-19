@@ -21,6 +21,10 @@ const COUNSELOR = {
   email: "counselor@demo-school.test",
   fullName: "School Counselor",
 };
+const VIEWER = {
+  email: "viewer@demo-school.test",
+  fullName: "Demo Viewer",
+};
 
 // 11 default event types (color-blind safe glyphs, distinct colors)
 const EVENT_TYPES = [
@@ -50,7 +54,7 @@ export interface SeedOptions {
   database?: Database;
 }
 
-async function ensureAuthUser(email: string): Promise<string> {
+async function ensureAuthUser(email: string, password?: string): Promise<string> {
   // listUsers paginated; sufficient for small seed.
   const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
   const found = existing.users.find((u) => u.email === email);
@@ -58,6 +62,7 @@ async function ensureAuthUser(email: string): Promise<string> {
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
     email_confirm: true,
+    ...(password ? { password } : {}),
   });
   if (error ?? !data.user) throw new Error(`createUser ${email}: ${error?.message ?? "unknown"}`);
   return data.user.id;
@@ -194,13 +199,32 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
         scopeValue: COUNSELOR.eventTypeKey,
       })
       .onConflictDoNothing();
+
+    // 7. Viewer — read-only staff account; no editor_scopes
+    const viewerAuthId = await opts.ensureStaffUserId(VIEWER.email);
+    await tx
+      .insert(schema.staffUsers)
+      .values({
+        id: viewerAuthId,
+        schoolId: school.id,
+        email: VIEWER.email,
+        fullName: VIEWER.fullName,
+        role: "viewer",
+      })
+      .onConflictDoUpdate({
+        target: schema.staffUsers.email,
+        set: { schoolId: school.id, fullName: sql`excluded.full_name` },
+      });
   });
 
   return { schoolId: school.id };
 }
 
 async function main() {
-  const { schoolId } = await seedDb({ ensureStaffUserId: ensureAuthUser });
+  const { schoolId } = await seedDb({
+    ensureStaffUserId: (email) =>
+      ensureAuthUser(email, email === VIEWER.email ? "ChangeMe123!" : undefined),
+  });
   console.log(`Seed complete: schoolId=${schoolId} admin=${ADMIN_EMAIL}`);
   process.exit(0);
 }

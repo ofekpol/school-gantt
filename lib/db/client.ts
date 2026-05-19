@@ -1,8 +1,8 @@
 // Load .env.local first (Next.js convention), then fall back to .env
 // Required because tsx/vitest scripts don't use Next.js env loading
 import { config } from "dotenv";
-config({ path: ".env.local", override: false });
-config({ override: false });
+config({ path: ".env.local", override: false, quiet: true });
+config({ override: false, quiet: true });
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import { Pool } from "pg";
@@ -33,6 +33,45 @@ export const db: NodePgDatabase<typeof schema> = new Proxy({} as NodePgDatabase<
 });
 
 export { supabaseAdmin } from "./supabase-admin";
+
+type ErrorLike = {
+  cause?: unknown;
+  code?: unknown;
+  hostname?: unknown;
+};
+
+function asErrorLike(error: unknown): ErrorLike | null {
+  return error && typeof error === "object" ? (error as ErrorLike) : null;
+}
+
+/**
+ * Drizzle wraps pg failures as "Failed query", which hides the useful network
+ * or credential detail in Next's overlay. Keep the raw error as `cause`, but
+ * promote actionable setup hints to the top-level message.
+ */
+export function rethrowWithDatabaseHint(error: unknown, context: string): never {
+  const wrapped = asErrorLike(error);
+  const cause = asErrorLike(wrapped?.cause) ?? wrapped;
+  const code = typeof cause?.code === "string" ? cause.code : null;
+  const hostname =
+    typeof cause?.hostname === "string" ? cause.hostname : "the database host";
+
+  let hint: string | null = null;
+  if (code === "ENOTFOUND") {
+    hint = `could not resolve ${hostname}. If this is a Supabase direct database host, it may be IPv6-only; use the Supabase pooler connection string in DATABASE_URL, or run from an IPv6-capable network. Also confirm the project ref is correct and the project is active.`;
+  } else if (code === "ECONNREFUSED") {
+    hint = `connection refused by ${hostname}. Check that the database is reachable and accepts direct connections.`;
+  } else if (code === "ETIMEDOUT" || code === "ENETUNREACH") {
+    hint = `could not reach ${hostname}. Check network access or use the Supabase pooler connection string in DATABASE_URL.`;
+  } else if (code === "28P01") {
+    hint = "database authentication failed. Check the username/password in DATABASE_URL.";
+  } else if (code === "3D000") {
+    hint = "database does not exist. Check the database name in DATABASE_URL.";
+  }
+
+  if (!hint) throw error;
+  throw new Error(`${context}: ${hint}`, { cause: error });
+}
 
 /**
  * Run `fn` with `app.school_id` set to `schoolId` via SET LOCAL semantics.
