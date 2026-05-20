@@ -19,7 +19,16 @@
     "unnamed": "(ללא שם)",
     "more": "+{count} נוספים",
     "yes": "כן",
-    "no": "לא"
+    "no": "לא",
+    "confirm": "אישור",
+    "cancel": "ביטול"
+  },
+  "nav": {
+    "dashboard": "לוח בקרה",
+    "staff": "ניהול צוות",
+    "eventTypes": "סוגי אירועים",
+    "year": "שנת לימודים",
+    "profile": "פרופיל"
   },
   "grades": {
     "label_7": "ז",
@@ -98,6 +107,7 @@
       "expired": "פגה",
       "copyInvite": "העתק קישור",
       "inviteCopied": "ההזמנה הועתקה",
+      "emailSent": "האימייל נשלח",
       "duplicateEmail": "כתובת אימייל קיימת",
       "createError": "שגיאת יצירה"
     },
@@ -151,6 +161,11 @@
     "empty": "אין אירועים עדיין. לחץ על \"אירוע חדש\" כדי להתחיל.",
     "resume": "המשך",
     "edit": "ערוך",
+    "viewWeekly": "תצוגה שבועית",
+    "viewMonthly": "תצוגה חודשית",
+    "confirmNewEventTitle": "אירוע חדש",
+    "confirmNewEvent": "ליצור אירוע חדש בתאריך {date}?",
+    "myDrafts": "האירועים שלי",
     "status": {
       "draft": "טיוטה",
       "approved": "פורסם"

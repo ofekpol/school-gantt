@@ -12,7 +12,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const ok = await revokeSubscription(user.schoolId, user.id, id);
+  const ok = await revokeSubscription(user.schoolId!, user.id, id);
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ revoked: true }, { status: 200 });
 }

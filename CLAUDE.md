@@ -11,7 +11,7 @@ Staff editors submit events through a 7-step wizard → publish directly → app
 - Drizzle ORM + `pg` (service-role client only inside `lib/db/`)
 - `next-intl` (Hebrew + English, `he` default)
 - `ical-generator` (iCal feed)
-- Resend (email — password reset, rejection notifications)
+- Resend (email — invite links, password reset)
 - Zod (all API boundary validation)
 - Vitest (unit + integration) + Playwright (e2e)
 
@@ -31,29 +31,33 @@ pnpm playwright test  # Playwright e2e suite
 
 ```
 app/
-  (public)/[school]/           — Gantt (index), /calendar, /agenda
-  (staff)/                     — /dashboard, /events/new, /events/[id]/edit, /profile
-  (admin)/admin/               — /staff, /event-types, /year
-  api/v1/                      — REST route handlers
-  ical/[token]/route.ts        — text/calendar feed (unauthenticated, token-gated)
+  (viewer)/[school]/         — Gantt (index), /calendar, /agenda (unauthenticated public)
+  (staff)/                   — /dashboard, /events/new, /events/[id]/edit, /profile
+  (admin)/admin/             — /staff, /event-types, /year
+  api/v1/                    — REST route handlers
+  ical/[token]/route.ts      — text/calendar feed (unauthenticated, token-gated)
+  auth/                      — /login, /register, /confirm, /callback, /pending, /deactivated
+  invite/[token]/            — Invite redemption page
 lib/
-  db/                          — Drizzle schema, RLS client wrapper
-  auth/                        — Session helpers, scope checks
-  events/                      — Domain logic: create, publish, edit, revisions
-  ical/                        — VEVENT serializer + filter resolver
-  views/                       — Event → Gantt / calendar / agenda projections
-  datetime.ts                  — Timezone helpers (Asia/Jerusalem)
-  validations/                 — Zod schemas
-components/                    — Shared UI; WizardStep[1..7], GanttCanvas, FilterBar, etc.
+  db/                        — Drizzle schema, RLS client wrapper, invites, staff, schools
+  auth/                      — Session helpers (session.ts), scope checks (scopes.ts), admin (admin.ts)
+  events/                    — Domain logic: create, publish, edit, revisions
+  ical/                      — VEVENT serializer + filter resolver
+  views/                     — Event → Gantt / calendar / agenda projections
+  datetime.ts                — Timezone helpers (Asia/Jerusalem)
+  validations/               — Zod schemas
+  email/                     — Resend email helpers
+components/                  — Shared UI; WizardStep[1..7], GanttCanvas, FilterBar, etc.
 db/
-  migrations/                  — One .sql file per schema change
-  seed.ts                      — One school + 1 admin + 6 grade editors + 11 event types
+  migrations/                — One .sql file per schema change
+  seed.ts                    — One school + 1 admin + 6 grade editors + 11 event types
 messages/
-  he.json                      — Hebrew strings (primary)
-  en.json                      — English strings
+  he.json                    — Hebrew strings (primary)
+  en.json                    — English strings
 test/
-  integration/                 — RLS positive + negative cases (real Postgres)
-  e2e/                         — Playwright specs
+  integration/               — RLS positive + negative cases (real Postgres)
+  e2e/                       — Playwright specs
+scripts/                     — Hand-written dev/ops scripts (tracked in git)
 ```
 
 ## Multi-Tenancy (Critical)
@@ -76,12 +80,12 @@ An ESLint rule bans importing it outside `lib/db/`.
 
 All status transitions go through `lib/events/approval.ts`. Never set `events.status` directly.
 
-```
+```text
 draft → approved  (editor publishes via Step 7 — "פרסם אירוע")
 approved → approved (editor edits in-place via PATCH or wizard resume)
 ```
 
-The `pending` and `rejected` enum values exist in the DB schema but are never produced.
+The `pending` and `rejected` enum values exist in the DB schema but are **never produced**.
 Every transition writes a row to `event_revisions`:
 
 - `decision='published'` — new draft → approved
@@ -91,11 +95,28 @@ Deletes set `deleted_at` (soft delete).
 
 ## Auth
 
-Supabase Auth (email + password). No custom session cookies.
-- `lib/auth/session.ts` — `getSession()` server helper
+Email + password via Supabase Auth. No OAuth. No custom session cookies.
+
+**Roles:** `editor` | `admin` | `viewer` (stored in `staff_users.role`)
+
+Invite flow:
+
+1. Admin creates invite via `lib/db/invites.ts` (token, role, grade/event-type scopes, 72h TTL)
+2. Invitee opens `/invite/[token]` → registers at `/auth/register` → confirms via `/auth/confirm`
+3. On confirm: `staff_users` row created, scopes applied, invite marked used
+
+Key files:
+
+- `lib/auth/session.ts` — `getSession()` (validates JWT via `getUser()`, never `getSession()`) and `getStaffUser()`
 - `lib/auth/scopes.ts` — `assertEditorScope(user, grade?, eventType?)` — throws 403 on violation
-- Admins: `role='admin'` in `staff_users`. Public routes: unauthenticated.
-- Lockout: 10 failed attempts / 15 min window.
+- `lib/db/invites.ts` — invite CRUD; `getInviteByToken` uses service-role (school unknown pre-validation)
+
+Rules:
+
+- Admins bypass all scope checks
+- Viewers can read but cannot edit (403 from `assertEditorScope`)
+- Lockout: 10 failed attempts / 15 min window (tracked in `staff_users.locked_until`)
+- Public routes (viewer pages, iCal): unauthenticated
 
 ## RTL / i18n
 
@@ -103,38 +124,39 @@ Supabase Auth (email + password). No custom session cookies.
 - CSS: use logical properties (`start`/`end`) — never hardcode `left`/`right` in layout/position styles
 - All user-visible strings through `next-intl` `t()` — no string literals in JSX
 - Dates formatted via `lib/datetime.ts` using `Asia/Jerusalem` timezone — never raw `new Date()` in display code
-- shadcn Popover, Calendar, Dropdown: RTL patches required (budget in Phase 0)
 
 ## Key Files
 
 | File | Purpose |
-|------|---------|
+| ---- | ------- |
 | `lib/db/schema.ts` | Drizzle schema — **do not modify without a new migration** |
 | `lib/db/client.ts` | RLS wrapper + service-role client — only import inside `lib/db/` |
 | `lib/events/approval.ts` | State machine — all status transitions here |
 | `lib/auth/scopes.ts` | Scope enforcement — regression = privilege escalation |
+| `lib/db/invites.ts` | Invite lifecycle — create, validate, mark used |
 | `db/migrations/` | Never edit existing files; add a new file per change |
 | `db/seed.ts` | Canonical school bootstrap |
 | `messages/he.json` | Primary locale strings |
 
 ## Data Model (short form)
 
-```
+```text
 schools           id, slug, name, locale, timezone, active_academic_year_id
 academic_years    id, school_id, label, start_date, end_date
-staff_users       id, school_id, email, full_name, role ∈ {editor,admin}, locked_until
+staff_users       id, school_id, auth_id, email, full_name, role ∈ {editor,admin,viewer}, status ∈ {pending,active,deactivated}, locked_until
+staff_invites     id, school_id, token, role, grade_scopes[], event_type_scopes[], expires_at, used_at, used_by, created_by
 editor_scopes     id, staff_user_id, scope_kind ∈ {grade,event_type}, scope_value
 event_types       id, school_id, key, label_he, label_en, color_hex, glyph, sort_order
 events            id, school_id, status ∈ {draft,approved}, version, deleted_at, ...
 event_grades      event_id, grade  (composite PK)
-event_revisions   id, event_id, snapshot JSONB, submitted_by, decided_by, decision, reason
+event_revisions   id, event_id, snapshot JSONB, submitted_by, decided_by, decision ∈ {published,edited}, reason
 ical_subscriptions id, staff_user_id, token, filter_grades, filter_event_types, revoked_at
 audit_log         id, school_id, actor_staff_id, action, target_table, target_id, payload, at
 ```
 
 ## Environment Variables
 
-```
+```text
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
@@ -155,6 +177,17 @@ Never commit these.
 - Parameterized queries only — no SQL string interpolation
 - Functions < 50 lines, files < 400 lines
 
+## Conventions
+
+- API routes validate with Zod on both request and response shapes
+- `withSchool(schoolId, fn)` wraps every school-scoped DB query — no exceptions
+- Server Components fetch data directly; Client Components receive data as props or call `/api/v1/` routes
+- New migrations go in `db/migrations/` as plain `.sql` files — never edit existing ones
+- i18n keys in `messages/he.json` first, `en.json` mirror — no hardcoded strings in JSX
+- Tests that touch the DB use real Postgres (no mocks); skip gracefully when DB unreachable
+- Integration tests: cover RLS positive access + cross-school denial for every new table
+- One-time dev/ops scripts go in `scripts/` (tracked in git)
+
 ## Git Workflow
 
 - Never commit directly to `main`
@@ -163,6 +196,14 @@ Never commit these.
 - Verify `pnpm build` passes before merging
 - Keep commits atomic per logical change
 - Never spawn agents with `isolation: "worktree"`.
+
+## How Claude Should Work
+
+- **Small task (bug fix, single file, typo):** Just do it.
+- **Medium task (new component, new API route):** Make a reasonable call; flag assumptions in response.
+- **Large task (new feature, new flow, auth change):** Ask 1-2 scoping questions first.
+- **Testing:** Write tests for non-trivial domain logic and API routes; skip tests for simple UI wiring.
+- **End of task:** One line — what changed, what's next. No summary of the diff.
 
 ## Testing Targets
 
@@ -183,11 +224,11 @@ Never commit these.
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
-**School Gantt Chart System**
+School Gantt Chart System
 
 Multi-tenant school event calendar where each school is an isolated tenant (Postgres RLS). Staff editors submit events through a 7-step wizard → publish directly (no admin approval) → events appear on 4 synchronized public views (Gantt chart, printable yearly calendar, mobile agenda, per-user iCal feed). Unauthenticated public viewers (students, parents, teachers) browse without accounts.
 
-**Core Value:** An editor can publish an event and it appears publicly across all views within 5 seconds.
+Core Value: An editor can publish an event and it appears publicly across all views within 5 seconds.
 
 ### Constraints
 
@@ -200,41 +241,3 @@ Multi-tenant school event calendar where each school is an isolated tenant (Post
 - **Coverage:** ≥ 80% on new code; integration tests use real Postgres (no mocks)
 - **Code style:** Functions < 50 lines; files < 400 lines; no `any`; `snake_case` DB → `camelCase` frontend transformed at API layer
 <!-- GSD:project-end -->
-
-<!-- GSD:stack-start source:STACK.md -->
-## Technology Stack
-
-Technology stack not yet documented. Will populate after codebase mapping or first phase.
-<!-- GSD:stack-end -->
-
-<!-- GSD:conventions-start source:CONVENTIONS.md -->
-## Conventions
-
-Conventions not yet established. Will populate as patterns emerge during development.
-<!-- GSD:conventions-end -->
-
-<!-- GSD:architecture-start source:ARCHITECTURE.md -->
-## Architecture
-
-Architecture not yet mapped. Follow existing patterns found in the codebase.
-<!-- GSD:architecture-end -->
-
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
-
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd:debug` for investigation and bug fixing
-- `/gsd:execute-phase` for planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
-
-<!-- GSD:profile-start -->
-## Developer Profile
-
-> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
-> This section is managed by `generate-claude-profile` -- do not edit manually.
-<!-- GSD:profile-end -->

@@ -8,7 +8,7 @@ import { getEditorAllowedGrades } from "@/lib/events/queries";
 import { createDraft, updateDraft } from "@/lib/events/crud";
 import { publishEvent } from "@/lib/events/approval";
 import { getAgendaForSchool } from "@/lib/views/agenda";
-import { testDb, skipIfNoTestDb, testSchoolA } from "./setup";
+import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA } from "./setup";
 
 /**
  * Invite → grade-scope → publish → viewer visibility tests.
@@ -51,6 +51,7 @@ describe.skipIf(skipIfNoTestDb)("INV-01: editor invite stores correct role + gra
   let adminId: string;
 
   beforeAll(async () => {
+    if (shouldSkip()) return;
     const admin = await ensureAdminForInviteTests(testSchoolA, "invite-admin@test");
     adminId = admin.id;
   });
@@ -84,6 +85,7 @@ describe.skipIf(skipIfNoTestDb)("INV-02: viewer invite stores correct role", () 
   let adminId: string;
 
   beforeAll(async () => {
+    if (shouldSkip()) return;
     const admin = await ensureAdminForInviteTests(testSchoolA, "invite-admin@test");
     adminId = admin.id;
   });
@@ -198,6 +200,7 @@ describe.skipIf(skipIfNoTestDb)(
     let eventTypeId: string;
 
     beforeAll(async () => {
+      if (shouldSkip()) return;
       await createStaffUserFromInvite({
         authUserId: editorId,
         schoolId: testSchoolA,
@@ -258,6 +261,7 @@ describe.skipIf(skipIfNoTestDb)(
     let eventTypeId: string;
 
     beforeAll(async () => {
+      if (shouldSkip()) return;
       await createStaffUserFromInvite({
         authUserId: editorId,
         schoolId: testSchoolA,

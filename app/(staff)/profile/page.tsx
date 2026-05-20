@@ -12,7 +12,7 @@ import { ProfileSubscriptions } from "@/components/staff/ProfileSubscriptions";
  */
 export default async function ProfilePage() {
   const user = await getStaffUser();
-  if (!user) redirect("/");
+  if (!user || !user.schoolId) redirect("/");
 
   const [subs, eventTypes] = await Promise.all([
     listSubscriptionsForStaff(user.schoolId, user.id),

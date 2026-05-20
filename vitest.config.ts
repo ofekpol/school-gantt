@@ -35,6 +35,10 @@ export default defineConfig({
           include: ["test/integration/**/*.test.ts"],
           exclude: ["node_modules/**", ".next/**"],
           testTimeout: 15000,
+          // Integration suites hit a remote Supabase pooler; setup hooks issue
+          // many sequential round trips that exceed the 10s default under
+          // network latency. Raise hook budget accordingly.
+          hookTimeout: 30000,
           // Integration tests share one TEST_DATABASE_URL and the canonical
           // school IDs (testSchoolA/B). Running files in parallel causes one
           // file's writes to race with another's reads. Serialize file runs.

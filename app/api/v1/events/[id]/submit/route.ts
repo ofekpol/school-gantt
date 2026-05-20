@@ -17,7 +17,7 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     // All active staff publish directly — no admin-queue step.
-    await publishEvent(user.schoolId, id, user.id);
+    await publishEvent(user.schoolId!, id, user.id);
     return NextResponse.json({ ok: true, status: "approved" }, { status: 200 });
   } catch (e) {
     if (e instanceof Response) {

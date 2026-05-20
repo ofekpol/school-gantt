@@ -43,6 +43,33 @@ export async function getSchoolBySlug(
 }
 
 /**
+ * Resolves a school by id. Used by authenticated pages where the caller
+ * already has `user.schoolId` and needs the human-readable name.
+ */
+export async function getSchoolById(
+  id: string,
+): Promise<PublicSchoolRecord | null> {
+  let row: PublicSchoolRecord | undefined;
+  try {
+    [row] = await db
+      .select({
+        id: schools.id,
+        slug: schools.slug,
+        name: schools.name,
+        locale: schools.locale,
+        timezone: schools.timezone,
+      })
+      .from(schools)
+      .where(eq(schools.id, id))
+      .limit(1);
+  } catch (error) {
+    rethrowWithDatabaseHint(error, "Failed to load school");
+  }
+
+  return row ?? null;
+}
+
+/**
  * Lists all schools, alphabetical by name. Used by the root landing page (`/`)
  * so unauthenticated visitors can pick a school.
  */

@@ -31,9 +31,10 @@ interface SerializedEvent {
 interface Props {
   model: WeeklyModel;
   events: SerializedEvent[];
+  onDayClick?: (isoDate: string) => void;
 }
 
-export function GanttWeekly({ model, events }: Props) {
+export function GanttWeekly({ model, events, onDayClick }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -75,7 +76,7 @@ export function GanttWeekly({ model, events }: Props) {
         position: "relative",
       }}>
         {/* Day axis */}
-        <DayAxis days={model.days} />
+        <DayAxis days={model.days} onDayClick={onDayClick} />
 
         {/* Grades column header */}
         <div style={{
@@ -98,6 +99,7 @@ export function GanttWeekly({ model, events }: Props) {
               row={row}
               days={model.days}
               onSelect={setSelectedId}
+              onDayClick={onDayClick}
             />
           ))}
         </div>
@@ -135,7 +137,14 @@ export function GanttWeekly({ model, events }: Props) {
 }
 
 /* ---- Day axis ---- */
-function DayAxis({ days }: { days: WeeklyModel["days"] }) {
+function isoDate(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function DayAxis({ days, onDayClick }: { days: WeeklyModel["days"]; onDayClick?: (isoDate: string) => void }) {
   return (
     <div style={{
       display: "grid",
@@ -144,15 +153,24 @@ function DayAxis({ days }: { days: WeeklyModel["days"] }) {
       background: "var(--sg-surface-2)",
     }}>
       {days.map((d) => (
-        <div key={d.dayIndex} style={{
+        <button
+          key={d.dayIndex}
+          type="button"
+          onClick={() => onDayClick?.(isoDate(d.date))}
+          disabled={!onDayClick}
+          style={{
           padding: "12px 16px 12px",
           borderInlineStart: "1px solid var(--sg-hairline-2)",
+          borderTop: "none", borderBottom: "none", borderInlineEnd: "none",
           background: d.isToday
             ? "var(--sg-accent-soft)"
             : d.isWeekend
               ? "color-mix(in oklch, var(--sg-bg-deep) 60%, white)"
               : "transparent",
           display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 2,
+          textAlign: "start",
+          cursor: onDayClick ? "pointer" : "default",
+          font: "inherit",
         }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span style={{
@@ -180,7 +198,7 @@ function DayAxis({ days }: { days: WeeklyModel["days"] }) {
               </span>
             )}
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -216,31 +234,42 @@ interface GradeRowProps {
   row: WeeklyModel["rows"][number];
   days: WeeklyModel["days"];
   onSelect: (id: string) => void;
+  onDayClick?: (isoDate: string) => void;
 }
 
-function GradeRow({ row, days, onSelect }: GradeRowProps) {
+function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
   return (
     <div style={{
       height: ROW_H, position: "relative",
       borderBottom: "1px solid var(--sg-hairline-2)",
     }}>
-      {/* Day column dividers */}
+      {/* Day column dividers — also catches clicks on empty day area */}
       <div style={{
         position: "absolute", inset: 0,
         display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
       }}>
         {days.map((d) => (
-          <div key={d.dayIndex} style={{
-            borderInlineStart: "1px solid var(--sg-hairline-2)",
-            background: d.isWeekend
-              ? "repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in oklch, var(--sg-bg-deep) 80%, transparent) 8px 9px)"
-              : "transparent",
-          }} />
+          <button
+            key={d.dayIndex}
+            type="button"
+            onClick={() => onDayClick?.(isoDate(d.date))}
+            disabled={!onDayClick}
+            aria-label={onDayClick ? `אירוע חדש ב-${isoDate(d.date)}` : undefined}
+            style={{
+              borderInlineStart: "1px solid var(--sg-hairline-2)",
+              borderTop: "none", borderBottom: "none", borderInlineEnd: "none",
+              background: d.isWeekend
+                ? "repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in oklch, var(--sg-bg-deep) 80%, transparent) 8px 9px)"
+                : "transparent",
+              cursor: onDayClick ? "pointer" : "default",
+              padding: 0,
+            }}
+          />
         ))}
       </div>
 
       {/* Event bars */}
-      <div style={{ position: "absolute", inset: 0 }}>
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         {row.bars.map((bar) => (
           <EventBarChip
             key={bar.id}
@@ -292,6 +321,7 @@ function EventBarChip({ bar, onSelect }: { bar: WeeklyEventBar; onSelect: (id: s
         cursor: "pointer",
         textAlign: "start",
         zIndex: 2,
+        pointerEvents: "auto",
       }}
     >
       <span style={{ width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

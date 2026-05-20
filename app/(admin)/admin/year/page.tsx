@@ -12,7 +12,7 @@ import { YearForm } from "@/components/admin/YearForm";
  */
 export default async function AdminYearPage() {
   const user = await getStaffUser();
-  if (!user) redirect("/");
+  if (!user || !user.schoolId) redirect("/");
 
   const [years, active] = await Promise.all([
     listAcademicYears(user.schoolId),

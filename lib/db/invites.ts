@@ -24,7 +24,7 @@ export async function createInvite(params: {
   eventTypeScopes: string[];
   createdBy: string;
   expiresInHours?: number;
-}): Promise<{ token: string }> {
+}): Promise<{ token: string; expiresAt: Date }> {
   const expiresAt = new Date(
     Date.now() + (params.expiresInHours ?? 72) * 60 * 60 * 1000,
   );
@@ -39,9 +39,9 @@ export async function createInvite(params: {
         createdBy: params.createdBy,
         expiresAt,
       })
-      .returning({ token: staffInvites.token }),
+      .returning({ token: staffInvites.token, expiresAt: staffInvites.expiresAt }),
   );
-  return { token: row.token };
+  return { token: row.token, expiresAt: row.expiresAt };
 }
 
 /**

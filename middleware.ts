@@ -8,6 +8,9 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
  * no path-prefix routing, so all routes stay clean regardless of locale.
  */
 export async function middleware(request: NextRequest) {
+  // Expose pathname to server components so layouts can highlight the
+  // active nav link without becoming client components.
+  request.headers.set("x-pathname", request.nextUrl.pathname);
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -57,8 +60,11 @@ export async function middleware(request: NextRequest) {
     "/auth/register",
     "/auth/pending",
     "/auth/deactivated",
+    "/auth/change-password",
     "/invite/",
     "/ical/",
+    "/api/v1/auth/signin",
+    "/api/v1/auth/register",
   ];
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
