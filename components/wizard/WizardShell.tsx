@@ -24,6 +24,7 @@ export interface WizardShellProps {
   allowedGrades: number[];
   resumeDraft: Record<string, unknown> | null;
   resumeId: string | null;
+  initialDate?: string | null;
 }
 
 export interface WizardData {
@@ -58,12 +59,13 @@ export function WizardShell({
   allowedGrades,
   resumeDraft,
   resumeId,
+  initialDate,
 }: WizardShellProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [eventId, setEventId] = useState<string | null>(resumeId);
   const [data, setData] = useState<WizardData>(() => {
-    if (!resumeDraft) return {};
+    if (!resumeDraft) return initialDate ? { date: initialDate } : {};
     return {
       title: typeof resumeDraft.title === "string" ? resumeDraft.title : undefined,
       startAt:

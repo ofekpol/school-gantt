@@ -7,6 +7,7 @@ interface Props {
   months: CalendarMonth[];
   yearLabel: string;
   schoolName: string;
+  onDayClick?: (isoDate: string) => void;
 }
 
 /**
@@ -16,7 +17,7 @@ interface Props {
  * event-type glyph + dashed border so chips remain distinguishable when
  * printed in black-and-white.
  */
-export function YearCalendarGrid({ months, yearLabel, schoolName }: Props) {
+export function YearCalendarGrid({ months, yearLabel, schoolName, onDayClick }: Props) {
   const tm = useTranslations("months");
   const tw = useTranslations("weekdays");
   const tc = useTranslations("common");
@@ -53,9 +54,20 @@ export function YearCalendarGrid({ months, yearLabel, schoolName }: Props) {
                 >
                   {day && (
                     <>
-                      <div className="text-[11px] font-medium text-neutral-700 mb-0.5">
-                        {day.dayOfMonth}
-                      </div>
+                      {onDayClick ? (
+                        <button
+                          type="button"
+                          onClick={() => onDayClick(day.date)}
+                          aria-label={`אירוע חדש ב-${day.date}`}
+                          className="text-[11px] font-medium text-neutral-700 mb-0.5 hover:text-blue-600 cursor-pointer w-full text-start"
+                        >
+                          {day.dayOfMonth}
+                        </button>
+                      ) : (
+                        <div className="text-[11px] font-medium text-neutral-700 mb-0.5">
+                          {day.dayOfMonth}
+                        </div>
+                      )}
                       <ul className="space-y-0.5">
                         {day.events.slice(0, 4).map((chip) => (
                           <li

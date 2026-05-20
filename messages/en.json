@@ -19,7 +19,16 @@
     "unnamed": "(untitled)",
     "more": "+{count} more",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "staff": "Staff",
+    "eventTypes": "Event Types",
+    "year": "Academic Year",
+    "profile": "Profile"
   },
   "grades": {
     "label_7": "ז",
@@ -98,6 +107,7 @@
       "expired": "Expired",
       "copyInvite": "Copy URL",
       "inviteCopied": "Invite copied",
+      "emailSent": "Email sent",
       "duplicateEmail": "Email address already exists",
       "createError": "Creation error"
     },
@@ -151,6 +161,11 @@
     "empty": "No events yet. Click \"New event\" to start.",
     "resume": "Resume",
     "edit": "Edit",
+    "viewWeekly": "Weekly",
+    "viewMonthly": "Monthly",
+    "confirmNewEventTitle": "New event",
+    "confirmNewEvent": "Create a new event on {date}?",
+    "myDrafts": "My events",
     "status": {
       "draft": "Draft",
       "approved": "Published"

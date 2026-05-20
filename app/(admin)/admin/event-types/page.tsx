@@ -11,7 +11,7 @@ import { EventTypeTable } from "@/components/admin/EventTypeTable";
  */
 export default async function AdminEventTypesPage() {
   const user = await getStaffUser();
-  if (!user) redirect("/");
+  if (!user || !user.schoolId) redirect("/");
 
   const eventTypes = await listEventTypes(user.schoolId);
   const t = await getTranslations("admin.eventTypes");

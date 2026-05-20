@@ -12,6 +12,7 @@ export interface StaffUserRecord {
   status: "pending" | "active" | "deactivated";
   email: string;
   fullName: string;
+  mustChangePassword: boolean;
 }
 
 /**
@@ -35,6 +36,7 @@ export async function getStaffUserByAuthId(authId: string): Promise<StaffUserRec
       status: staffUsers.status,
       email: staffUsers.email,
       fullName: staffUsers.fullName,
+      mustChangePassword: staffUsers.mustChangePassword,
     })
     .from(staffUsers)
     .leftJoin(schools, eq(staffUsers.schoolId, schools.id))

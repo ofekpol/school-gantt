@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getStaffUser } from "@/lib/auth/session";
 import { AppHeader } from "@/components/AppHeader";
+import { buildNavLinks, getCurrentPath } from "@/lib/nav";
 import type { ReactNode } from "react";
 
 /**
@@ -14,10 +15,20 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   if (!user) redirect("/auth/login");
   if (user.status === "pending") redirect("/auth/pending");
   if (user.status === "deactivated") redirect("/auth/deactivated");
+  if (user.mustChangePassword) redirect("/auth/change-password");
   if (user.role === "viewer") redirect(user.schoolSlug ? `/${user.schoolSlug}` : "/auth/pending");
+  const [navLinks, currentPath] = await Promise.all([
+    buildNavLinks(user.role),
+    getCurrentPath(),
+  ]);
   return (
     <>
-      <AppHeader title={user.fullName} subtitle={user.email} />
+      <AppHeader
+        title={user.fullName}
+        subtitle={user.email}
+        navLinks={navLinks}
+        currentPath={currentPath}
+      />
       {children}
     </>
   );

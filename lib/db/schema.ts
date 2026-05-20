@@ -81,6 +81,7 @@ export const staffUsers = pgTable(
     lockedUntil: timestamp("locked_until", { withTimezone: true }),
     loginAttempts: integer("login_attempts").notNull().default(0),
     status: staffStatusEnum().notNull().default("active"),
+    mustChangePassword: boolean("must_change_password").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
   },

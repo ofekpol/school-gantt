@@ -10,6 +10,7 @@ function makeUser(overrides: Partial<StaffUserRecord>): StaffUserRecord {
     fullName: "Test User",
     role: "admin",
     status: "active",
+    mustChangePassword: false,
     ...overrides,
   };
 }

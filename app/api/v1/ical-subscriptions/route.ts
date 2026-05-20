@@ -9,13 +9,16 @@ import { ICalSubscriptionSchema } from "@/lib/validations/events";
 export async function GET(): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const rows = await listSubscriptionsForStaff(user.schoolId, user.id);
+  const rows = await listSubscriptionsForStaff(user.schoolId!, user.id);
   return NextResponse.json({ subscriptions: rows }, { status: 200 });
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (user.mustChangePassword) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => null);
   const parsed = ICalSubscriptionSchema.safeParse(body ?? {});
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const result = await createSubscription(user.schoolId, user.id, {
+  const result = await createSubscription(user.schoolId!, user.id, {
     grades: parsed.data.grades ?? [],
     eventTypes: parsed.data.eventTypes ?? [],
   });

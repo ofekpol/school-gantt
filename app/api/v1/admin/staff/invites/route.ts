@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { assertAdmin } from "@/lib/auth/admin";
 import { getStaffUser } from "@/lib/auth/session";
 import { createInvite, listInvitesForSchool } from "@/lib/db/invites";
+import { sendInviteEmail } from "@/lib/email/invite";
 import { StaffInviteCreateSchema } from "@/lib/validations/admin";
 
 export async function GET(): Promise<NextResponse> {
@@ -25,6 +26,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (e instanceof Response) return NextResponse.json({ error: "Forbidden" }, { status: e.status });
     throw e;
   }
+  if (user.mustChangePassword) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const parsed = StaffInviteCreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -41,5 +45,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
   const url = `${appUrl}/invite/${result.token}`;
-  return NextResponse.json({ token: result.token, url }, { status: 201 });
+
+  let emailSent = false;
+  if (parsed.data.email) {
+    try {
+      await sendInviteEmail({
+        to: parsed.data.email,
+        inviteUrl: url,
+        role: parsed.data.role,
+        expiresAt: result.expiresAt,
+      });
+      emailSent = true;
+    } catch (err) {
+      console.error("invite email send failed", err);
+    }
+  }
+
+  return NextResponse.json(
+    { token: result.token, url, emailSent },
+    { status: 201 },
+  );
 }

@@ -28,6 +28,7 @@ export function EmailPasswordSignInForm() {
           ? new Date(data.lockedUntil).toLocaleTimeString("he-IL")
           : "";
         setError(`החשבון נעול זמנית. נסו שוב אחרי ${until}`);
+        setLoading(false);
         return;
       }
       if (res.status === 401) {
@@ -37,16 +38,18 @@ export function EmailPasswordSignInForm() {
             ? `אימייל או סיסמה שגויים. נותרו ${remaining} ניסיונות`
             : "אימייל או סיסמה שגויים",
         );
+        setLoading(false);
         return;
       }
       if (!res.ok) {
         setError("אירעה שגיאה. נסו שוב מאוחר יותר");
+        setLoading(false);
         return;
       }
 
-      router.push(data.redirectTo ?? "/dashboard");
-      router.refresh();
-    } finally {
+      // Keep loading=true — page unmounts on navigation, no need to reset.
+      router.replace(data.redirectTo ?? "/dashboard");
+    } catch {
       setLoading(false);
     }
   }

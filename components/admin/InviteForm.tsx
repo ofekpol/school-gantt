@@ -19,29 +19,36 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [emailSent, setEmailSent] = useState(false);
+
   async function create(form: FormData) {
     setError(null);
     setUrl(null);
+    setEmailSent(false);
     const gradeScopes = ALL_GRADES.filter((g) => form.get(`invite-grade-${g}`) === "on");
     const eventTypeScopes = eventTypes
       .filter((et) => form.get(`invite-type-${et.key}`) === "on")
       .map((et) => et.key);
+    const emailRaw = String(form.get("email") ?? "").trim();
+    const body: Record<string, unknown> = {
+      role: String(form.get("role") ?? "viewer"),
+      expiresInHours: Number(form.get("expiresInHours") ?? 72),
+      gradeScopes,
+      eventTypeScopes,
+    };
+    if (emailRaw) body.email = emailRaw;
     const res = await fetch("/api/v1/admin/staff/invites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        role: String(form.get("role") ?? "viewer"),
-        expiresInHours: Number(form.get("expiresInHours") ?? 72),
-        gradeScopes,
-        eventTypeScopes,
-      }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       setError(t("createError"));
       return;
     }
-    const data = (await res.json()) as { url: string };
+    const data = (await res.json()) as { url: string; emailSent: boolean };
     setUrl(data.url);
+    setEmailSent(data.emailSent);
     router.refresh();
   }
 
@@ -53,6 +60,13 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
           <option value="editor">{t("roleEditor")}</option>
           <option value="admin">{t("roleAdmin")}</option>
         </select>
+        <input
+          name="email"
+          type="email"
+          placeholder={t("email")}
+          className="w-56 rounded border px-2 py-1"
+          aria-label={t("email")}
+        />
         <input
           name="expiresInHours"
           type="number"
@@ -87,6 +101,7 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
       {url && (
         <p className="break-all text-sm text-green-700">
           {t("inviteCreated")}: {url}
+          {emailSent && <span className="ml-2">· {t("emailSent")}</span>}
         </p>
       )}
       {error && <p className="text-sm text-red-500">{error}</p>}

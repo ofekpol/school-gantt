@@ -54,11 +54,21 @@ export interface SeedOptions {
   database?: Database;
 }
 
+// Temporary password assigned to all seeded staff accounts.
+// Users are forced to change it on first login (mustChangePassword=true).
+const SEED_TEMP_PASSWORD = "ChangeMe123!";
+
 async function ensureAuthUser(email: string, password?: string): Promise<string> {
   // listUsers paginated; sufficient for small seed.
   const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
   const found = existing.users.find((u) => u.email === email);
-  if (found) return found.id;
+  if (found) {
+    // Ensure password is set even for pre-existing users (idempotent re-seed).
+    if (password) {
+      await supabaseAdmin.auth.admin.updateUserById(found.id, { password });
+    }
+    return found.id;
+  }
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
     email_confirm: true,
@@ -136,6 +146,7 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
         email: ADMIN_EMAIL,
         fullName: "Demo Admin",
         role: "admin",
+        mustChangePassword: true,
       })
       .onConflictDoUpdate({
         target: schema.staffUsers.email,
@@ -156,6 +167,7 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
           email: ge.email,
           fullName: ge.fullName,
           role: "editor",
+          mustChangePassword: true,
         })
         .onConflictDoUpdate({
           target: schema.staffUsers.email,
@@ -183,6 +195,7 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
         email: COUNSELOR.email,
         fullName: COUNSELOR.fullName,
         role: "editor",
+        mustChangePassword: true,
       })
       .onConflictDoUpdate({
         target: schema.staffUsers.email,
@@ -222,10 +235,11 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
 
 async function main() {
   const { schoolId } = await seedDb({
-    ensureStaffUserId: (email) =>
-      ensureAuthUser(email, email === VIEWER.email ? "ChangeMe123!" : undefined),
+    ensureStaffUserId: (email) => ensureAuthUser(email, SEED_TEMP_PASSWORD),
   });
-  console.log(`Seed complete: schoolId=${schoolId} admin=${ADMIN_EMAIL}`);
+  console.log(
+    `Seed complete: schoolId=${schoolId} admin=${ADMIN_EMAIL} tempPassword=${SEED_TEMP_PASSWORD}`,
+  );
   process.exit(0);
 }
 

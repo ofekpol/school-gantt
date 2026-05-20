@@ -18,7 +18,7 @@ export async function GET(
 
   const { id } = await params;
   const result = await getEventForEditor(
-    user.schoolId,
+    user.schoolId!,
     id,
     user.id,
     user.role === "admin",
@@ -33,7 +33,7 @@ export async function PATCH(
 ): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role === "viewer" || user.status !== "active") {
+  if (user.role === "viewer" || user.status !== "active" || user.mustChangePassword) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -59,7 +59,7 @@ export async function PATCH(
 
   // Scope check: every grade in body.grades must be in the editor's allowed set (WIZARD-05)
   if (parsed.data.grades && parsed.data.grades.length > 0 && user.role !== "admin") {
-    const allowed = await getEditorAllowedGrades(user.schoolId, user.id);
+    const allowed = await getEditorAllowedGrades(user.schoolId!, user.id);
     const allowedSet = new Set(allowed);
     const violators = parsed.data.grades.filter((g) => !allowedSet.has(g));
     if (violators.length > 0) {
@@ -71,7 +71,7 @@ export async function PATCH(
   }
 
   const result = await updateDraft(
-    user.schoolId,
+    user.schoolId!,
     id,
     user.id,
     user.role === "admin",
@@ -94,12 +94,12 @@ export async function DELETE(
 ): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role === "viewer" || user.status !== "active") {
+  if (user.role === "viewer" || user.status !== "active" || user.mustChangePassword) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
-  const result = await softDelete(user.schoolId, id, user.id);
+  const result = await softDelete(user.schoolId!, id, user.id);
   if (!result.deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ deleted: true }, { status: 200 });
 }

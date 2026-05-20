@@ -16,7 +16,7 @@ export async function GET(): Promise<NextResponse> {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const events = await getEditorDashboardEvents(user.schoolId, user.id);
+  const events = await getEditorDashboardEvents(user.schoolId!, user.id);
   return NextResponse.json({ events }, { status: 200 });
 }
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (user.role === "viewer" || user.status !== "active") {
+  if (user.role === "viewer" || user.status !== "active" || user.mustChangePassword) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -40,13 +40,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Guard: cannot create event without an active academic year (RESEARCH Pitfall 2)
-  const year = await getActiveAcademicYear(user.schoolId);
+  const year = await getActiveAcademicYear(user.schoolId!);
   if (!year) {
     return NextResponse.json({ error: "no_active_year" }, { status: 409 });
   }
 
   const draft = await createDraft(
-    user.schoolId,
+    user.schoolId!,
     user.id,
     parsed.data.eventTypeId,
   );

@@ -9,7 +9,7 @@ import {
 import { WizardShell } from "@/components/wizard/WizardShell";
 
 interface PageProps {
-  searchParams: Promise<{ resumeId?: string }>;
+  searchParams: Promise<{ resumeId?: string; date?: string }>;
 }
 
 /**
@@ -19,9 +19,11 @@ interface PageProps {
  */
 export default async function NewEventPage({ searchParams }: PageProps) {
   const user = await getStaffUser();
-  if (!user) redirect("/");
+  if (!user || !user.schoolId) redirect("/");
 
-  const { resumeId } = await searchParams;
+  const { resumeId, date } = await searchParams;
+  const initialDate =
+    typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
 
   const [activeYear, eventTypeList, allowedGradesRaw] = await Promise.all([
     getActiveAcademicYear(user.schoolId),
@@ -48,6 +50,7 @@ export default async function NewEventPage({ searchParams }: PageProps) {
       allowedGrades={allowedGrades}
       resumeDraft={resumeDraft}
       resumeId={resumeId ?? null}
+      initialDate={initialDate}
     />
   );
 }
