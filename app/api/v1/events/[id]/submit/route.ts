@@ -13,7 +13,7 @@ export async function POST(
 
   const { id } = await params;
   try {
-    if (user.role === "viewer" || user.status !== "active") {
+    if (user.role === "viewer" || user.status !== "active" || user.mustChangePassword) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     // All active staff publish directly — no admin-queue step.

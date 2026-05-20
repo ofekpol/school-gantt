@@ -26,6 +26,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (e instanceof Response) return NextResponse.json({ error: "Forbidden" }, { status: e.status });
     throw e;
   }
+  if (user.mustChangePassword) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const parsed = StaffInviteCreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
