@@ -50,17 +50,23 @@ export function FilterBar({
 
   function toggleGrade(g: number) {
     const next = new URLSearchParams(searchParams.toString());
-    const current = new Set(selectedGrades);
+    // Empty selection renders as "all on", so toggling starts from the full set.
+    const current = new Set(selectedGrades.length === 0 ? allGrades : selectedGrades);
     if (current.has(g)) current.delete(g); else current.add(g);
-    setMulti(next, "grades", Array.from(current).map(String));
+    // Full set === no filter; collapse back to an empty param.
+    const values = current.size === allGrades.length ? [] : Array.from(current).map(String);
+    setMulti(next, "grades", values);
     commit(next);
   }
 
   function toggleType(key: string) {
     const next = new URLSearchParams(searchParams.toString());
-    const current = new Set(selectedTypes);
+    const allKeys = eventTypes.map((et) => et.key);
+    // Empty selection renders as "all on", so toggling starts from the full set.
+    const current = new Set(selectedTypes.length === 0 ? allKeys : selectedTypes);
     if (current.has(key)) current.delete(key); else current.add(key);
-    setMulti(next, "types", Array.from(current));
+    const values = current.size === allKeys.length ? [] : Array.from(current);
+    setMulti(next, "types", values);
     commit(next);
   }
 
