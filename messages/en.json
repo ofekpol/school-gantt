@@ -200,7 +200,8 @@
       "type": "Type",
       "grades": "Grades",
       "location": "Location",
-      "description": "Details"
+      "description": "Details",
+      "edit": "Edit"
     },
     "zoom": {
       "year": "Year",
