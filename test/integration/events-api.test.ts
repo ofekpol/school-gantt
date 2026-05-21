@@ -1,24 +1,248 @@
-import { describe, it } from "vitest";
-import { skipIfNoTestDb } from "./setup";
+import { randomUUID } from "node:crypto";
+import { beforeAll, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
+import * as schema from "@/lib/db/schema";
+import { createDraft, replaceEventGrades, softDelete, updateDraft } from "@/lib/events/crud";
+import { getEditorDashboardEvents, getEventForEditor } from "@/lib/events/queries";
+import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA, testSchoolB } from "./setup";
 
-describe("Events API — RLS and auth boundaries", () => {
-  it.todo("unauthenticated POST /api/v1/events returns 401");
-  it.todo("editor from school A cannot PATCH event from school B (returns 404)");
-  it.todo("admin can PATCH any event in their school");
-});
+// ─── Shared helpers ───────────────────────────────────────────────────────────
 
-describe("Events API — response shape", () => {
-  it.todo("POST /api/v1/events returns camelCase event object (not snake_case)");
-  it.todo("event object includes id, schoolId, status, version, createdAt");
-  it.todo("event_grades join is included as grades array in event response");
-});
+async function ensureEditor(
+  schoolId: string,
+  email: string,
+  role: "editor" | "admin" = "editor",
+) {
+  const existing = await testDb!
+    .select()
+    .from(schema.staffUsers)
+    .where(eq(schema.staffUsers.email, email))
+    .limit(1);
+  if (existing.length > 0) return existing[0];
+  const [row] = await testDb!
+    .insert(schema.staffUsers)
+    .values({ id: randomUUID(), schoolId, email, fullName: email, role })
+    .returning();
+  return row;
+}
 
-describe("Events API — validation", () => {
-  it.todo("POST with missing required fields returns 422 with field errors");
-  it.todo("POST with title longer than 120 chars returns 422");
-  it.todo("POST with empty grades array returns 422");
-  it.todo("POST with endAt before startAt returns 422");
-});
+async function firstEventType(schoolId: string): Promise<string> {
+  const [t] = await testDb!
+    .select({ id: schema.eventTypes.id })
+    .from(schema.eventTypes)
+    .where(eq(schema.eventTypes.schoolId, schoolId))
+    .limit(1);
+  return t.id;
+}
 
-// Suppress unused-import warning — skipIfNoTestDb used by individual tests in implementation
-void skipIfNoTestDb;
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENTS-CRUD-01: createDraft
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe.skipIf(skipIfNoTestDb)(
+  "EVENTS-CRUD-01: createDraft — persists draft row",
+  () => {
+    let editorId: string;
+    let eventTypeId: string;
+
+    beforeAll(async () => {
+      if (shouldSkip()) return;
+      editorId = (await ensureEditor(testSchoolA, "crud-create@test")).id;
+      eventTypeId = await firstEventType(testSchoolA);
+    });
+
+    it("returns {id, version: 1}", async () => {
+      const result = await createDraft(testSchoolA, editorId, eventTypeId);
+      expect(typeof result.id).toBe("string");
+      expect(result.version).toBe(1);
+    });
+
+    it("persists a row with status=draft and correct schoolId", async () => {
+      const { id } = await createDraft(testSchoolA, editorId, eventTypeId);
+      const [row] = await testDb!
+        .select({ status: schema.events.status, schoolId: schema.events.schoolId })
+        .from(schema.events)
+        .where(eq(schema.events.id, id));
+      expect(row.status).toBe("draft");
+      expect(row.schoolId).toBe(testSchoolA);
+    });
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENTS-CRUD-02: getEventForEditor — shape, ownership, camelCase
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe.skipIf(skipIfNoTestDb)(
+  "EVENTS-CRUD-02: getEventForEditor — response shape and ownership",
+  () => {
+    let ownerEditorId: string;
+    let otherEditorId: string;
+    let adminId: string;
+    let eventTypeId: string;
+
+    beforeAll(async () => {
+      if (shouldSkip()) return;
+      ownerEditorId = (await ensureEditor(testSchoolA, "qry-owner@test")).id;
+      otherEditorId = (await ensureEditor(testSchoolA, "qry-other@test")).id;
+      adminId = (await ensureEditor(testSchoolA, "qry-admin@test", "admin")).id;
+      eventTypeId = await firstEventType(testSchoolA);
+    });
+
+    it("returns null when the event does not exist", async () => {
+      const r = await getEventForEditor(testSchoolA, randomUUID(), ownerEditorId, false);
+      expect(r).toBeNull();
+    });
+
+    it("returns null when a non-admin caller is not the event owner", async () => {
+      const { id } = await createDraft(testSchoolA, ownerEditorId, eventTypeId);
+      const r = await getEventForEditor(testSchoolA, id, otherEditorId, false);
+      expect(r).toBeNull();
+    });
+
+    it("owner can retrieve their own event", async () => {
+      const { id } = await createDraft(testSchoolA, ownerEditorId, eventTypeId);
+      const r = await getEventForEditor(testSchoolA, id, ownerEditorId, false);
+      expect(r).not.toBeNull();
+      expect(r?.event.id).toBe(id);
+    });
+
+    it("admin can retrieve an event they do not own", async () => {
+      const { id } = await createDraft(testSchoolA, ownerEditorId, eventTypeId);
+      const r = await getEventForEditor(testSchoolA, id, adminId, true);
+      expect(r).not.toBeNull();
+    });
+
+    it("returns grades as a number array", async () => {
+      const { id } = await createDraft(testSchoolA, ownerEditorId, eventTypeId);
+      await replaceEventGrades(testSchoolA, id, [7, 11]);
+      const r = await getEventForEditor(testSchoolA, id, ownerEditorId, false);
+      expect(r?.grades.sort()).toEqual([7, 11]);
+    });
+
+    it("returns empty grades array when no grades are assigned", async () => {
+      const { id } = await createDraft(testSchoolA, ownerEditorId, eventTypeId);
+      const r = await getEventForEditor(testSchoolA, id, ownerEditorId, false);
+      expect(r?.grades).toEqual([]);
+    });
+
+    it("event object uses camelCase field names (eventTypeId, createdBy, updatedAt)", async () => {
+      const { id } = await createDraft(testSchoolA, ownerEditorId, eventTypeId);
+      const r = await getEventForEditor(testSchoolA, id, ownerEditorId, false);
+      const event = r?.event as Record<string, unknown>;
+      expect(event).toHaveProperty("eventTypeId");
+      expect(event).toHaveProperty("createdBy");
+      expect(event).toHaveProperty("updatedAt");
+      expect(event).not.toHaveProperty("event_type_id");
+      expect(event).not.toHaveProperty("created_by");
+      expect(event).not.toHaveProperty("updated_at");
+    });
+
+    it("returns null for a soft-deleted event", async () => {
+      const { id } = await createDraft(testSchoolA, ownerEditorId, eventTypeId);
+      await softDelete(testSchoolA, id, ownerEditorId);
+      const r = await getEventForEditor(testSchoolA, id, ownerEditorId, false);
+      expect(r).toBeNull();
+    });
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENTS-CRUD-03: cross-school RLS
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe.skipIf(skipIfNoTestDb)(
+  "EVENTS-CRUD-03: cross-school RLS — school A cannot touch school B events",
+  () => {
+    let editorA: string;
+    let editorB: string;
+    let schoolBEventId: string;
+
+    beforeAll(async () => {
+      if (shouldSkip()) return;
+      editorA = (await ensureEditor(testSchoolA, "rls-editor-a@test")).id;
+      editorB = (await ensureEditor(testSchoolB, "rls-editor-b@test")).id;
+      const etB = await firstEventType(testSchoolB);
+      const { id } = await createDraft(testSchoolB, editorB, etB);
+      schoolBEventId = id;
+    });
+
+    it("getEventForEditor with school A context returns null for school B's event", async () => {
+      const r = await getEventForEditor(testSchoolA, schoolBEventId, editorA, false);
+      expect(r).toBeNull();
+    });
+
+    it("updateDraft with school A context returns not_found for school B's event", async () => {
+      const r = await updateDraft(
+        testSchoolA,
+        schoolBEventId,
+        editorA,
+        false,
+        { title: "cross-school hack" },
+        null,
+      );
+      expect(r.status).toBe("not_found");
+    });
+
+    it("softDelete with school A context returns {deleted: false} for school B's event", async () => {
+      const r = await softDelete(testSchoolA, schoolBEventId, editorA);
+      expect(r).toEqual({ deleted: false });
+    });
+
+    it("getEditorDashboardEvents does not leak events from the other school", async () => {
+      const events = await getEditorDashboardEvents(testSchoolA, editorA);
+      const ids = events.map((e) => e.id);
+      expect(ids).not.toContain(schoolBEventId);
+    });
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENTS-CRUD-04: getEditorDashboardEvents
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe.skipIf(skipIfNoTestDb)(
+  "EVENTS-CRUD-04: getEditorDashboardEvents — filtering and shape",
+  () => {
+    let editorA: string;
+    let editorB: string;
+    let eventTypeId: string;
+
+    beforeAll(async () => {
+      if (shouldSkip()) return;
+      editorA = (await ensureEditor(testSchoolA, "dash-editor-a@test")).id;
+      editorB = (await ensureEditor(testSchoolA, "dash-editor-b@test")).id;
+      eventTypeId = await firstEventType(testSchoolA);
+    });
+
+    it("includes events owned by the calling editor", async () => {
+      const { id } = await createDraft(testSchoolA, editorA, eventTypeId);
+      const events = await getEditorDashboardEvents(testSchoolA, editorA);
+      expect(events.map((e) => e.id)).toContain(id);
+    });
+
+    it("does not include events owned by a different editor", async () => {
+      const { id: idB } = await createDraft(testSchoolA, editorB, eventTypeId);
+      const events = await getEditorDashboardEvents(testSchoolA, editorA);
+      expect(events.map((e) => e.id)).not.toContain(idB);
+    });
+
+    it("excludes soft-deleted events", async () => {
+      const { id } = await createDraft(testSchoolA, editorA, eventTypeId);
+      await softDelete(testSchoolA, id, editorA);
+      const events = await getEditorDashboardEvents(testSchoolA, editorA);
+      expect(events.map((e) => e.id)).not.toContain(id);
+    });
+
+    it("returns camelCase field names (eventTypeId, updatedAt)", async () => {
+      const { id } = await createDraft(testSchoolA, editorA, eventTypeId);
+      const events = await getEditorDashboardEvents(testSchoolA, editorA);
+      const event = events.find((e) => e.id === id) as Record<string, unknown> | undefined;
+      expect(event).toBeDefined();
+      expect(event).toHaveProperty("eventTypeId");
+      expect(event).toHaveProperty("updatedAt");
+      expect(event).not.toHaveProperty("event_type_id");
+      expect(event).not.toHaveProperty("updated_at");
+    });
+  },
+);

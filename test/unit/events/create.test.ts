@@ -1,30 +1,306 @@
-import { describe, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-describe("createDraftEvent: creates a draft event row", () => {
-  it.todo("returns an event with status=draft");
-  it.todo("sets version=1 on initial create");
-  it.todo("sets schoolId from the authenticated user's school");
-  it.todo("sets createdBy from the authenticated user id");
-});
+// ─── Mocks ────────────────────────────────────────────────────────────────────
 
-describe("updateEventStep: autosaves a wizard step", () => {
-  it.todo("updates only the fields provided (partial update)");
-  it.todo("increments version on each successful update");
-  it.todo("throws if event belongs to a different school (RLS)");
-  it.todo("throws if event is not in draft status");
-});
+const withSchoolMock = vi.fn();
+vi.mock("@/lib/db/client", () => ({
+  withSchool: (...args: unknown[]) => withSchoolMock(...args),
+}));
 
-describe("submitEvent: transitions draft to pending", () => {
-  it.todo("changes status from draft to pending");
-  it.todo(
-    "validates all required wizard fields are present before submitting",
+// ─── SUT (imported after mocks are registered) ────────────────────────────────
+
+import {
+  createDraft,
+  replaceEventGrades,
+  softDelete,
+  updateDraft,
+} from "@/lib/events/crud";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Builds a minimal Drizzle-like tx mock whose query chains resolve to the
+ * supplied row arrays.  Every method ignores its arguments so the same chain
+ * works for any table or condition expression.
+ *
+ * .select().from().where().limit()          → selectRows
+ * .update().set().where()                   → awaitable (resolves to updateRows)
+ * .update().set().where().returning()       → updateRows
+ * .insert().values()                        → awaitable (resolves to insertRows)
+ * .insert().values().returning()            → insertRows
+ * .delete().where()                         → awaitable (resolves to [])
+ */
+function makeTx({
+  selectRows = [] as unknown[],
+  updateRows = [] as unknown[],
+  insertRows = [] as unknown[],
+} = {}) {
+  const selectChain = {
+    from: (..._: unknown[]) => selectChain,
+    where: (..._: unknown[]) => selectChain,
+    limit: (..._: unknown[]) => Promise.resolve(selectRows),
+  };
+
+  // Must be both directly awaitable AND have .returning()
+  const updateWhereResult = Object.assign(Promise.resolve(updateRows), {
+    returning: (..._: unknown[]) => Promise.resolve(updateRows),
+  });
+
+  const insertValuesResult = Object.assign(Promise.resolve(insertRows), {
+    returning: (..._: unknown[]) => Promise.resolve(insertRows),
+  });
+
+  return {
+    select: (..._: unknown[]) => selectChain,
+    update: (..._: unknown[]) => ({
+      set: (..._: unknown[]) => ({
+        where: (..._: unknown[]) => updateWhereResult,
+      }),
+    }),
+    insert: (..._: unknown[]) => ({
+      values: (..._: unknown[]) => insertValuesResult,
+    }),
+    delete: (..._: unknown[]) => ({
+      where: (..._: unknown[]) => Promise.resolve([]),
+    }),
+  };
+}
+
+type MockTx = ReturnType<typeof makeTx>;
+type TxCallback = (tx: MockTx) => Promise<unknown>;
+
+/** Wires withSchoolMock so every call invokes its callback with tx. */
+function useTx(tx: MockTx) {
+  withSchoolMock.mockImplementation(
+    async (_schoolId: unknown, fn: TxCallback) => fn(tx),
   );
-  it.todo("writes an event_revisions row on submit");
-  it.todo("throws if event is already pending or approved");
+}
+
+// ─── Test constants ───────────────────────────────────────────────────────────
+
+const SCHOOL = "00000000-0000-0000-0000-000000000001";
+const EVENT = "00000000-0000-0000-0000-000000000002";
+const USER = "00000000-0000-0000-0000-000000000003";
+const OTHER_USER = "00000000-0000-0000-0000-000000000004";
+const EVENT_TYPE = "00000000-0000-0000-0000-000000000005";
+
+beforeEach(() => {
+  withSchoolMock.mockReset();
 });
 
-describe("softDeleteEvent: marks event as deleted", () => {
-  it.todo("sets deletedAt timestamp on the event");
-  it.todo("throws if event is pending or approved (can only delete drafts)");
-  it.todo("throws if caller is not the event creator (unless admin)");
+// ─────────────────────────────────────────────────────────────────────────────
+// createDraft
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("createDraft: creates a draft event row", () => {
+  it("returns the id and version=1 from the insert", async () => {
+    useTx(makeTx({ insertRows: [{ id: EVENT, version: 1 }] }));
+    expect(await createDraft(SCHOOL, USER, EVENT_TYPE)).toEqual({
+      id: EVENT,
+      version: 1,
+    });
+  });
+
+  it("sets schoolId from the caller's schoolId argument", async () => {
+    useTx(makeTx({ insertRows: [{ id: EVENT, version: 1 }] }));
+    await createDraft(SCHOOL, USER, EVENT_TYPE);
+    expect(withSchoolMock).toHaveBeenCalledWith(SCHOOL, expect.any(Function));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateDraft
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("updateDraft: ownership, concurrency, and revision logic", () => {
+  it("returns not_found when the event row does not exist", async () => {
+    useTx(makeTx({ selectRows: [] }));
+    const r = await updateDraft(SCHOOL, EVENT, USER, false, { title: "x" }, null);
+    expect(r.status).toBe("not_found");
+  });
+
+  it("returns not_found when a non-admin editor does not own the event", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ version: 1, createdBy: OTHER_USER, status: "draft" }],
+      }),
+    );
+    const r = await updateDraft(SCHOOL, EVENT, USER, false, { title: "hack" }, null);
+    expect(r.status).toBe("not_found");
+  });
+
+  it("allows an admin to edit an event they did not create", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ version: 1, createdBy: OTHER_USER, status: "draft" }],
+        updateRows: [{ version: 2 }],
+      }),
+    );
+    const r = await updateDraft(SCHOOL, EVENT, USER, true, { title: "admin edit" }, null);
+    expect(r.status).toBe("ok");
+  });
+
+  it("returns conflict when expectedVersion does not match the stored version", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ version: 3, createdBy: USER, status: "draft" }],
+      }),
+    );
+    const r = await updateDraft(SCHOOL, EVENT, USER, false, { title: "x" }, 1);
+    expect(r.status).toBe("conflict");
+  });
+
+  it("skips the version check when expectedVersion is null", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ version: 5, createdBy: USER, status: "draft" }],
+        updateRows: [{ version: 6 }],
+      }),
+    );
+    const r = await updateDraft(SCHOOL, EVENT, USER, false, { title: "x" }, null);
+    expect(r.status).toBe("ok");
+  });
+
+  it("returns ok with the new version on a successful update", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ version: 1, createdBy: USER, status: "draft" }],
+        updateRows: [{ version: 2 }],
+      }),
+    );
+    const r = await updateDraft(SCHOOL, EVENT, USER, false, { title: "new title" }, 1);
+    expect(r).toEqual({ status: "ok", version: 2 });
+  });
+
+  it("inserts an 'edited' revision when updating an already-approved event", async () => {
+    const insertValuesSpy = vi.fn().mockReturnValue(
+      Object.assign(Promise.resolve([]), {
+        returning: () => Promise.resolve([]),
+      }),
+    );
+
+    const approvedRow = {
+      version: 1,
+      createdBy: USER,
+      status: "approved",
+      title: "old title",
+      description: null,
+      location: null,
+      startAt: new Date(),
+      endAt: new Date(),
+      allDay: false,
+      eventTypeId: EVENT_TYPE,
+    };
+
+    withSchoolMock.mockImplementation(
+      async (_: unknown, fn: TxCallback) =>
+        fn(
+          // Cast: only the select/update/insert paths are exercised here
+          {
+            select: () => ({
+              from: () => ({
+                where: () => ({ limit: () => Promise.resolve([approvedRow]) }),
+              }),
+            }),
+            update: () => ({
+              set: () => ({
+                where: () =>
+                  Object.assign(Promise.resolve([{ version: 2 }]), {
+                    returning: () => Promise.resolve([{ version: 2 }]),
+                  }),
+              }),
+            }),
+            insert: () => ({ values: insertValuesSpy }),
+          } as unknown as MockTx,
+        ),
+    );
+
+    await updateDraft(SCHOOL, EVENT, USER, false, { title: "updated" }, null);
+
+    expect(insertValuesSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: EVENT,
+        decision: "edited",
+        submittedBy: USER,
+      }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// softDelete
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("softDelete: ownership and status guards", () => {
+  it("returns {deleted: false} when the event does not exist", async () => {
+    useTx(makeTx({ selectRows: [] }));
+    expect(await softDelete(SCHOOL, EVENT, USER)).toEqual({ deleted: false });
+  });
+
+  it("returns {deleted: false} when the caller does not own the event", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ id: EVENT, createdBy: OTHER_USER, status: "draft" }],
+      }),
+    );
+    expect(await softDelete(SCHOOL, EVENT, USER)).toEqual({ deleted: false });
+  });
+
+  it("returns {deleted: false} when the event is not in draft status", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ id: EVENT, createdBy: USER, status: "approved" }],
+      }),
+    );
+    expect(await softDelete(SCHOOL, EVENT, USER)).toEqual({ deleted: false });
+  });
+
+  it("returns {deleted: true} when the caller owns a draft event", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ id: EVENT, createdBy: USER, status: "draft" }],
+      }),
+    );
+    expect(await softDelete(SCHOOL, EVENT, USER)).toEqual({ deleted: true });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// replaceEventGrades
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("replaceEventGrades: atomic grade replacement", () => {
+  it("does not call insert when grades array is empty", async () => {
+    const insertSpy = vi.fn().mockReturnValue({
+      values: vi.fn().mockResolvedValue([]),
+    });
+    withSchoolMock.mockImplementation(
+      async (_: unknown, fn: TxCallback) =>
+        fn({
+          delete: () => ({ where: () => Promise.resolve([]) }),
+          insert: insertSpy,
+        } as unknown as MockTx),
+    );
+
+    await replaceEventGrades(SCHOOL, EVENT, []);
+    expect(insertSpy).not.toHaveBeenCalled();
+  });
+
+  it("inserts one row per grade with the correct shape", async () => {
+    const valuesSpy = vi.fn().mockResolvedValue([]);
+    withSchoolMock.mockImplementation(
+      async (_: unknown, fn: TxCallback) =>
+        fn({
+          delete: () => ({ where: () => Promise.resolve([]) }),
+          insert: () => ({ values: valuesSpy }),
+        } as unknown as MockTx),
+    );
+
+    await replaceEventGrades(SCHOOL, EVENT, [7, 8, 9]);
+    expect(valuesSpy).toHaveBeenCalledWith([
+      { eventId: EVENT, grade: 7, schoolId: SCHOOL },
+      { eventId: EVENT, grade: 8, schoolId: SCHOOL },
+      { eventId: EVENT, grade: 9, schoolId: SCHOOL },
+    ]);
+  });
 });

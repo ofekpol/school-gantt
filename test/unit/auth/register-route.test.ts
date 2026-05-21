@@ -47,7 +47,10 @@ describe("POST /api/v1/auth/register", () => {
     expect(signUpMock).toHaveBeenCalledWith({
       email: "a@b.com",
       password: "password123",
-      options: { data: { full_name: "Test User" } },
+      options: {
+        data: { full_name: "Test User" },
+        emailRedirectTo: "http://localhost/auth/confirm",
+      },
     });
   });
 
