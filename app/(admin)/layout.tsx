@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getStaffUser } from "@/lib/auth/session";
 import { AppHeader } from "@/components/AppHeader";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import { buildNavLinks, getCurrentPath } from "@/lib/nav";
 import type { ReactNode } from "react";
 
@@ -18,9 +20,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (user.status === "deactivated") redirect("/auth/deactivated");
   if (user.mustChangePassword) redirect("/auth/change-password");
   if (user.role !== "admin") redirect("/dashboard");
-  const [navLinks, currentPath] = await Promise.all([
+  const [navLinks, currentPath, t] = await Promise.all([
     buildNavLinks(user.role),
     getCurrentPath(),
+    getTranslations("nav"),
   ]);
   return (
     <div className="min-h-screen">
@@ -29,6 +32,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         subtitle={user.email}
         navLinks={navLinks}
         currentPath={currentPath}
+        rightSlot={<LogoutButton label={t("logout")} />}
       />
       {children}
     </div>

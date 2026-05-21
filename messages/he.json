@@ -28,7 +28,8 @@
     "staff": "ניהול צוות",
     "eventTypes": "סוגי אירועים",
     "year": "שנת לימודים",
-    "profile": "פרופיל"
+    "profile": "פרופיל",
+    "logout": "יציאה"
   },
   "grades": {
     "label_7": "ז",
