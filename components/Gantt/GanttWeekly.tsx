@@ -387,8 +387,8 @@ function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
         </h1>
       </div>
       <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-        <NavBtn onClick={onNext} aria-label="שבוע הבא">›</NavBtn>
-        <NavBtn onClick={onPrev} aria-label="שבוע קודם">‹</NavBtn>
+        <NavBtn onClick={onNext} aria-label="שבוע הבא">‹</NavBtn>
+        <NavBtn onClick={onPrev} aria-label="שבוע קודם">›</NavBtn>
         <div style={{ width: 1, height: 22, background: "var(--sg-hairline)", margin: "0 4px" }} />
         <PrintBtn />
       </div>

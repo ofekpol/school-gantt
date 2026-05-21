@@ -89,6 +89,8 @@
       "roleViewer": "Viewer",
       "gradeScopes": "Allowed Grades",
       "eventTypeScopes": "Allowed Event Types",
+      "edit": "Edit",
+      "save": "Save",
       "deactivate": "Deactivate",
       "deactivated": "Deactivated",
       "approve": "Approve",
