@@ -13,6 +13,12 @@ interface InviteRow {
   usedAt: Date | string | null;
 }
 
+const EXPIRES_AT_FMT = new Intl.DateTimeFormat("he-IL", {
+  timeZone: "Asia/Jerusalem",
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
 export function InviteTable({ invites }: { invites: InviteRow[] }) {
   const t = useTranslations("admin.staff");
 
@@ -35,23 +41,22 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
         {invites.map((invite) => {
           const expired = new Date(invite.expiresAt) <= new Date();
           const status = invite.usedAt ? t("used") : expired ? t("expired") : t("active");
-          const url =
-            typeof window === "undefined"
-              ? `/invite/${invite.token}`
-              : `${window.location.origin}/invite/${invite.token}`;
           return (
             <tr key={invite.id} className="border-t">
               <td className="py-2 pe-4">{t(`role${capitalize(invite.role)}`)}</td>
               <td className="py-2 pe-4">
                 {[...invite.gradeScopes.map(String), ...invite.eventTypeScopes].join(", ") || "—"}
               </td>
-              <td className="py-2 pe-4">{new Date(invite.expiresAt).toLocaleString()}</td>
+              <td className="py-2 pe-4">{EXPIRES_AT_FMT.format(new Date(invite.expiresAt))}</td>
               <td className="py-2 pe-4">{status}</td>
               <td className="py-2">
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => void navigator.clipboard.writeText(url)}
+                  onClick={() => {
+                    const url = `${window.location.origin}/invite/${invite.token}`;
+                    void navigator.clipboard.writeText(url);
+                  }}
                 >
                   {t("copyInvite")}
                 </Button>

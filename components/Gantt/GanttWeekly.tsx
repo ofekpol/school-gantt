@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { WeeklyModel, WeeklyEventBar } from "@/lib/views/gantt-weekly";
+import {
+  buildWeeklyModel,
+  type WeeklyModel,
+  type WeeklyEventBar,
+} from "@/lib/views/gantt-weekly";
 import { EventDrawer } from "./EventDrawer";
 
 /* ---- Layout constants ---- */
@@ -39,29 +43,56 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const [displayWeekStartMs, setDisplayWeekStartMs] = useState(() => model.weekStart.getTime());
 
-  const eventMap = new Map(events.map((e) => [e.id, {
-    ...e,
-    startAt: new Date(e.startAt),
-    endAt: new Date(e.endAt),
-  }]));
+  useEffect(() => {
+    setDisplayWeekStartMs(model.weekStart.getTime());
+  }, [model.weekStart]);
+
+  const hydratedEvents = useMemo(
+    () => events.map((e) => ({
+      ...e,
+      startAt: new Date(e.startAt),
+      endAt: new Date(e.endAt),
+    })),
+    [events],
+  );
+
+  const eventMap = useMemo(
+    () => new Map(hydratedEvents.map((e) => [e.id, e])),
+    [hydratedEvents],
+  );
+
+  const displayModel = useMemo(() => {
+    if (displayWeekStartMs === model.weekStart.getTime()) return model;
+    return buildWeeklyModel(
+      new Date(displayWeekStartMs),
+      hydratedEvents,
+      model.rows.map((row) => row.grade),
+      new Date(),
+    );
+  }, [displayWeekStartMs, hydratedEvents, model]);
 
   const selected = selectedId ? (eventMap.get(selectedId) ?? null) : null;
 
   function navigate(delta: number) {
-    const next = new Date(model.weekStart.getTime() + delta * 7 * 24 * 60 * 60 * 1000);
+    const next = new Date(displayModel.weekStart.getTime() + delta * 7 * 24 * 60 * 60 * 1000);
     const iso = next.toISOString().slice(0, 10);
     const params = new URLSearchParams(searchParams.toString());
     params.set("week", iso);
-    router.replace(`${pathname}?${params.toString()}` as never, { scroll: false });
+    setDisplayWeekStartMs(next.getTime());
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}` as never, { scroll: false });
+    });
   }
 
-  const todayIndex = model.days.findIndex((d) => d.isToday);
+  const todayIndex = displayModel.days.findIndex((d) => d.isToday);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", fontFamily: "var(--sg-font-ui)" }}>
       {/* Week navigation */}
-      <WeekNav model={model} onPrev={() => navigate(-1)} onNext={() => navigate(1)} />
+      <WeekNav model={displayModel} onPrev={() => navigate(-1)} onNext={() => navigate(1)} />
 
       {/* Gantt body */}
       <div style={{
@@ -76,7 +107,7 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
         position: "relative",
       }}>
         {/* Day axis */}
-        <DayAxis days={model.days} onDayClick={onDayClick} />
+        <DayAxis days={displayModel.days} onDayClick={onDayClick} />
 
         {/* Grades column header */}
         <div style={{
@@ -93,11 +124,11 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
         {/* Timeline body */}
         <div style={{ position: "relative" }}>
           {todayIndex >= 0 && <TodayLine dayIndex={todayIndex} />}
-          {model.rows.map((row) => (
+          {displayModel.rows.map((row) => (
             <GradeRow
               key={row.grade}
               row={row}
-              days={model.days}
+              days={displayModel.days}
               onSelect={setSelectedId}
               onDayClick={onDayClick}
             />
@@ -109,9 +140,9 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
           borderInlineStart: "1px solid var(--sg-hairline)",
           background: "var(--sg-surface-2)",
           display: "grid",
-          gridTemplateRows: model.rows.map(() => `${ROW_H}px`).join(" "),
+          gridTemplateRows: displayModel.rows.map(() => `${ROW_H}px`).join(" "),
         }}>
-          {model.rows.map((row) => (
+          {displayModel.rows.map((row) => (
             <div key={row.grade} style={{
               display: "flex", flexDirection: "column", justifyContent: "center",
               padding: "0 14px",
@@ -356,8 +387,8 @@ function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
         </h1>
       </div>
       <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-        <NavBtn onClick={onPrev} aria-label="שבוע קודם">›</NavBtn>
-        <NavBtn onClick={onNext} aria-label="שבוע הבא">‹</NavBtn>
+        <NavBtn onClick={onNext} aria-label="שבוע הבא">›</NavBtn>
+        <NavBtn onClick={onPrev} aria-label="שבוע קודם">‹</NavBtn>
         <div style={{ width: 1, height: 22, background: "var(--sg-hairline)", margin: "0 4px" }} />
         <PrintBtn />
       </div>
