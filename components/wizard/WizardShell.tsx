@@ -49,6 +49,26 @@ export interface StepProps {
 const TOTAL_STEPS = 7;
 
 /**
+ * Maps wizard state to the EventDraftSchema PATCH body. The wizard tracks the
+ * Step-6 fields as responsibleText/requirementsText, but they persist to the
+ * `location`/`description` columns — without this mapping Zod silently drops
+ * the unknown keys and the data is lost on save. `date` is a wizard-only field
+ * (the canonical timestamp is startAt/endAt) and is intentionally omitted.
+ */
+function toApiBody(d: WizardData): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  if (d.title !== undefined) body.title = d.title;
+  if (d.eventTypeId !== undefined) body.eventTypeId = d.eventTypeId;
+  if (d.grades !== undefined) body.grades = d.grades;
+  if (d.startAt !== undefined) body.startAt = d.startAt;
+  if (d.endAt !== undefined) body.endAt = d.endAt;
+  if (d.allDay !== undefined) body.allDay = d.allDay;
+  if (d.responsibleText !== undefined) body.location = d.responsibleText;
+  if (d.requirementsText !== undefined) body.description = d.requirementsText;
+  return body;
+}
+
+/**
  * WizardShell — client-side orchestrator for the 7-step event creation wizard.
  * Autosaves to the API after every step (WIZARD-02).
  * On submit, calls POST /api/v1/events/:id/submit (WIZARD-06).
@@ -102,7 +122,7 @@ export function WizardShell({
           const json = (await res.json()) as { id: string };
           setEventId(json.id);
           // Immediately PATCH with all buffered data so nothing is lost.
-          const buffered: WizardData = { ...patch };
+          const buffered = toApiBody(patch);
           delete buffered.eventTypeId;
           const hasBuffered = Object.keys(buffered).length > 0;
           if (hasBuffered) {
@@ -118,7 +138,7 @@ export function WizardShell({
           const res = await fetch(`/api/v1/events/${eventId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(patch),
+            body: JSON.stringify(toApiBody(patch)),
           });
           if (!res.ok) throw new Error("Failed to save step");
           return eventId;
