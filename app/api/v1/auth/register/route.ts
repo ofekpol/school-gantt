@@ -19,11 +19,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const { email, fullName, password } = parsed.data;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: {
+      data: { full_name: fullName },
+      emailRedirectTo: `${appUrl}/auth/confirm`,
+    },
   });
 
   if (error) {
