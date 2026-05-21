@@ -12,6 +12,7 @@ import { EventTypeTable } from "@/components/admin/EventTypeTable";
 export default async function AdminEventTypesPage() {
   const user = await getStaffUser();
   if (!user || !user.schoolId) redirect("/");
+  if (user.role === "viewer") redirect("/dashboard");
 
   const eventTypes = await listEventTypes(user.schoolId);
   const t = await getTranslations("admin.eventTypes");
@@ -19,7 +20,7 @@ export default async function AdminEventTypesPage() {
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-4">{t("title")}</h1>
-      <EventTypeTable initial={eventTypes} />
+      <EventTypeTable initial={eventTypes} canManage={user.role === "admin"} />
     </main>
   );
 }

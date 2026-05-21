@@ -125,7 +125,10 @@
       "cancel": "Cancel",
       "edit": "Edit",
       "delete": "Delete",
-      "inUse": "Cannot delete — events are assigned to this type"
+      "inUse": "Cannot delete — events are assigned to this type",
+      "chooseColor": "Choose a color",
+      "customColor": "Custom color",
+      "empty": "No event types yet. Add your first one."
     },
     "year": {
       "title": "Academic Year",

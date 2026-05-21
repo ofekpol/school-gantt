@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { ColorPicker } from "@/components/admin/ColorPicker";
 
 interface EventTypeRow {
   id: string;
@@ -17,6 +18,8 @@ interface EventTypeRow {
 
 interface Props {
   initial: EventTypeRow[];
+  /** Admins can edit/delete; editors create-only. Defaults to true. */
+  canManage?: boolean;
 }
 
 interface CreateForm {
@@ -37,12 +40,12 @@ const EMPTY_FORM: CreateForm = {
   key: "",
   labelHe: "",
   labelEn: "",
-  colorHex: "#000000",
+  colorHex: "#1f77b4",
   glyph: "",
   sortOrder: 0,
 };
 
-export function EventTypeTable({ initial }: Props) {
+export function EventTypeTable({ initial, canManage = true }: Props) {
   const t = useTranslations("admin.eventTypes");
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
@@ -129,12 +132,13 @@ export function EventTypeTable({ initial }: Props) {
               onChange={(e) => setCreateForm((f) => ({ ...f, labelEn: e.target.value }))}
               className="border rounded px-2 py-1"
             />
-            <input
-              placeholder={t("colorHex")}
-              value={createForm.colorHex}
-              onChange={(e) => setCreateForm((f) => ({ ...f, colorHex: e.target.value }))}
-              className="border rounded px-2 py-1"
-            />
+            <div className="col-span-2">
+              <span className="block text-sm mb-1">{t("colorHex")}</span>
+              <ColorPicker
+                value={createForm.colorHex}
+                onChange={(hex) => setCreateForm((f) => ({ ...f, colorHex: hex }))}
+              />
+            </div>
             <input
               type="number"
               placeholder={t("sortOrder")}
@@ -173,6 +177,13 @@ export function EventTypeTable({ initial }: Props) {
           </tr>
         </thead>
         <tbody>
+          {initial.length === 0 && (
+            <tr className="border-t">
+              <td colSpan={7} className="py-6 text-center text-muted-foreground">
+                {t("empty")}
+              </td>
+            </tr>
+          )}
           {initial.map((row) =>
             editState?.id === row.id ? (
               <tr key={row.id} className="border-t">
@@ -205,14 +216,13 @@ export function EventTypeTable({ initial }: Props) {
                       }
                       className="border rounded px-2 py-1 w-28"
                     />
-                    <input
+                    <ColorPicker
                       value={editState.form.colorHex}
-                      onChange={(e) =>
+                      onChange={(hex) =>
                         setEditState((s) =>
-                          s ? { ...s, form: { ...s.form, colorHex: e.target.value } } : s,
+                          s ? { ...s, form: { ...s.form, colorHex: hex } } : s,
                         )
                       }
-                      className="border rounded px-2 py-1 w-24"
                     />
                     <input
                       value={editState.form.glyph}
@@ -248,6 +258,7 @@ export function EventTypeTable({ initial }: Props) {
                 <td className="py-2 pe-3">{row.glyph}</td>
                 <td className="py-2 pe-3">{row.sortOrder}</td>
                 <td className="py-2">
+                  {canManage && (
                   <span className="flex gap-2">
                     <Button
                       size="sm"
@@ -276,6 +287,7 @@ export function EventTypeTable({ initial }: Props) {
                       {t("delete")}
                     </Button>
                   </span>
+                  )}
                 </td>
               </tr>
             ),

@@ -10,8 +10,8 @@ import type { ReactNode } from "react";
  * Admin route group layout.
  * AUTH guard: redirects unauthenticated users to /auth/login.
  * STATUS guard: pending users → /auth/pending; deactivated → /auth/deactivated.
- * ROLE guard: redirects non-admin users to /dashboard.
- * All routes under (admin)/ require role='admin'.
+ * ROLE guard: redirects viewers to /dashboard. Per-page guards enforce
+ * admin-only access for staff/year; event-types also allows editors.
  */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getStaffUser();
@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (user.status === "pending") redirect("/auth/pending");
   if (user.status === "deactivated") redirect("/auth/deactivated");
   if (user.mustChangePassword) redirect("/auth/change-password");
-  if (user.role !== "admin") redirect("/dashboard");
+  if (user.role === "viewer") redirect("/dashboard");
   const [navLinks, currentPath, t] = await Promise.all([
     buildNavLinks(user.role),
     getCurrentPath(),

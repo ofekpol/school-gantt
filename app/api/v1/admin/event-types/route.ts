@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStaffUser } from "@/lib/auth/session";
-import { assertAdmin } from "@/lib/auth/admin";
+import { assertAdmin, assertCanCreateEventType } from "@/lib/auth/admin";
 import { createEventType, listEventTypes } from "@/lib/admin/event-types";
 import { EventTypeSchema } from "@/lib/validations/admin";
 
@@ -19,7 +19,7 @@ export async function GET(): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await getStaffUser();
   try {
-    assertAdmin(user);
+    assertCanCreateEventType(user);
   } catch (e) {
     if (e instanceof Response) return NextResponse.json({ error: "Forbidden" }, { status: e.status });
     throw e;

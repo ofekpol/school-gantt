@@ -16,7 +16,9 @@ describe("ADMIN-02: admin configures event types at /admin/event-types", () => {
     "admin can create a new event type with labelHe, labelEn, colorHex, glyph",
   );
   it.todo("admin can edit event type label and sortOrder");
-  it.todo("non-admin cannot POST to event-types API (returns 403)");
+  it.todo("active editor can POST to create an event type (201)");
+  it.todo("editor cannot PATCH or DELETE event-types (admin-only, 403)");
+  it.todo("viewer cannot POST to event-types API (returns 403)");
   it.todo("event type key must be unique per school");
 });
 

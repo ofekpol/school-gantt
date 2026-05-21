@@ -13,6 +13,7 @@ import { YearForm } from "@/components/admin/YearForm";
 export default async function AdminYearPage() {
   const user = await getStaffUser();
   if (!user || !user.schoolId) redirect("/");
+  if (user.role !== "admin") redirect("/dashboard");
 
   const [years, active] = await Promise.all([
     listAcademicYears(user.schoolId),
