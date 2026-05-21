@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ZoomLevel } from "@/lib/views/gantt";
 import { formatGradeLabel } from "@/lib/grades";
@@ -39,7 +39,6 @@ export function FilterBar({
   const t = useTranslations("agenda.filter");
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [q, setQ] = useState(searchQuery);
   useEffect(() => setQ(searchQuery), [searchQuery]);
 
@@ -48,8 +47,12 @@ export function FilterBar({
     router.replace((qs ? `${pathname}?${qs}` : pathname) as never, { scroll: false });
   }
 
+  function currentParams() {
+    return new URLSearchParams(window.location.search);
+  }
+
   function toggleGrade(g: number) {
-    const next = new URLSearchParams(searchParams.toString());
+    const next = currentParams();
     // Empty selection renders as "all on", so toggling starts from the full set.
     const current = new Set(selectedGrades.length === 0 ? allGrades : selectedGrades);
     if (current.has(g)) current.delete(g); else current.add(g);
@@ -60,7 +63,7 @@ export function FilterBar({
   }
 
   function toggleType(key: string) {
-    const next = new URLSearchParams(searchParams.toString());
+    const next = currentParams();
     const allKeys = eventTypes.map((et) => et.key);
     // Empty selection renders as "all on", so toggling starts from the full set.
     const current = new Set(selectedTypes.length === 0 ? allKeys : selectedTypes);
@@ -71,7 +74,7 @@ export function FilterBar({
   }
 
   function setZoom(next: ZoomLevel) {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = currentParams();
     if (next === "year") params.delete("zoom"); else params.set("zoom", next);
     // reset week param when changing zoom
     params.delete("week");
@@ -80,7 +83,7 @@ export function FilterBar({
 
   function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const next = new URLSearchParams(searchParams.toString());
+    const next = currentParams();
     if (q.trim().length > 0) next.set("q", q.trim()); else next.delete("q");
     commit(next);
   }
@@ -178,6 +181,7 @@ export function FilterBar({
             }}
           />
         </div>
+        <button type="submit" style={{ display: "none" }} aria-hidden="true" />
       </form>
 
       {/* Zoom segmented */}
