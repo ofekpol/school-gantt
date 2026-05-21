@@ -136,6 +136,7 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
           width: GRADE_COLUMN_PX,
           background: "var(--sg-surface-2)",
           borderInlineStart: "1px solid var(--sg-hairline)",
+          zIndex: 0,
         }}
       >
         <div style={{
@@ -202,6 +203,7 @@ function EventBarButton({ bar, onSelect }: EventBarButtonProps) {
         cursor: "pointer", textAlign: "start",
         color: "var(--sg-ink)",
         border: "none",
+        zIndex: 1,
       }}
     >
       <span style={{ fontSize: 11, flexShrink: 0 }}>{bar.eventTypeGlyph}</span>
