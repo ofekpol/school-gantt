@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
+  getStaffUserByAuthId,
   getStaffUserByEmail,
   incrementLoginAttempts,
   resetLoginAttempts,
 } from "@/lib/db/staff";
+import { getPostLoginRedirect } from "@/lib/auth/redirects";
 
 const MAX_ATTEMPTS = 10;
 
@@ -57,9 +59,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
 
-  if (staffUser) {
+  const authedStaffUser = await getStaffUserByAuthId(data.user.id);
+
+  if (authedStaffUser) {
+    await resetLoginAttempts(authedStaffUser.id);
+  } else if (staffUser) {
     await resetLoginAttempts(staffUser.id);
   }
 
-  return NextResponse.json({ status: "ok", redirectTo: "/dashboard" }, { status: 200 });
+  return NextResponse.json(
+    { status: "ok", redirectTo: getPostLoginRedirect(authedStaffUser) },
+    { status: 200 },
+  );
 }

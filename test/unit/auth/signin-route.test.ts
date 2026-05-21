@@ -9,9 +9,11 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const getStaffMock = vi.fn();
+const getStaffByAuthIdMock = vi.fn();
 const incrementLoginAttemptsMock = vi.fn();
 const resetLoginAttemptsMock = vi.fn();
 vi.mock("@/lib/db/staff", () => ({
+  getStaffUserByAuthId: (...args: unknown[]) => getStaffByAuthIdMock(...args),
   getStaffUserByEmail: (...args: unknown[]) => getStaffMock(...args),
   incrementLoginAttempts: (...args: unknown[]) => incrementLoginAttemptsMock(...args),
   resetLoginAttempts: (...args: unknown[]) => resetLoginAttemptsMock(...args),
@@ -23,6 +25,7 @@ describe("POST /api/v1/auth/signin", () => {
   beforeEach(() => {
     signInMock.mockReset();
     getStaffMock.mockReset();
+    getStaffByAuthIdMock.mockReset();
     incrementLoginAttemptsMock.mockReset();
     resetLoginAttemptsMock.mockReset();
   });
@@ -73,7 +76,7 @@ describe("POST /api/v1/auth/signin", () => {
     expect(body.attemptsRemaining).toBe(7); // 10 - (2+1)
   });
 
-  it("returns 200 on successful sign in and resets attempts", async () => {
+  it("returns 200 on successful staff sign in and redirects to dashboard", async () => {
     getStaffMock.mockResolvedValue({
       id: "u1",
       status: "active",
@@ -81,12 +84,48 @@ describe("POST /api/v1/auth/signin", () => {
       lockedUntil: null,
     });
     signInMock.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    getStaffByAuthIdMock.mockResolvedValue({
+      id: "u1",
+      schoolId: "school-1",
+      schoolSlug: "demo-school",
+      role: "editor",
+      status: "active",
+      email: "a@b.com",
+      fullName: "Test User",
+      mustChangePassword: false,
+    });
 
     const res = await POST(makeRequest({ email: "a@b.com", password: "password123" }));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe("ok");
     expect(body.redirectTo).toBe("/dashboard");
+  });
+
+  it("redirects viewers to their school calendar after sign in", async () => {
+    getStaffMock.mockResolvedValue({
+      id: "u1",
+      status: "active",
+      loginAttempts: 0,
+      lockedUntil: null,
+    });
+    signInMock.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    getStaffByAuthIdMock.mockResolvedValue({
+      id: "u1",
+      schoolId: "school-1",
+      schoolSlug: "demo-school",
+      role: "viewer",
+      status: "active",
+      email: "a@b.com",
+      fullName: "Test User",
+      mustChangePassword: false,
+    });
+
+    const res = await POST(makeRequest({ email: "a@b.com", password: "password123" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe("ok");
+    expect(body.redirectTo).toBe("/demo-school/calendar");
   });
 
   it("returns 401 when staff_users row not found (no account)", async () => {

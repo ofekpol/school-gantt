@@ -1,5 +1,8 @@
 import { EmailPasswordSignInForm } from "@/components/auth/EmailPasswordSignInForm";
+import { getPostLoginRedirect } from "@/lib/auth/redirects";
+import { getStaffUser } from "@/lib/auth/session";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function LoginPage({
   searchParams,
@@ -7,6 +10,8 @@ export default async function LoginPage({
   searchParams: Promise<{ confirmed?: string; error?: string }>;
 }) {
   const { confirmed, error } = await searchParams;
+  const user = await getStaffUser();
+  if (user) redirect(getPostLoginRedirect(user));
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
