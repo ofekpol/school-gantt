@@ -200,7 +200,8 @@
       "type": "סוג",
       "grades": "שכבות",
       "location": "מיקום",
-      "description": "פרטים"
+      "description": "פרטים",
+      "edit": "עריכה"
     },
     "zoom": {
       "year": "שנה",

@@ -8,6 +8,7 @@ import { formatGradeLabel } from "@/lib/grades";
 interface Props {
   event: AgendaItem | null;
   onClose: () => void;
+  editHref?: string;
 }
 
 const dateFmt = new Intl.DateTimeFormat("he-IL", {
@@ -20,7 +21,7 @@ const timeFmt = new Intl.DateTimeFormat("he-IL", {
   minute: "2-digit",
 });
 
-export function EventDrawer({ event, onClose }: Props) {
+export function EventDrawer({ event, onClose, editHref }: Props) {
   const t = useTranslations("gantt.drawer");
   const ta = useTranslations("a11y");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -149,6 +150,21 @@ export function EventDrawer({ event, onClose }: Props) {
           borderTop: "1px solid var(--sg-hairline)",
           background: "var(--sg-surface-2)",
         }}>
+          {editHref && (
+            <a
+              href={editHref}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                height: 32, padding: "0 14px",
+                borderRadius: 8,
+                background: "var(--sg-ink)", color: "var(--sg-bg)",
+                fontSize: 13, fontWeight: 500, cursor: "pointer",
+                textDecoration: "none",
+              }}
+            >
+              {t("edit")}
+            </a>
+          )}
           <button
             type="button"
             onClick={onClose}
