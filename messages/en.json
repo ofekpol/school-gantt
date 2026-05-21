@@ -28,7 +28,8 @@
     "staff": "Staff",
     "eventTypes": "Event Types",
     "year": "Academic Year",
-    "profile": "Profile"
+    "profile": "Profile",
+    "logout": "Sign out"
   },
   "grades": {
     "label_7": "ז",
