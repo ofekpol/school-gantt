@@ -130,7 +130,7 @@ export function FilterBar({
       <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden" }}>
         <span style={labelStyle}>סוגים</span>
         <div style={{ display: "flex", gap: 6, flexWrap: "nowrap", overflow: "hidden" }}>
-          {eventTypes.slice(0, 9).map((et) => {
+          {eventTypes.map((et) => {
             const on = selectedTypes.length === 0 || selectedTypes.includes(et.key);
             return (
               <button
