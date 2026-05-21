@@ -73,7 +73,7 @@ export async function middleware(request: NextRequest) {
     "/dashboard", "/events", "/profile", "/_next",
   ];
   const isViewerPath =
-    !RESERVED_PREFIXES.some((p) => pathname.startsWith(p)) &&
+    !RESERVED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/")) &&
     /^\/[^/]+(\/calendar|\/agenda)?$/.test(pathname);
 
   const isPublic = isViewerPath || PUBLIC_PATHS.some((p) => pathname.startsWith(p));

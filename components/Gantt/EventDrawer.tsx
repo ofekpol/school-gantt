@@ -162,7 +162,7 @@ export function EventDrawer({ event, onClose, editHref }: Props) {
                 textDecoration: "none",
               }}
             >
-              עריכה
+              {t("edit")}
             </a>
           )}
           <button
