@@ -67,15 +67,17 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
           className="w-56 rounded border px-2 py-1"
           aria-label={t("email")}
         />
-        <input
-          name="expiresInHours"
-          type="number"
-          defaultValue={72}
-          min={1}
-          max={720}
-          className="w-28 rounded border px-2 py-1"
-          aria-label={t("expiresInHours")}
-        />
+        <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+          <span>{t("expiresInHours")}</span>
+          <input
+            name="expiresInHours"
+            type="number"
+            defaultValue={72}
+            min={1}
+            max={720}
+            className="w-24 rounded border px-2 py-1 text-base font-normal text-neutral-900"
+          />
+        </label>
         <Button type="submit">{t("createInvite")}</Button>
       </div>
       <fieldset>

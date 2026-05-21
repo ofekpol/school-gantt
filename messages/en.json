@@ -97,7 +97,7 @@
       "requestedAt": "Requested",
       "noPendingRequests": "No pending requests.",
       "createInvite": "Create Invite",
-      "expiresInHours": "Expires in hours",
+      "expiresInHours": "Invite expires in hours",
       "inviteCreated": "Invite created",
       "noInvites": "No invites.",
       "scopes": "Scopes",
