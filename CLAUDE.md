@@ -95,7 +95,9 @@ Deletes set `deleted_at` (soft delete).
 
 ## Auth
 
-Email + password via Supabase Auth. No OAuth. No custom session cookies.
+Email + password via Supabase Auth, plus Google OAuth. No custom session cookies.
+
+Google OAuth requires the Google provider enabled in the Supabase dashboard (Client ID/Secret) with `/auth/callback` registered as a redirect URL. OAuth sign-ups land in `/auth/pending` (a `pending_registrations` row) and need admin activation; they do not auto-create an active `staff_users` row.
 
 **Roles:** `editor` | `admin` | `viewer` (stored in `staff_users.role`)
 
