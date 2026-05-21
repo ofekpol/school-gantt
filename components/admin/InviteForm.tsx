@@ -18,8 +18,8 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
   const router = useRouter();
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   const [emailSent, setEmailSent] = useState(false);
+  const [formKey, setFormKey] = useState(0);
 
   async function create(form: FormData) {
     setError(null);
@@ -49,11 +49,12 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
     const data = (await res.json()) as { url: string; emailSent: boolean };
     setUrl(data.url);
     setEmailSent(data.emailSent);
+    setFormKey((k) => k + 1);
     router.refresh();
   }
 
   return (
-    <form action={create} className="space-y-3 rounded border p-3">
+    <form key={formKey} action={create} className="space-y-3 rounded border p-3">
       <div className="flex flex-wrap items-center gap-3">
         <select name="role" defaultValue="viewer" className="rounded border px-2 py-1">
           <option value="viewer">{t("roleViewer")}</option>
