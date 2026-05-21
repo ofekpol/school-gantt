@@ -8,27 +8,27 @@ import { Pool } from "pg";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "@/lib/db/schema";
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
+const DATABASE_URL = process.env.DATABASE_URL;
 
 /**
  * skipIfNoTestDb is true when:
- * - TEST_DATABASE_URL is not set, OR
+ * - DATABASE_URL is not set, OR
  * - The DB is set but unreachable (checked in beforeAll and toggled at runtime).
  *
  * Test files that use `describe.skipIf(skipIfNoTestDb)` must re-read this via
  * the `shouldSkip()` helper which reflects the runtime connectivity check.
  */
-let _skip = !TEST_DATABASE_URL;
+let _skip = !DATABASE_URL;
 /** @deprecated Use shouldSkip() for runtime-accurate skip checks */
-export const skipIfNoTestDb = !TEST_DATABASE_URL;
+export const skipIfNoTestDb = !DATABASE_URL;
 
 /** Runtime-accurate: true if DB is absent OR unreachable after connectivity check */
 export function shouldSkip(): boolean {
   return _skip;
 }
 
-const testPool = TEST_DATABASE_URL
-  ? new Pool({ connectionString: TEST_DATABASE_URL, max: 5, connectionTimeoutMillis: 5000 })
+const testPool = DATABASE_URL
+  ? new Pool({ connectionString: DATABASE_URL, max: 5, connectionTimeoutMillis: 5000 })
   : null;
 
 export const testDb: NodePgDatabase<typeof schema> | null =
@@ -39,7 +39,7 @@ export const testSchoolB = "00000000-0000-0000-0000-00000000000b";
 
 beforeAll(async () => {
   if (_skip || !testDb || !testPool) {
-    console.warn("[integration] TEST_DATABASE_URL not set — skipping");
+    console.warn("[integration] DATABASE_URL not set — skipping");
     return;
   }
   // Verify connectivity before running setup queries; if the DB is unreachable,
@@ -47,7 +47,7 @@ beforeAll(async () => {
   try {
     await testPool.query("SELECT 1");
   } catch (err) {
-    console.warn("[integration] TEST_DATABASE_URL unreachable — skipping:", (err as Error).message);
+    console.warn("[integration] DATABASE_URL unreachable — skipping:", (err as Error).message);
     _skip = true;
     return;
   }
