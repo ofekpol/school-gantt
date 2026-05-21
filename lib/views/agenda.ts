@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, between, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
 import { withSchool } from "@/lib/db/client";
 import {
   eventGrades,
@@ -29,6 +29,9 @@ export interface AgendaFilters {
   types?: string[];
   /** Free-text search across title (case-insensitive ILIKE). */
   q?: string;
+  /** Inclusive academic-year bounds (YYYY-MM-DD). When provided, only events
+   *  whose startAt falls within [startDate, endDate] are returned. */
+  yearBounds?: { startDate: string; endDate: string };
 }
 
 /**
@@ -49,6 +52,13 @@ export async function getAgendaForSchool(
       eq(events.status, "approved"),
       isNull(events.deletedAt),
     ];
+
+    if (filters.yearBounds) {
+      const { startDate, endDate } = filters.yearBounds;
+      conditions.push(
+        between(events.startAt, new Date(startDate), new Date(`${endDate}T23:59:59Z`)),
+      );
+    }
 
     if (filters.grades && filters.grades.length > 0) {
       const gradeList = filters.grades;
