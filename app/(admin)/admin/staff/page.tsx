@@ -18,6 +18,7 @@ import { InviteTable } from "@/components/admin/InviteTable";
 export default async function AdminStaffPage() {
   const user = await getStaffUser();
   if (!user?.schoolId) redirect("/auth/login");
+  if (user.role !== "admin") redirect("/dashboard");
 
   const [staff, eventTypes, pendingRegs, invites] = await Promise.all([
     listStaffUsers(user.schoolId),

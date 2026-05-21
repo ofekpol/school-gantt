@@ -24,11 +24,13 @@ export async function buildNavLinks(
     { href: "/dashboard", label: t("dashboard") },
   ];
   if (role === "admin") {
-    links.push(
-      { href: "/admin/staff", label: t("staff") },
-      { href: "/admin/event-types", label: t("eventTypes") },
-      { href: "/admin/year", label: t("year") },
-    );
+    links.push({ href: "/admin/staff", label: t("staff") });
+  }
+  if (role === "admin" || role === "editor") {
+    links.push({ href: "/admin/event-types", label: t("eventTypes") });
+  }
+  if (role === "admin") {
+    links.push({ href: "/admin/year", label: t("year") });
   }
   links.push({ href: "/profile", label: t("profile") });
   return links;
