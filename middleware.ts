@@ -67,7 +67,16 @@ export async function middleware(request: NextRequest) {
     "/api/v1/auth/register",
   ];
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  // Viewer school paths are public: /:school, /:school/calendar, /:school/agenda
+  const RESERVED_PREFIXES = [
+    "/auth", "/invite", "/ical", "/api", "/admin",
+    "/dashboard", "/events", "/profile", "/_next",
+  ];
+  const isViewerPath =
+    !RESERVED_PREFIXES.some((p) => pathname.startsWith(p)) &&
+    /^\/[^/]+(\/calendar|\/agenda)?$/.test(pathname);
+
+  const isPublic = isViewerPath || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   if (!isPublic && !user) {
     const loginUrl = new URL("/auth/login", request.url);
