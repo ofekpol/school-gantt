@@ -117,7 +117,9 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
         startDate: `${startYear}-09-01`,
         endDate: `${startYear + 1}-07-31`,
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing({
+        target: [schema.academicYears.schoolId, schema.academicYears.label],
+      });
 
     // 3. Event types (insert before scopes so counselor scope FK-by-key works)
     for (const et of EVENT_TYPES) {

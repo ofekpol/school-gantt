@@ -19,3 +19,10 @@ tsconfig.tsbuildinfo
 .playwright-mcp/
 test/e2e/.auth/
 לוח גאנט.docx
+
+# Screenshots and debug artifacts
+*.png
+*.rvf
+*.rvf.lock
+ruvector.db
+agentdb*

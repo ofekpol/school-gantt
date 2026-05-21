@@ -120,10 +120,12 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
             }} />
           ))}
 
-          {/* Event bars */}
-          {bars.map((bar) => (
-            <EventBarButton key={bar.id} bar={bar} onSelect={setSelectedId} />
-          ))}
+          {/* Event bars — smaller area gets higher z so they're always clickable */}
+          {bars.map((bar, i) => {
+            const area = bar.widthPct * bar.rowSpan;
+            const zIndex = 10 + Math.round(10000 / Math.max(area, 0.01));
+            return <EventBarButton key={bar.id} bar={bar} zIndex={zIndex} onSelect={setSelectedId} />;
+          })}
         </div>
       </div>
 
@@ -136,7 +138,7 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
           width: GRADE_COLUMN_PX,
           background: "var(--sg-surface-2)",
           borderInlineStart: "1px solid var(--sg-hairline)",
-          zIndex: 0,
+          zIndex: 20,
         }}
       >
         <div style={{
@@ -178,10 +180,11 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
 
 interface EventBarButtonProps {
   bar: GanttBar;
+  zIndex: number;
   onSelect: (id: string) => void;
 }
 
-function EventBarButton({ bar, onSelect }: EventBarButtonProps) {
+function EventBarButton({ bar, zIndex, onSelect }: EventBarButtonProps) {
   return (
     <button
       type="button"
@@ -203,7 +206,7 @@ function EventBarButton({ bar, onSelect }: EventBarButtonProps) {
         cursor: "pointer", textAlign: "start",
         color: "var(--sg-ink)",
         border: "none",
-        zIndex: 1,
+        zIndex,
       }}
     >
       <span style={{ fontSize: 11, flexShrink: 0 }}>{bar.eventTypeGlyph}</span>
