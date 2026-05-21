@@ -63,7 +63,7 @@ export const academicYears = pgTable(
     endDate: date("end_date").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  () => [schoolIsolation],
+  (t) => [schoolIsolation, uniqueIndex("academic_years_school_id_label_key").on(t.schoolId, t.label)],
 );
 
 /**
