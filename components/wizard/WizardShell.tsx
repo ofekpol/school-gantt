@@ -86,19 +86,24 @@ export function WizardShell({
   const [eventId, setEventId] = useState<string | null>(resumeId);
   const [data, setData] = useState<WizardData>(() => {
     if (!resumeDraft) return initialDate ? { date: initialDate } : {};
+    // startAt is serialized as "YYYY-MM-DDTHH:MM:SS+02:00" by the page,
+    // so slicing [0:10] gives the local date in Jerusalem time.
+    const startAtStr = typeof resumeDraft.startAt === "string" ? resumeDraft.startAt : undefined;
     return {
+      date: initialDate ?? (startAtStr ? startAtStr.slice(0, 10) : undefined),
       title: typeof resumeDraft.title === "string" ? resumeDraft.title : undefined,
-      startAt:
-        typeof resumeDraft.startAt === "string"
-          ? new Date(resumeDraft.startAt).toISOString()
-          : undefined,
-      endAt:
-        typeof resumeDraft.endAt === "string"
-          ? new Date(resumeDraft.endAt).toISOString()
-          : undefined,
+      startAt: startAtStr,
+      endAt: typeof resumeDraft.endAt === "string" ? resumeDraft.endAt : undefined,
       allDay: typeof resumeDraft.allDay === "boolean" ? resumeDraft.allDay : false,
       eventTypeId:
         typeof resumeDraft.eventTypeId === "string" ? resumeDraft.eventTypeId : undefined,
+      grades: Array.isArray(resumeDraft.grades)
+        ? (resumeDraft.grades as number[])
+        : undefined,
+      responsibleText:
+        typeof resumeDraft.location === "string" ? resumeDraft.location : undefined,
+      requirementsText:
+        typeof resumeDraft.description === "string" ? resumeDraft.description : undefined,
     };
   });
   const [saving, setSaving] = useState(false);

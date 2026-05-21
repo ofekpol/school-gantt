@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { getStaffUser } from "@/lib/auth/session";
 import {
   getActiveAcademicYear,
-  getDraftForResume,
   getEditorAllowedGrades,
+  getEventForEditor,
   listEventTypes,
 } from "@/lib/events/queries";
 import { WizardShell } from "@/components/wizard/WizardShell";
@@ -40,7 +40,24 @@ export default async function NewEventPage({ searchParams }: PageProps) {
   const allowedGrades = allowedGradesRaw;
 
   const resumeDraft = resumeId
-    ? await getDraftForResume(user.schoolId, resumeId, user.id)
+    ? await getEventForEditor(user.schoolId, resumeId, user.id, user.role === "admin").then(
+        (result) => {
+          if (!result) return null;
+          const { event, grades } = result;
+          return {
+            title: event.title ?? undefined,
+            // Serialize as Jerusalem-tz ISO so WizardShell and Step5Time can
+            // slice [11:16] to recover the local time without a tz library.
+            startAt: event.startAt ? toJerusalemIso(event.startAt) : undefined,
+            endAt: event.endAt ? toJerusalemIso(event.endAt) : undefined,
+            allDay: event.allDay,
+            eventTypeId: event.eventTypeId,
+            location: event.location ?? undefined,
+            description: event.description ?? undefined,
+            grades,
+          };
+        },
+      )
     : null;
 
   return (
@@ -53,4 +70,21 @@ export default async function NewEventPage({ searchParams }: PageProps) {
       initialDate={initialDate}
     />
   );
+}
+
+const JERUSALEM_FMT = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "Asia/Jerusalem",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
+function toJerusalemIso(d: Date): string {
+  // sv-SE produces "YYYY-MM-DD HH:MM:SS" — replace space, append fixed +02:00.
+  // The wizard uses a fixed +02:00 offset throughout (v1 approximation).
+  return JERUSALEM_FMT.format(d).replace(" ", "T") + "+02:00";
 }
