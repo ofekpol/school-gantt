@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppHeaderNav } from "@/components/AppHeaderNav";
 
 export interface AppHeaderNavLink {
   href: string;
@@ -15,9 +15,7 @@ interface Props {
 
 /**
  * Shared app header — title/subtitle on the start side, optional nav links
- * in the center, and an optional action slot on the end side. `currentPath`
- * lets the server-rendered header style the active link without becoming a
- * client component.
+ * in the center, and an optional action slot on the end side.
  */
 export function AppHeader({
   title,
@@ -35,27 +33,7 @@ export function AppHeader({
         )}
       </div>
       {navLinks && navLinks.length > 0 && (
-        <nav className="flex items-center gap-1 flex-wrap">
-          {navLinks.map((link) => {
-            const active =
-              currentPath === link.href ||
-              (link.href !== "/dashboard" &&
-                currentPath?.startsWith(link.href));
-            return (
-              <Link
-                key={link.href}
-                href={link.href as never}
-                className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-                  active
-                    ? "bg-blue-600 text-white"
-                    : "text-neutral-700 hover:bg-neutral-100"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <AppHeaderNav links={navLinks} initialPath={currentPath} />
       )}
       <div className="flex items-center gap-3 shrink-0">{rightSlot}</div>
     </div>
