@@ -17,9 +17,9 @@ export function Step7Summary({ data, saving, eventTypes, onBack, onSubmit }: Ste
   const t = useTranslations("wizard.step7");
   const tc = useTranslations("common");
   const tg = useTranslations("grades");
-  const ta = useTranslations("agenda");
   const td = useTranslations("gantt.drawer");
   const tw = useTranslations("wizard.step5");
+  const t6 = useTranslations("wizard.step6");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -60,9 +60,9 @@ export function Step7Summary({ data, saving, eventTypes, onBack, onSubmit }: Ste
         <SummaryRow label={td("type")} value={eventType?.labelHe ?? "—"} />
         <SummaryRow label={td("description")} value={data.title ?? "—"} />
         <SummaryRow label={tw("title")} value={formatTime(data)} />
-        <SummaryRow label={td("location")} value={data.responsibleText ?? "—"} />
+        <SummaryRow label={t6("title")} value={data.responsibleText ?? "—"} />
         {data.requirementsText && (
-          <SummaryRow label={ta("location")} value={data.requirementsText} />
+          <SummaryRow label={t6("requirementsTitle")} value={data.requirementsText} />
         )}
       </dl>
       {error && (
