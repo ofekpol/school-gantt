@@ -8,6 +8,15 @@ import { formatGradeLabel } from "@/lib/grades";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
+// Pinned locale + timezone so SSR (Node) and the client agree — a bare
+// toLocaleString() uses each runtime's default locale and triggers a
+// hydration mismatch.
+const REQUESTED_AT_FMT = new Intl.DateTimeFormat("he-IL", {
+  timeZone: "Asia/Jerusalem",
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
 interface PendingRow {
   id: string;
   email: string;
@@ -88,7 +97,7 @@ export function PendingRequestsTable({
             <tr key={row.id} className="border-t">
               <td className="py-2 pe-4">{row.email}</td>
               <td className="py-2 pe-4">{row.fullName}</td>
-              <td className="py-2 pe-4">{new Date(row.requestedAt).toLocaleString()}</td>
+              <td className="py-2 pe-4">{REQUESTED_AT_FMT.format(new Date(row.requestedAt))}</td>
               <td className="flex gap-2 py-2">
                 <Button size="sm" onClick={() => setActiveId(row.id)}>
                   {t("approve")}
