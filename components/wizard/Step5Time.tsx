@@ -13,8 +13,10 @@ export function Step5Time({ data, saving, onNext, onBack }: StepProps) {
   const tc = useTranslations("common");
   const [allDay, setAllDay] = useState(data.allDay ?? false);
   const dateStr = data.date ?? new Date().toISOString().slice(0, 10);
-  const [startTime, setStartTime] = useState("08:00");
-  const [endTime, setEndTime] = useState("09:00");
+  // startAt/endAt are stored as "YYYY-MM-DDTHH:MM:SS+02:00" (Jerusalem local time),
+  // so slicing [11:16] recovers the HH:MM without needing a tz library.
+  const [startTime, setStartTime] = useState(data.startAt?.slice(11, 16) ?? "08:00");
+  const [endTime, setEndTime] = useState(data.endAt?.slice(11, 16) ?? "09:00");
   const [error, setError] = useState("");
 
   function handleNext() {
