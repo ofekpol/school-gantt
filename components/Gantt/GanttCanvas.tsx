@@ -121,7 +121,7 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
           ))}
 
           {/* Event bars — smaller area gets higher z so they're always clickable */}
-          {bars.map((bar, i) => {
+          {bars.map((bar) => {
             const area = bar.widthPct * bar.rowSpan;
             const zIndex = 10 + Math.round(10000 / Math.max(area, 0.01));
             return <EventBarButton key={bar.id} bar={bar} zIndex={zIndex} onSelect={setSelectedId} />;
