@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getSchoolBySlug } from "@/lib/db/schools";
-import { listEventTypes } from "@/lib/events/queries";
+import { getActiveAcademicYear, listEventTypes } from "@/lib/events/queries";
 import { getAgendaForSchool, groupByWeek } from "@/lib/views/agenda";
 import { FilterBar } from "@/components/FilterBar";
 import { AgendaList } from "@/components/AgendaList";
@@ -43,11 +43,16 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
   const q = typeof sp.q === "string" ? sp.q : "";
 
   const [items, eventTypeList] = await Promise.all([
-    getAgendaForSchool(school.id, {
-      grades: grades.length > 0 ? grades : undefined,
-      types: types.length > 0 ? types : undefined,
-      q: q.trim().length > 0 ? q : undefined,
-    }),
+    getActiveAcademicYear(school.id).then((year) =>
+      getAgendaForSchool(school.id, {
+        grades: grades.length > 0 ? grades : undefined,
+        types: types.length > 0 ? types : undefined,
+        q: q.trim().length > 0 ? q : undefined,
+        yearBounds: year
+          ? { startDate: year.startDate, endDate: year.endDate }
+          : undefined,
+      }),
+    ),
     listEventTypes(school.id),
   ]);
 
