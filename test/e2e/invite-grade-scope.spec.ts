@@ -22,6 +22,24 @@ const enabled = process.env.ADMIN_E2E === "1";
 const dbReady = !!process.env.DATABASE_URL;
 const skip = !enabled || !dbReady;
 
+// POST /api/v1/events requires an eventTypeId. Event types are only listed via
+// the admin API, so fetch the first one through a short-lived admin context.
+async function firstEventTypeId(
+  playwright: import("@playwright/test").PlaywrightWorkerArgs["playwright"],
+): Promise<string> {
+  const adminCtx = await playwright.request.newContext({
+    baseURL: "http://localhost:3000",
+    storageState: "test/e2e/.auth/admin.json",
+  });
+  try {
+    const res = await adminCtx.get("/api/v1/admin/event-types");
+    const body = (await res.json()) as { eventTypes: { id: string }[] };
+    return body.eventTypes[0].id;
+  } finally {
+    await adminCtx.dispose();
+  }
+}
+
 // ─── Admin invite API ────────────────────────────────────────────────────────
 
 test.describe("INVITE: admin creates invite links via API", () => {
@@ -63,8 +81,12 @@ test.describe("SCOPE: grade scope enforcement via HTTP (grade-10 editor)", () =>
   let eventId: string;
   let version: number;
 
-  test("setup: create draft event", async ({ request }) => {
-    const res = await request.post("/api/v1/events");
+  test("setup: create draft event", async ({ request, playwright }) => {
+    const eventTypeId = await firstEventTypeId(playwright);
+    const res = await request.post("/api/v1/events", {
+      data: { eventTypeId },
+      headers: { "Content-Type": "application/json" },
+    });
     expect(res.status()).toBe(201);
     const body = await res.json();
     eventId = body.id;
@@ -156,8 +178,8 @@ test.describe("WIZARD: wizard step 2 shows only allowed grades (grade-10 editor)
     await page.getByRole("main").locator('input[type="text"]').fill("E2E Tester");
     await nextBtn().click();
 
-    // Step 7 — submit (auto-publishes)
-    const submitBtn = page.getByRole("main").getByRole("button", { name: /שלח/ });
+    // Step 7 — publish (draft → approved)
+    const submitBtn = page.getByRole("main").getByRole("button", { name: /פרסם/ });
     await submitBtn.waitFor({ state: "visible" });
     await expect(submitBtn).toBeEnabled({ timeout: 10_000 });
     await submitBtn.click();
@@ -175,13 +197,20 @@ test.describe("VIEWER: viewer staff account experience", () => {
   let approvedEventTitle: string;
 
   test.beforeAll(async ({ playwright }) => {
+    // Cold-compiling the admin/event API routes under full-suite load can exceed
+    // the default 30 s hook timeout.
+    test.setTimeout(60_000);
     // Create and publish an approved event via admin so the viewer has something to see.
+    const eventTypeId = await firstEventTypeId(playwright);
     const adminCtx = await playwright.request.newContext({
       baseURL: "http://localhost:3000",
       storageState: "test/e2e/.auth/admin.json",
     });
     try {
-      const createRes = await adminCtx.post("/api/v1/events");
+      const createRes = await adminCtx.post("/api/v1/events", {
+        data: { eventTypeId },
+        headers: { "Content-Type": "application/json" },
+      });
       const { id, version } = await createRes.json();
       approvedEventTitle = `E2E Viewer Test Event ${Date.now()}`;
 
@@ -210,10 +239,15 @@ test.describe("VIEWER: viewer staff account experience", () => {
     await expect(page.url()).toMatch(/demo-school|auth/);
   });
 
-  test("VIEWER-02: approved event appears on the public Gantt page", async ({
+  test("VIEWER-02: approved event appears on a public view (agenda)", async ({
     page,
   }) => {
-    await page.goto("/demo-school");
-    await expect(page.getByText(approvedEventTitle)).toBeVisible({ timeout: 10_000 });
+    // The agenda lists event titles as plain text — a reliable public-view
+    // assertion. (The Gantt renders titles inside a wide, horizontally-scrolled
+    // canvas where individual labels are not reliably in-viewport.)
+    await page.goto("/demo-school/agenda");
+    await expect(page.getByText(approvedEventTitle).first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });

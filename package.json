@@ -23,6 +23,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "playwright": "playwright test",
+    "test:e2e:full": "cross-env ADMIN_E2E=1 TEST_LOGIN_ENABLED=1 playwright test --workers=1",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -64,6 +65,7 @@
     "@vitest/coverage-v8": "^4.1.5",
     "autoprefixer": "^10.4.0",
     "axe-core": "^4.11.4",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.0.0",

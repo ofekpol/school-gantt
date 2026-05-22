@@ -117,7 +117,7 @@ describe.skipIf(skipIfNoTestDb)(
       const { id } = await createDraft(testSchoolA, ownerEditorId, eventTypeId);
       await replaceEventGrades(testSchoolA, id, [7, 11]);
       const r = await getEventForEditor(testSchoolA, id, ownerEditorId, false);
-      expect(r?.grades.sort()).toEqual([7, 11]);
+      expect([...(r?.grades ?? [])].sort((a, b) => a - b)).toEqual([7, 11]);
     });
 
     it("returns empty grades array when no grades are assigned", async () => {

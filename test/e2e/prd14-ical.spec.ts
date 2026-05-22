@@ -11,8 +11,8 @@ import { test, expect, request } from "@playwright/test";
  * cache with prod).
  */
 test.skip(
-  !process.env.DATABASE_URL,
-  "DATABASE_URL not set — skipping DB-dependent iCal e2e",
+  process.env.ADMIN_E2E !== "1" || !process.env.DATABASE_URL,
+  "ADMIN_E2E=1 and DATABASE_URL required — skipping DB+auth iCal e2e",
 );
 
 test.use({ storageState: "test/e2e/.auth/editor.json" });

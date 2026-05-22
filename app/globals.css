@@ -118,7 +118,8 @@
   /* Ink */
   --sg-ink:          oklch(0.20 0.012 60);
   --sg-ink-mute:     oklch(0.45 0.010 60);
-  --sg-ink-soft:     oklch(0.62 0.008 60);
+  /* ink-soft darkened to meet WCAG AA 4.5:1 on white for small text (axe gate) */
+  --sg-ink-soft:     oklch(0.50 0.010 60);
   --sg-ink-ghost:    oklch(0.78 0.006 60);
 
   /* Accent — editor's grade highlight */

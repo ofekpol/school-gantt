@@ -14,8 +14,8 @@ import { test, expect } from "@playwright/test";
  * school + editor account.
  */
 test.skip(
-  !process.env.DATABASE_URL,
-  "DATABASE_URL not set — skipping DB-dependent wizard e2e",
+  process.env.ADMIN_E2E !== "1" || !process.env.DATABASE_URL,
+  "ADMIN_E2E=1 and DATABASE_URL required — skipping DB+auth wizard e2e",
 );
 
 test.use({ storageState: "test/e2e/.auth/editor.json" });
@@ -58,8 +58,8 @@ test("WIZARD-PRD14: editor completes the 7-step wizard in under 60 s with keyboa
   await page.getByRole("main").locator('input[type="text"]').fill("Yaakov Levi");
   await nextBtn().click();
 
-  // Step 7 — Submit for approval. Wait for button to be enabled before clicking.
-  const submitBtn = page.getByRole("main").getByRole("button", { name: /שלח/ });
+  // Step 7 — Publish the event. Wait for button to be enabled before clicking.
+  const submitBtn = page.getByRole("main").getByRole("button", { name: /פרסם/ });
   await submitBtn.waitFor({ state: "visible" });
   await expect(submitBtn).toBeEnabled({ timeout: 10_000 });
   await submitBtn.click();

@@ -76,20 +76,26 @@ async function saveAuthState({
 }: SaveAuthOptions): Promise<string> {
   const context = await browser.newContext({ baseURL });
   try {
-    const response = await context.request.post("/api/v1/auth/login", {
-      data: { email, password },
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (!response.ok()) {
-      const body = await response.text();
-      throw new Error(
-        `Login failed for ${email} (${response.status()}): ${body}`,
-      );
+    // The Next dev server can return a transient 5xx while a route is still
+    // compiling (manifest write race). Retry a few times before giving up.
+    let lastStatus = 0;
+    let lastBody = "";
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      const response = await context.request.post("/api/v1/auth/login", {
+        data: { email, password },
+        headers: { "Content-Type": "application/json" },
+      });
+      if (response.ok()) {
+        await context.storageState({ path: outputPath });
+        return outputPath;
+      }
+      lastStatus = response.status();
+      lastBody = await response.text();
+      // Only retry on server-side errors; auth failures (4xx) are terminal.
+      if (lastStatus < 500) break;
+      await new Promise((r) => setTimeout(r, 1_000));
     }
-
-    await context.storageState({ path: outputPath });
-    return outputPath;
+    throw new Error(`Login failed for ${email} (${lastStatus}): ${lastBody}`);
   } finally {
     await context.close();
   }

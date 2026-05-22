@@ -7,18 +7,20 @@ import { test, expect } from "@playwright/test";
  *
  * The 5 s freshness contract is implemented as Next.js ISR revalidate=5
  * on each public view (Phase 4 + 5 + 6). This spec asserts that a freshly
- * approved event becomes visible to an anonymous browser at /[school]
+ * published event becomes visible to an anonymous browser at /[school]
  * within that window.
  *
- * The test is self-contained: it creates a pending event via the editor
- * API before opening the admin queue, so no prior DB state is required.
+ * Current model: editors publish directly (draft → approved via POST
+ * /submit) — there is no separate admin-approval step. The test is
+ * self-contained: it creates and publishes an event, so no prior DB state
+ * is required.
  */
 test.skip(
-  !process.env.DATABASE_URL,
-  "DATABASE_URL not set — skipping DB-dependent approval e2e",
+  process.env.ADMIN_E2E !== "1" || !process.env.DATABASE_URL,
+  "ADMIN_E2E=1 and DATABASE_URL required — skipping DB+auth approval e2e",
 );
 
-test("APPROVAL-PRD14: admin approves a pending event, public view shows it within 5 s", async ({
+test("APPROVAL-PRD14: editor publishes an event, public view shows it within 5 s", async ({
   browser,
 }) => {
   test.setTimeout(90_000);
@@ -57,23 +59,19 @@ test("APPROVAL-PRD14: admin approves a pending event, public view shows it withi
         grades: [10],
         eventTypeId,
         allDay: true,
-        startAt: "2026-11-01T00:00:00+02:00",
-        endAt: "2026-11-01T23:59:59+02:00",
+        startAt: "2026-06-15T00:00:00+03:00",
+        endAt: "2026-06-15T23:59:59+03:00",
       },
       headers: { "Content-Type": "application/json" },
     });
     expect(patchRes.ok()).toBeTruthy();
 
+    // Submit publishes directly (draft → approved); no separate approve step.
+    const t0 = Date.now();
     const submitRes = await editorApi.post(`/api/v1/events/${eventId}/submit`);
     expect(submitRes.ok()).toBeTruthy();
 
-    // ── Step 3: admin approves the specific event via API ────────────────
-    // Use the API directly to avoid picking the wrong event from a busy queue.
-    const t0 = Date.now();
-    const approveRes = await adminApi.post(`/api/v1/events/${eventId}/approve`);
-    expect(approveRes.ok()).toBeTruthy();
-
-    // ── Step 4: public view shows the event within 5 s ─────────────────
+    // ── Step 3: public view shows the event within 5 s ─────────────────
     // In dev mode Next.js does not cache pages with ISR — each request hits
     // the server fresh, so the event should appear on the next page load.
     const publicPage = await publicContext.newPage();

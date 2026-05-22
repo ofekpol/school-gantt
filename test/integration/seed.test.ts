@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { createHash } from "node:crypto";
-import { eq, and } from "drizzle-orm";
+import { eq, and, like } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import { seedDb } from "@/db/seed";
 import { testDb, skipIfNoTestDb, shouldSkip } from "./setup";
@@ -58,12 +58,17 @@ describe.skipIf(skipIfNoTestDb)("DB-06: seed creates canonical bootstrap", () =>
       .from(schema.schools)
       .where(eq(schema.schools.slug, "demo-school"));
     const scopes = await testDb!
-      .select()
+      .select({ scopeValue: schema.editorScopes.scopeValue })
       .from(schema.editorScopes)
+      .innerJoin(
+        schema.staffUsers,
+        eq(schema.editorScopes.staffUserId, schema.staffUsers.id),
+      )
       .where(
         and(
           eq(schema.editorScopes.schoolId, school.id),
           eq(schema.editorScopes.scopeKind, "grade"),
+          like(schema.staffUsers.email, "%@demo-school.test"),
         ),
       );
     const grades = scopes.map((s) => Number(s.scopeValue)).sort((a, b) => a - b);
@@ -76,12 +81,17 @@ describe.skipIf(skipIfNoTestDb)("DB-06: seed creates canonical bootstrap", () =>
       .from(schema.schools)
       .where(eq(schema.schools.slug, "demo-school"));
     const eventTypeScopes = await testDb!
-      .select()
+      .select({ scopeValue: schema.editorScopes.scopeValue })
       .from(schema.editorScopes)
+      .innerJoin(
+        schema.staffUsers,
+        eq(schema.editorScopes.staffUserId, schema.staffUsers.id),
+      )
       .where(
         and(
           eq(schema.editorScopes.schoolId, school.id),
           eq(schema.editorScopes.scopeKind, "event_type"),
+          like(schema.staffUsers.email, "%@demo-school.test"),
         ),
       );
     expect(eventTypeScopes).toHaveLength(1);

@@ -196,7 +196,7 @@ describe.skipIf(skipIfNoTestDb)(
         .from(schema.editorScopes)
         .where(eq(schema.editorScopes.staffUserId, scopedAuthId));
       expect(scopes).toHaveLength(2);
-      expect(scopes.map((s) => Number(s.scopeValue)).sort()).toEqual([9, 10]);
+      expect(scopes.map((s) => Number(s.scopeValue)).sort((a, b) => a - b)).toEqual([9, 10]);
     });
   },
 );

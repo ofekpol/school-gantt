@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import type { CalendarMonth } from "@/lib/views/calendar";
+import { readableTextColor } from "@/lib/colors";
 
 interface Props {
   months: CalendarMonth[];
@@ -72,8 +73,11 @@ export function YearCalendarGrid({ months, yearLabel, schoolName, onDayClick }: 
                         {day.events.slice(0, 4).map((chip) => (
                           <li
                             key={chip.id}
-                            className="event-chip flex items-center gap-1 rounded-sm border border-black/10 px-1 py-0.5 text-[10px] text-white truncate"
-                            style={{ backgroundColor: chip.eventTypeColor }}
+                            className="event-chip flex items-center gap-1 rounded-sm border border-black/10 px-1 py-0.5 text-[10px] truncate"
+                            style={{
+                              backgroundColor: chip.eventTypeColor,
+                              color: readableTextColor(chip.eventTypeColor),
+                            }}
                             title={chip.title}
                           >
                             <span aria-hidden="true" className="event-chip-glyph">
