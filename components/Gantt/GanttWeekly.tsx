@@ -25,6 +25,7 @@ interface SerializedEvent {
   allDay: boolean;
   description: string | null;
   location: string | null;
+  eventTypeId?: string;
   eventTypeKey: string;
   eventTypeLabelHe: string;
   eventTypeColor: string;
@@ -36,9 +37,10 @@ interface Props {
   model: WeeklyModel;
   events: SerializedEvent[];
   onDayClick?: (isoDate: string) => void;
+  onEventClick?: (eventId: string) => void;
 }
 
-export function GanttWeekly({ model, events, onDayClick }: Props) {
+export function GanttWeekly({ model, events, onDayClick, onEventClick }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -75,6 +77,14 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
   }, [displayWeekStartMs, hydratedEvents, model]);
 
   const selected = selectedId ? (eventMap.get(selectedId) ?? null) : null;
+
+  function selectEvent(eventId: string) {
+    if (onEventClick) {
+      onEventClick(eventId);
+      return;
+    }
+    setSelectedId(eventId);
+  }
 
   function navigate(delta: number) {
     const next = new Date(displayModel.weekStart.getTime() + delta * 7 * 24 * 60 * 60 * 1000);
@@ -129,7 +139,7 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
               key={row.grade}
               row={row}
               days={displayModel.days}
-              onSelect={setSelectedId}
+              onSelect={selectEvent}
               onDayClick={onDayClick}
             />
           ))}
@@ -162,7 +172,7 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
         </div>
       </div>
 
-      <EventDrawer event={selected} onClose={() => setSelectedId(null)} />
+      {!onEventClick && <EventDrawer event={selected} onClose={() => setSelectedId(null)} />}
     </div>
   );
 }

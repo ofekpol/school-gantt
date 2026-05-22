@@ -39,6 +39,10 @@ const EMPTY_DATA: QuickEventData = {
   responsibleText: "",
 };
 
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 export function QuickEventDialog({
   open,
   dateIso,
@@ -97,6 +101,9 @@ export function QuickEventDialog({
     }
     if (!data.eventTypeId) return t3("errorRequired");
     if (data.grades.length === 0) return t2("errorRequired");
+    if (!data.allDay && (!TIME_RE.test(data.startTime) || !TIME_RE.test(data.endTime))) {
+      return t5("errorInvalid");
+    }
     if (!data.allDay && data.startTime >= data.endTime) return t5("errorInverted");
     return "";
   }
@@ -217,23 +224,29 @@ export function QuickEventDialog({
               />
             </Field>
             <Field label={t5("title")}>
-              <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
-                <input
-                  type="time"
-                  value={data.startTime}
-                  disabled={data.allDay}
-                  onChange={(e) => patch({ startTime: e.target.value })}
-                  aria-label={t5("startLabel")}
-                  className="h-10 min-w-0 rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-2 text-sm outline-none focus:border-sky-400 focus:bg-white disabled:opacity-45"
-                />
-                <input
-                  type="time"
-                  value={data.endTime}
-                  disabled={data.allDay}
-                  onChange={(e) => patch({ endTime: e.target.value })}
-                  aria-label={t5("endLabel")}
-                  className="h-10 min-w-0 rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-2 text-sm outline-none focus:border-sky-400 focus:bg-white disabled:opacity-45"
-                />
+              <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+                <label className="min-w-0">
+                  <span className="mb-1 block text-[11px] font-semibold text-[var(--sg-ink-soft)]">
+                    {t5("startLabel")}
+                  </span>
+                  <TimeWheelInput
+                    value={data.startTime}
+                    disabled={data.allDay}
+                    label={t5("startLabel")}
+                    onChange={(startTime) => patch({ startTime })}
+                  />
+                </label>
+                <label className="min-w-0">
+                  <span className="mb-1 block text-[11px] font-semibold text-[var(--sg-ink-soft)]">
+                    {t5("endLabel")}
+                  </span>
+                  <TimeWheelInput
+                    value={data.endTime}
+                    disabled={data.allDay}
+                    label={t5("endLabel")}
+                    onChange={(endTime) => patch({ endTime })}
+                  />
+                </label>
                 <label className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-2 text-xs">
                   <input
                     type="checkbox"
@@ -344,4 +357,140 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function TimeWheelInput({
+  value,
+  label,
+  disabled,
+  onChange,
+}: {
+  value: string;
+  label: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [hour = "08", minute = "00"] = value.split(":");
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  function commitManual() {
+    const normalized = normalizeTime(draft);
+    setDraft(normalized ?? value);
+    if (normalized) onChange(normalized);
+  }
+
+  function pick(nextHour: string, nextMinute: string) {
+    const next = `${nextHour}:${nextMinute}`;
+    setDraft(next);
+    onChange(next);
+  }
+
+  return (
+    <div
+      className="relative"
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setOpen(false);
+          commitManual();
+        }
+      }}
+    >
+      <input
+        type="text"
+        inputMode="numeric"
+        value={draft}
+        disabled={disabled}
+        onFocus={() => setOpen(true)}
+        onClick={() => setOpen(true)}
+        onChange={(e) => {
+          const next = e.target.value.replace(/[^\d:]/g, "").slice(0, 5);
+          setDraft(next);
+          if (TIME_RE.test(next)) onChange(next);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur();
+          }
+          if (e.key === "Escape") {
+            setOpen(false);
+          }
+        }}
+        aria-label={label}
+        placeholder="HH:MM"
+        className="h-10 w-full min-w-0 rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-2 text-center text-sm outline-none focus:border-sky-400 focus:bg-white disabled:opacity-45"
+      />
+
+      {open && !disabled && (
+        <div
+          dir="ltr"
+          className="absolute top-full right-0 z-20 mt-2 grid w-40 grid-cols-2 overflow-hidden rounded-xl border border-[var(--sg-hairline)] bg-white shadow-xl"
+        >
+          <WheelColumn
+            values={HOURS}
+            selected={hour}
+            onPick={(nextHour) => pick(nextHour, minute)}
+          />
+          <WheelColumn
+            values={MINUTES}
+            selected={minute}
+            onPick={(nextMinute) => pick(hour, nextMinute)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WheelColumn({
+  values,
+  selected,
+  onPick,
+}: {
+  values: string[];
+  selected: string;
+  onPick: (value: string) => void;
+}) {
+  return (
+    <div className="max-h-40 overflow-y-auto py-1">
+      {values.map((value) => (
+        <button
+          key={value}
+          type="button"
+          tabIndex={0}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onPick(value)}
+          className={`block h-8 w-full text-center text-sm ${
+            value === selected
+              ? "bg-sky-100 font-bold text-sky-700"
+              : "text-[var(--sg-ink)] hover:bg-[var(--sg-surface-2)]"
+          }`}
+        >
+          {value}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function normalizeTime(value: string): string | null {
+  if (TIME_RE.test(value)) return value;
+
+  const compact = value.replace(/\D/g, "");
+  if (compact.length === 3) {
+    const hour = compact.slice(0, 1).padStart(2, "0");
+    const minute = compact.slice(1);
+    const normalized = `${hour}:${minute}`;
+    return TIME_RE.test(normalized) ? normalized : null;
+  }
+  if (compact.length === 4) {
+    const normalized = `${compact.slice(0, 2)}:${compact.slice(2)}`;
+    return TIME_RE.test(normalized) ? normalized : null;
+  }
+
+  return null;
 }

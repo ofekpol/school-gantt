@@ -52,6 +52,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const t = await getTranslations("dashboard");
   const tc = await getTranslations("common");
 
+  const editableEventIds = new Set(myEvents.map((event) => event.id));
   const serializedEvents = agendaItems.map((e) => ({
     id: e.id,
     title: e.title,
@@ -60,11 +61,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     allDay: e.allDay,
     description: e.description,
     location: e.location,
+    eventTypeId: e.eventTypeId ?? "",
     eventTypeKey: e.eventTypeKey,
     eventTypeLabelHe: e.eventTypeLabelHe,
     eventTypeColor: e.eventTypeColor,
     eventTypeGlyph: e.eventTypeGlyph,
     grades: e.grades,
+    canEdit: user.role === "admin" || editableEventIds.has(e.id),
   }));
 
   const weeklyModel =

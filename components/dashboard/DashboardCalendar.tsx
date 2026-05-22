@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
+import { EventDrawer } from "@/components/Gantt/EventDrawer";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
 import { QuickEventDialog } from "./QuickEventDialog";
 import type { WeeklyModel } from "@/lib/views/gantt-weekly";
@@ -18,11 +19,13 @@ interface SerializedEvent {
   allDay: boolean;
   description: string | null;
   location: string | null;
+  eventTypeId: string;
   eventTypeKey: string;
   eventTypeLabelHe: string;
   eventTypeColor: string;
   eventTypeGlyph: string;
   grades: number[];
+  canEdit: boolean;
 }
 
 interface Props {
@@ -58,6 +61,12 @@ export function DashboardCalendar({
   const searchParams = useSearchParams();
   const t = useTranslations("dashboard");
   const [pendingDate, setPendingDate] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [eventOverrides, setEventOverrides] = useState<Record<string, SerializedEvent>>({});
+  const selectedEventBase = events.find((event) => event.id === selectedEventId) ?? null;
+  const selectedEvent = selectedEventId
+    ? (eventOverrides[selectedEventId] ?? selectedEventBase)
+    : null;
 
   function setView(next: "weekly" | "monthly") {
     const params = new URLSearchParams(searchParams.toString());
@@ -67,6 +76,41 @@ export function DashboardCalendar({
 
   function openNewEvent(dateIso: string) {
     setPendingDate(dateIso);
+  }
+
+  async function saveSelectedEvent(patch: {
+    title: string;
+    description?: string;
+    location?: string;
+    eventTypeId: string;
+    grades: number[];
+    startAt: string;
+    endAt: string;
+    allDay: boolean;
+  }): Promise<boolean> {
+    if (!selectedEvent?.canEdit) return false;
+    const res = await fetch(`/api/v1/events/${selectedEvent.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) return false;
+    const selectedType = eventTypes.find((type) => type.id === patch.eventTypeId);
+    setEventOverrides((current) => ({
+      ...current,
+      [selectedEvent.id]: {
+        ...selectedEvent,
+        ...patch,
+        description: patch.description ?? null,
+        location: patch.location ?? null,
+        eventTypeKey: selectedType?.key ?? selectedEvent.eventTypeKey,
+        eventTypeLabelHe: selectedType?.labelHe ?? selectedEvent.eventTypeLabelHe,
+        eventTypeColor: selectedType?.colorHex ?? selectedEvent.eventTypeColor,
+        eventTypeGlyph: selectedType?.glyph ?? selectedEvent.eventTypeGlyph,
+      },
+    }));
+    router.refresh();
+    return true;
   }
 
   return (
@@ -90,7 +134,12 @@ export function DashboardCalendar({
       </div>
 
       {view === "weekly" && weeklyModel && (
-        <GanttWeekly model={weeklyModel} events={events} onDayClick={openNewEvent} />
+        <GanttWeekly
+          model={weeklyModel}
+          events={events}
+          onDayClick={openNewEvent}
+          onEventClick={setSelectedEventId}
+        />
       )}
       {view === "monthly" && months && (
         <YearCalendarGrid
@@ -98,6 +147,7 @@ export function DashboardCalendar({
           yearLabel={yearLabel}
           schoolName={schoolName}
           onDayClick={openNewEvent}
+          onEventClick={setSelectedEventId}
         />
       )}
 
@@ -108,6 +158,22 @@ export function DashboardCalendar({
         eventTypes={eventTypes}
         allowedGrades={allowedGrades}
         onClose={() => setPendingDate(null)}
+      />
+      <EventDrawer
+        event={
+          selectedEvent
+            ? {
+                ...selectedEvent,
+                startAt: new Date(selectedEvent.startAt),
+                endAt: new Date(selectedEvent.endAt),
+              }
+            : null
+        }
+        canEdit={selectedEvent?.canEdit ?? false}
+        eventTypes={eventTypes}
+        allowedGrades={allowedGrades}
+        onSave={saveSelectedEvent}
+        onClose={() => setSelectedEventId(null)}
       />
     </div>
   );

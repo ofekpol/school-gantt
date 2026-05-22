@@ -167,6 +167,9 @@
     "empty": "No events yet. Click \"New event\" to start.",
     "resume": "Resume",
     "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancelEdit": "Cancel edit",
     "viewWeekly": "Weekly",
     "viewMonthly": "Monthly",
     "confirmNewEventTitle": "New event",
@@ -263,6 +266,7 @@
       "startLabel": "Start time",
       "endLabel": "End time",
       "allDay": "All-day",
+      "errorInvalid": "Please enter a valid time",
       "errorInverted": "End time must come after start time"
     },
     "step6": {

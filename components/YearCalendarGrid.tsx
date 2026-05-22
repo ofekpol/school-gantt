@@ -8,6 +8,7 @@ interface Props {
   yearLabel: string;
   schoolName: string;
   onDayClick?: (isoDate: string) => void;
+  onEventClick?: (eventId: string) => void;
 }
 
 /**
@@ -17,7 +18,13 @@ interface Props {
  * event-type glyph + dashed border so chips remain distinguishable when
  * printed in black-and-white.
  */
-export function YearCalendarGrid({ months, yearLabel, schoolName, onDayClick }: Props) {
+export function YearCalendarGrid({
+  months,
+  yearLabel,
+  schoolName,
+  onDayClick,
+  onEventClick,
+}: Props) {
   const tm = useTranslations("months");
   const tw = useTranslations("weekdays");
   const tc = useTranslations("common");
@@ -72,14 +79,20 @@ export function YearCalendarGrid({ months, yearLabel, schoolName, onDayClick }: 
                         {day.events.slice(0, 4).map((chip) => (
                           <li
                             key={chip.id}
-                            className="event-chip flex items-center gap-1 rounded-sm border border-black/10 px-1 py-0.5 text-[10px] text-white truncate"
-                            style={{ backgroundColor: chip.eventTypeColor }}
                             title={chip.title}
                           >
-                            <span aria-hidden="true" className="event-chip-glyph">
-                              {chip.eventTypeGlyph}
-                            </span>
-                            <span className="truncate">{chip.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => onEventClick?.(chip.eventId)}
+                              disabled={!onEventClick}
+                              className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] text-white disabled:cursor-default"
+                              style={{ backgroundColor: chip.eventTypeColor }}
+                            >
+                              <span aria-hidden="true" className="event-chip-glyph">
+                                {chip.eventTypeGlyph}
+                              </span>
+                              <span className="truncate">{chip.title}</span>
+                            </button>
                           </li>
                         ))}
                         {day.events.length > 4 && (

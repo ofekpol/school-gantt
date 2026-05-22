@@ -167,6 +167,9 @@
     "empty": "אין אירועים עדיין. לחץ על \"אירוע חדש\" כדי להתחיל.",
     "resume": "המשך",
     "edit": "ערוך",
+    "save": "שמור",
+    "saving": "שומר…",
+    "cancelEdit": "בטל עריכה",
     "viewWeekly": "תצוגה שבועית",
     "viewMonthly": "תצוגה חודשית",
     "confirmNewEventTitle": "אירוע חדש",
@@ -263,6 +266,7 @@
       "startLabel": "שעת התחלה",
       "endLabel": "שעת סיום",
       "allDay": "כל היום",
+      "errorInvalid": "יש להזין שעה תקינה",
       "errorInverted": "שעת הסיום חייבת להיות אחרי שעת ההתחלה"
     },
     "step6": {
