@@ -29,7 +29,10 @@
     "eventTypes": "Event Types",
     "year": "Academic Year",
     "profile": "Profile",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "gantt": "Gantt",
+    "agenda": "Agenda",
+    "calendar": "Calendar"
   },
   "grades": {
     "label_7": "ז",

@@ -61,10 +61,6 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
 
   return (
     <main className="min-h-screen bg-neutral-50 pb-12">
-      <header className="bg-white border-b border-neutral-200 px-4 py-3 sticky top-0 z-10">
-        <h1 className="text-lg font-bold">{school.name}</h1>
-        <p className="text-xs text-neutral-500">{t("subtitle")}</p>
-      </header>
       <FilterBar
         allGrades={ALL_GRADES}
         eventTypes={eventTypeList.map((et) => ({
