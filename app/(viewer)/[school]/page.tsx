@@ -43,7 +43,7 @@ export default async function GanttPage({ params, searchParams }: PageProps) {
     return <NoYearState schoolName={school.name} />;
   }
 
-  const zoom = parseZoom(typeof sp.zoom === "string" ? sp.zoom : undefined);
+  const zoom = parseZoom(typeof sp.zoom === "string" ? sp.zoom : "week");
   const filters = parseFilters(sp);
 
   const events = await getAgendaForSchool(school.id, filters);
