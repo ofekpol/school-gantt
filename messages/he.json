@@ -276,6 +276,20 @@
       "submit": "פרסם אירוע",
       "submitting": "מפרסם…",
       "submitError": "הפרסום נכשל"
+    },
+    "editor": {
+      "createEyebrow": "אירוע חדש",
+      "editEyebrow": "עריכת אירוע",
+      "untitled": "אירוע ללא שם",
+      "saveDraft": "שמור טיוטה",
+      "saved": "הטיוטה נשמרה",
+      "saveError": "שמירת הטיוטה נכשלה",
+      "titlePlaceholder": "מה שם האירוע?",
+      "detailsLabel": "תיאור",
+      "detailsPlaceholder": "פרטים נוספים, חדר, ציוד…",
+      "selectType": "בחר סוג אירוע",
+      "moreOptions": "אפשרויות נוספות",
+      "responsiblePlaceholder": "שם אחראי, אם צריך"
     }
   }
 }

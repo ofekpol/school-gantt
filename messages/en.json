@@ -276,6 +276,20 @@
       "submit": "Publish event",
       "submitting": "Publishing…",
       "submitError": "Publish failed"
+    },
+    "editor": {
+      "createEyebrow": "New event",
+      "editEyebrow": "Edit event",
+      "untitled": "Untitled event",
+      "saveDraft": "Save draft",
+      "saved": "Draft saved",
+      "saveError": "Draft save failed",
+      "titlePlaceholder": "What is the event called?",
+      "detailsLabel": "Description",
+      "detailsPlaceholder": "Notes, room, equipment…",
+      "selectType": "Select event type",
+      "moreOptions": "More options",
+      "responsiblePlaceholder": "Responsible person, if needed"
     }
   }
 }

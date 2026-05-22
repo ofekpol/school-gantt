@@ -28,9 +28,7 @@ test.describe("INVITE: admin creates invite links via API", () => {
   test.use({ storageState: "test/e2e/.auth/admin.json" });
   test.skip(skip, "ADMIN_E2E=1 and DATABASE_URL required");
 
-  test("INVITE-01: editor invite returns 201 with token and url", async ({
-    request,
-  }) => {
+  test("INVITE-01: editor invite returns 201 with token and url", async ({ request }) => {
     const res = await request.post("/api/v1/admin/staff/invites", {
       data: { role: "editor", gradeScopes: [10], expiresInHours: 24 },
     });
@@ -86,9 +84,7 @@ test.describe("SCOPE: grade scope enforcement via HTTP (grade-10 editor)", () =>
     version = body.version;
   });
 
-  test("SCOPE-02: PATCH with grade 11 returns 403 scope_violation", async ({
-    request,
-  }) => {
+  test("SCOPE-02: PATCH with grade 11 returns 403 scope_violation", async ({ request }) => {
     const res = await request.patch(`/api/v1/events/${eventId}`, {
       data: { grades: [11] },
       headers: { "if-match": String(version) },
@@ -100,64 +96,32 @@ test.describe("SCOPE: grade scope enforcement via HTTP (grade-10 editor)", () =>
   });
 });
 
-// ─── Wizard UI ───────────────────────────────────────────────────────────────
+// ─── Event editor UI ─────────────────────────────────────────────────────────
 
-test.describe("WIZARD: wizard step 2 shows only allowed grades (grade-10 editor)", () => {
+test.describe("EVENT EDITOR: grade scope is enforced for grade-10 editor", () => {
   test.use({ storageState: "test/e2e/.auth/editor.json" });
   test.skip(skip, "ADMIN_E2E=1 and DATABASE_URL required");
 
-  test("WIZARD-01: only grade 10 button is rendered in step 2", async ({ page }) => {
+  test("EDITOR-01: only grade 10 button is rendered", async ({ page }) => {
     await page.goto("/events/new");
 
-    // Advance past step 1 (date)
-    await page.locator('input[type="date"]').fill("2026-06-15");
-    const nextBtn = () =>
-      page.getByRole("main").getByRole("button", { name: "הבא" }).first();
-    await nextBtn().click();
-
-    // Step 2 — grades
     await expect(page.locator('[data-grade="10"]')).toBeVisible();
-    // No other grade buttons should be present (grade-10 scope only)
     await expect(page.locator('[data-grade="7"]')).not.toBeVisible();
     await expect(page.locator('[data-grade="11"]')).not.toBeVisible();
   });
 
-  test("WIZARD-02: completing the wizard redirects to /dashboard", async ({ page }) => {
+  test("EDITOR-02: publishing an event redirects to /dashboard", async ({ page }) => {
     test.setTimeout(90_000);
 
     await page.goto("/events/new");
 
-    const nextBtn = () =>
-      page.getByRole("main").getByRole("button", { name: "הבא" }).first();
-
-    // Step 1 — date
+    await page.getByLabel("שם האירוע").fill("E2E Grade-10 Event");
+    await page.getByLabel("אחראי").fill("E2E Tester");
     await page.locator('input[type="date"]').fill("2026-06-16");
-    await nextBtn().click();
-
-    // Step 2 — grade (only grade 10 available)
     await page.locator('[data-grade="10"]').click();
-    await nextBtn().click();
-
-    // Step 3 — event type
     await page.getByRole("main").getByRole("radio").first().click();
-    await nextBtn().click();
 
-    // Step 4 — title
-    await page
-      .getByRole("main")
-      .locator('input[type="text"]')
-      .fill("E2E Wizard Grade-10 Event");
-    await nextBtn().click();
-
-    // Step 5 — time (defaults valid)
-    await nextBtn().click();
-
-    // Step 6 — responsible
-    await page.getByRole("main").locator('input[type="text"]').fill("E2E Tester");
-    await nextBtn().click();
-
-    // Step 7 — submit (auto-publishes)
-    const submitBtn = page.getByRole("main").getByRole("button", { name: /שלח/ });
+    const submitBtn = page.getByRole("main").getByRole("button", { name: "פרסם אירוע" });
     await submitBtn.waitFor({ state: "visible" });
     await expect(submitBtn).toBeEnabled({ timeout: 10_000 });
     await submitBtn.click();
@@ -201,18 +165,14 @@ test.describe("VIEWER: viewer staff account experience", () => {
     }
   });
 
-  test("VIEWER-01: visiting /events/new redirects to public school page", async ({
-    page,
-  }) => {
+  test("VIEWER-01: visiting /events/new redirects to public school page", async ({ page }) => {
     await page.goto("/events/new");
     // Staff layout redirects viewer to /{schoolSlug}
     await expect(page).not.toHaveURL(/\/events\/new/, { timeout: 5_000 });
     await expect(page.url()).toMatch(/demo-school|auth/);
   });
 
-  test("VIEWER-02: approved event appears on the public Gantt page", async ({
-    page,
-  }) => {
+  test("VIEWER-02: approved event appears on the public Gantt page", async ({ page }) => {
     await page.goto("/demo-school");
     await expect(page.getByText(approvedEventTitle)).toBeVisible({ timeout: 10_000 });
   });

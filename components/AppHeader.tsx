@@ -24,18 +24,26 @@ export function AppHeader({
   navLinks,
   currentPath,
 }: Props) {
+  const hasTitle = Boolean(title || subtitle);
+
   return (
-    <div className="bg-white border-b border-neutral-200 px-4 py-3 flex items-center justify-between gap-3">
-      <div className="min-w-0">
-        {title && <h1 className="text-base font-semibold truncate">{title}</h1>}
-        {subtitle && (
-          <p className="text-xs text-neutral-500 truncate">{subtitle}</p>
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-neutral-200 bg-white px-4 py-3">
+      <div className="min-w-0 justify-self-start">
+        {hasTitle && (
+          <>
+            {title && <h1 className="truncate text-base font-semibold">{title}</h1>}
+            {subtitle && (
+              <p className="truncate text-xs text-neutral-500">{subtitle}</p>
+            )}
+          </>
         )}
       </div>
       {navLinks && navLinks.length > 0 && (
         <AppHeaderNav links={navLinks} initialPath={currentPath} />
       )}
-      <div className="flex items-center gap-3 shrink-0">{rightSlot}</div>
+      <div className="flex shrink-0 items-center gap-3 justify-self-end">
+        {rightSlot}
+      </div>
     </div>
   );
 }

@@ -5,9 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
-import { NewEventDayDialog } from "./NewEventDayDialog";
+import { QuickEventDialog } from "./QuickEventDialog";
 import type { WeeklyModel } from "@/lib/views/gantt-weekly";
 import type { CalendarMonth } from "@/lib/views/calendar";
+import type { EventType } from "@/components/wizard/WizardShell";
 
 interface SerializedEvent {
   id: string;
@@ -31,11 +32,14 @@ interface Props {
   events: SerializedEvent[];
   yearLabel: string;
   schoolName: string;
+  yearBounds: { startDate: string; endDate: string } | null;
+  eventTypes: EventType[];
+  allowedGrades: number[];
 }
 
 /**
- * Dashboard calendar wrapper — segmented toggle (weekly/monthly) + day-click
- * confirm dialog that routes to the event wizard with `?date=` pre-filled.
+ * Dashboard calendar wrapper — segmented toggle (weekly/monthly) + day-clicks
+ * open a compact event dialog with `date` pre-filled.
  * Toggle state is URL-driven via `?view=`.
  */
 export function DashboardCalendar({
@@ -45,6 +49,9 @@ export function DashboardCalendar({
   events,
   yearLabel,
   schoolName,
+  yearBounds,
+  eventTypes,
+  allowedGrades,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -58,36 +65,48 @@ export function DashboardCalendar({
     router.replace(`${pathname}?${params.toString()}` as never, { scroll: false });
   }
 
+  function openNewEvent(dateIso: string) {
+    setPendingDate(dateIso);
+  }
+
   return (
     <div>
-      <div className="flex items-center gap-2 px-6 pt-4">
-        <ToggleBtn active={view === "weekly"} onClick={() => setView("weekly")}>
-          {t("viewWeekly")}
-        </ToggleBtn>
-        <ToggleBtn active={view === "monthly"} onClick={() => setView("monthly")}>
-          {t("viewMonthly")}
-        </ToggleBtn>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-4">
+        <div className="flex items-center gap-2">
+          <ToggleBtn active={view === "weekly"} onClick={() => setView("weekly")}>
+            {t("viewWeekly")}
+          </ToggleBtn>
+          <ToggleBtn active={view === "monthly"} onClick={() => setView("monthly")}>
+            {t("viewMonthly")}
+          </ToggleBtn>
+        </div>
+        <button
+          type="button"
+          onClick={() => openNewEvent(new Date().toISOString().slice(0, 10))}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+        >
+          {t("newEvent")}
+        </button>
       </div>
 
       {view === "weekly" && weeklyModel && (
-        <GanttWeekly
-          model={weeklyModel}
-          events={events}
-          onDayClick={setPendingDate}
-        />
+        <GanttWeekly model={weeklyModel} events={events} onDayClick={openNewEvent} />
       )}
       {view === "monthly" && months && (
         <YearCalendarGrid
           months={months}
           yearLabel={yearLabel}
           schoolName={schoolName}
-          onDayClick={setPendingDate}
+          onDayClick={openNewEvent}
         />
       )}
 
-      <NewEventDayDialog
+      <QuickEventDialog
         open={pendingDate !== null}
         dateIso={pendingDate}
+        yearBounds={yearBounds}
+        eventTypes={eventTypes}
+        allowedGrades={allowedGrades}
         onClose={() => setPendingDate(null)}
       />
     </div>
@@ -109,9 +128,7 @@ function ToggleBtn({
       onClick={onClick}
       aria-pressed={active}
       className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-        active
-          ? "bg-blue-600 text-white"
-          : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+        active ? "bg-blue-600 text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
       }`}
     >
       {children}
