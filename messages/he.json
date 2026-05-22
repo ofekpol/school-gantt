@@ -169,7 +169,13 @@
     "edit": "ערוך",
     "save": "שמור",
     "saving": "שומר…",
+    "delete": "בטל אירוע",
+    "deleting": "מבטל…",
+    "deleteConfirm": "לבטל את האירוע? הוא יישאר גלוי כ’מבוטל’ למי שיכול לראות אותו.",
+    "deleteError": "ביטול האירוע נכשל",
     "cancelEdit": "בטל עריכה",
+    "canceled": "מבוטל",
+    "updated": "עודכן",
     "viewWeekly": "תצוגה שבועית",
     "viewMonthly": "תצוגה חודשית",
     "confirmNewEventTitle": "אירוע חדש",
@@ -177,7 +183,8 @@
     "myDrafts": "האירועים שלי",
     "status": {
       "draft": "טיוטה",
-      "approved": "פורסם"
+      "approved": "פורסם",
+      "canceled": "מבוטל"
     }
   },
   "agenda": {

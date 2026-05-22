@@ -59,7 +59,7 @@ export async function getEditorAllowedGrades(
 export interface DashboardEvent {
   id: string;
   title: string | null;
-  status: "draft" | "pending" | "approved" | "rejected";
+  status: "draft" | "pending" | "approved" | "rejected" | "canceled";
   updatedAt: Date;
   startAt: Date | null;
   endAt: Date | null;
@@ -106,7 +106,7 @@ export interface EventWithGrades {
     startAt: Date | null;
     endAt: Date | null;
     allDay: boolean;
-    status: "draft" | "pending" | "approved" | "rejected";
+    status: "draft" | "pending" | "approved" | "rejected" | "canceled";
     version: number;
     eventTypeId: string;
     createdBy: string;

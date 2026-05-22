@@ -103,6 +103,9 @@ export async function updateDraft(
       .limit(1);
 
     if (!current) return { status: "not_found" as const };
+    if (current.status === "canceled") {
+      return { status: "not_found" as const };
+    }
     if (!isAdmin && current.createdBy !== userId) {
       return { status: "not_found" as const };
     }
@@ -153,9 +156,56 @@ export async function updateDraft(
 }
 
 /**
- * Soft-deletes the caller's own draft event (sets deletedAt).
- * Only drafts can be soft-deleted by editors — pending/approved are guarded.
- * Returns {deleted: false} when not found, not owned, or not draft status.
+ * Deletes drafts by hiding them, but keeps published events visible as canceled.
+ * Canceled published events remain in public views so viewers know the event
+ * was planned and then called off.
+ */
+export async function deleteOrCancelEvent(
+  schoolId: string,
+  eventId: string,
+  userId: string,
+  isAdmin: boolean,
+): Promise<{ status: "deleted" | "canceled" | "not_found" }> {
+  const result = await withSchool(schoolId, async (tx) => {
+    const [row] = await tx
+      .select()
+      .from(events)
+      .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
+      .limit(1);
+
+    if (!row) return "not_found" as const;
+    if (!isAdmin && row.createdBy !== userId) return "not_found" as const;
+    if (row.status === "canceled") return "not_found" as const;
+
+    if (row.status === "approved") {
+      await tx
+        .update(events)
+        .set({ status: "canceled", updatedAt: new Date(), version: row.version + 1 })
+        .where(eq(events.id, eventId));
+
+      await tx.insert(eventRevisions).values({
+        eventId,
+        schoolId,
+        snapshot: row as unknown as Record<string, unknown>,
+        submittedBy: userId,
+        decidedBy: userId,
+        decision: "canceled",
+      });
+
+      return "canceled" as const;
+    }
+
+    await tx.update(events).set({ deletedAt: new Date() }).where(eq(events.id, eventId));
+    return "deleted" as const;
+  });
+
+  return { status: result };
+}
+
+/**
+ * Backward-compatible draft deletion helper used by tests and lower-level code.
+ * Published events are intentionally not canceled here; use deleteOrCancelEvent
+ * from the API path when a user action should cancel published events.
  */
 export async function softDelete(
   schoolId: string,
@@ -173,11 +223,7 @@ export async function softDelete(
     if (row.createdBy !== userId) return false;
     if (row.status !== "draft") return false;
 
-    await tx
-      .update(events)
-      .set({ deletedAt: new Date() })
-      .where(eq(events.id, eventId));
-
+    await tx.update(events).set({ deletedAt: new Date() }).where(eq(events.id, eventId));
     return true;
   });
 

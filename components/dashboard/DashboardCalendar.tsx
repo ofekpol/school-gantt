@@ -25,6 +25,9 @@ interface SerializedEvent {
   eventTypeColor: string;
   eventTypeGlyph: string;
   grades: number[];
+  status: "approved" | "canceled";
+  isCanceled: boolean;
+  isUpdated: boolean;
   canEdit: boolean;
 }
 
@@ -107,8 +110,33 @@ export function DashboardCalendar({
         eventTypeLabelHe: selectedType?.labelHe ?? selectedEvent.eventTypeLabelHe,
         eventTypeColor: selectedType?.colorHex ?? selectedEvent.eventTypeColor,
         eventTypeGlyph: selectedType?.glyph ?? selectedEvent.eventTypeGlyph,
+        status: "approved",
+        isCanceled: false,
+        isUpdated: true,
       },
     }));
+    router.refresh();
+    return true;
+  }
+
+  async function deleteSelectedEvent(): Promise<boolean> {
+    if (!selectedEvent?.canEdit) return false;
+    const res = await fetch(`/api/v1/events/${selectedEvent.id}`, { method: "DELETE" });
+    if (!res.ok) return false;
+    const body = (await res.json().catch(() => null)) as { status?: string } | null;
+    if (body?.status === "canceled") {
+      setEventOverrides((current) => ({
+        ...current,
+        [selectedEvent.id]: {
+          ...selectedEvent,
+          status: "canceled",
+          isCanceled: true,
+          canEdit: false,
+        },
+      }));
+    } else {
+      setSelectedEventId(null);
+    }
     router.refresh();
     return true;
   }
@@ -173,6 +201,7 @@ export function DashboardCalendar({
         eventTypes={eventTypes}
         allowedGrades={allowedGrades}
         onSave={saveSelectedEvent}
+        onDelete={deleteSelectedEvent}
         onClose={() => setSelectedEventId(null)}
       />
     </div>

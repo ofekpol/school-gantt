@@ -27,6 +27,7 @@ export interface ICalEvent {
   allDay: boolean;
   eventTypeLabelHe: string;
   updatedAt: Date;
+  canceled?: boolean;
 }
 
 export interface SerializeInput {
@@ -67,7 +68,8 @@ export function serializeCalendar(input: SerializeInput): string {
       lines.push(`DTSTART:${formatUtc(evt.startAt)}`);
       lines.push(`DTEND:${formatUtc(evt.endAt)}`);
     }
-    lines.push(`SUMMARY:${escapeText(evt.title)}`);
+    if (evt.canceled) lines.push("STATUS:CANCELLED");
+    lines.push(`SUMMARY:${escapeText(evt.canceled ? `מבוטל - ${evt.title}` : evt.title)}`);
     if (evt.location)
       lines.push(`LOCATION:${escapeText(evt.location)}`);
     if (evt.description)

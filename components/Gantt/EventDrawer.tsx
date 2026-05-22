@@ -12,6 +12,7 @@ interface Props {
   eventTypes?: EventType[];
   allowedGrades?: number[];
   onSave?: (patch: EventEditPatch) => Promise<boolean>;
+  onDelete?: () => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -56,6 +57,7 @@ export function EventDrawer({
   eventTypes = [],
   allowedGrades = [],
   onSave,
+  onDelete,
   onClose,
 }: Props) {
   const t = useTranslations("gantt.drawer");
@@ -72,6 +74,7 @@ export function EventDrawer({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<EventEditData | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -81,6 +84,7 @@ export function EventDrawer({
     setDraft(buildEditData(event));
     setError("");
     setSaving(false);
+    setDeleting(false);
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -95,6 +99,7 @@ export function EventDrawer({
   const headerGlyph = selectedType?.glyph ?? event.eventTypeGlyph;
   const headerLabel = selectedType?.labelHe ?? event.eventTypeLabelHe;
   const title = editing && draft ? draft.title : event.title;
+  const statusLabel = event.isCanceled ? td("canceled") : event.isUpdated ? td("updated") : null;
 
   function patchDraft(patch: Partial<EventEditData>) {
     setDraft((current) => (current ? { ...current, ...patch } : current));
@@ -147,6 +152,18 @@ export function EventDrawer({
     setEditing(false);
   }
 
+  async function deleteEvent() {
+    if (!onDelete) return;
+    const confirmed = window.confirm(td("deleteConfirm"));
+    if (!confirmed) return;
+    setDeleting(true);
+    const ok = await onDelete();
+    setDeleting(false);
+    if (!ok) {
+      setError(td("deleteError"));
+    }
+  }
+
   return (
     <div
       role="dialog"
@@ -195,6 +212,20 @@ export function EventDrawer({
             }}>
               {headerLabel}
             </span>
+            {statusLabel && (
+              <span
+                style={{
+                  borderRadius: 999,
+                  background: event.isCanceled ? "#fee2e2" : "#dbeafe",
+                  color: event.isCanceled ? "#991b1b" : "#1e40af",
+                  padding: "2px 8px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                {statusLabel}
+              </span>
+            )}
             <button
               ref={closeButtonRef}
               type="button"
@@ -234,7 +265,11 @@ export function EventDrawer({
                   outline: "none",
                 }}
               />
-            ) : title}
+            ) : (
+              <span style={{ textDecoration: event.isCanceled ? "line-through" : "none" }}>
+                {title}
+              </span>
+            )}
           </h2>
         </div>
 
@@ -428,14 +463,32 @@ export function EventDrawer({
                 {saving ? td("saving") : td("save")}
               </button>
             </>
-          ) : canEdit && (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              style={primaryButtonStyle}
-            >
-              {td("edit")}
-            </button>
+          ) : (
+            <>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={deleteEvent}
+                  disabled={deleting}
+                  style={{
+                    ...dangerButtonStyle,
+                    opacity: deleting ? 0.55 : 1,
+                    cursor: deleting ? "default" : "pointer",
+                  }}
+                >
+                  {deleting ? td("deleting") : td("delete")}
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  style={primaryButtonStyle}
+                >
+                  {td("edit")}
+                </button>
+              )}
+            </>
           )}
           <button
             type="button"
@@ -496,6 +549,21 @@ const secondaryButtonStyle: CSSProperties = {
   color: "var(--sg-ink-mute)",
   fontSize: 13,
   fontWeight: 500,
+  cursor: "pointer",
+};
+
+const dangerButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  height: 32,
+  padding: "0 14px",
+  borderRadius: 8,
+  border: "1px solid #fecaca",
+  background: "#fee2e2",
+  color: "#991b1b",
+  fontSize: 13,
+  fontWeight: 700,
   cursor: "pointer",
 };
 

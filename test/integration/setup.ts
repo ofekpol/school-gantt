@@ -53,6 +53,7 @@ beforeAll(async () => {
   }
   // DB is reachable — reset skip flag and proceed with setup
   _skip = false;
+  await testPool.query(`ALTER TYPE "public"."event_status" ADD VALUE IF NOT EXISTS 'canceled'`);
   // Upsert two test schools (idempotent for repeated test runs)
   await testDb
     .insert(schema.schools)

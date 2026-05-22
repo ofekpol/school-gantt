@@ -5,6 +5,7 @@ import {
   eventGrades,
   events,
   eventTypes,
+  eventRevisions,
 } from "@/lib/db/schema";
 
 export interface AgendaItem {
@@ -21,6 +22,9 @@ export interface AgendaItem {
   eventTypeColor: string;
   eventTypeGlyph: string;
   grades: number[];
+  status?: "approved" | "canceled";
+  isCanceled?: boolean;
+  isUpdated?: boolean;
 }
 
 export interface AgendaFilters {
@@ -50,7 +54,7 @@ export async function getAgendaForSchool(
 ): Promise<AgendaItem[]> {
   return withSchool(schoolId, async (tx) => {
     const conditions = [
-      eq(events.status, "approved"),
+      inArray(events.status, ["approved", "canceled"]),
       isNull(events.deletedAt),
     ];
 
@@ -97,6 +101,12 @@ export async function getAgendaForSchool(
         eventTypeLabelHe: eventTypes.labelHe,
         eventTypeColor: eventTypes.colorHex,
         eventTypeGlyph: eventTypes.glyph,
+        status: events.status,
+        isUpdated: sql<boolean>`exists (
+          select 1 from ${eventRevisions}
+          where ${eventRevisions.eventId} = ${events.id}
+            and ${eventRevisions.decision} = 'edited'
+        )`,
       })
       .from(events)
       .innerJoin(eventTypes, eq(events.eventTypeId, eventTypes.id))
@@ -121,6 +131,9 @@ export async function getAgendaForSchool(
     return rows.map((r) => ({
       ...r,
       grades: (gradesByEvent.get(r.id) ?? []).sort((a, b) => a - b),
+      status: r.status === "canceled" ? "canceled" : "approved",
+      isCanceled: r.status === "canceled",
+      isUpdated: Boolean(r.isUpdated),
     }));
   });
 }

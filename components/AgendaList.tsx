@@ -90,7 +90,18 @@ export function AgendaList({ weeks, emptyLabel }: Props) {
                       style={{ backgroundColor: item.eventTypeColor }}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{item.title}</p>
+                      <div className="flex items-center gap-2">
+                        <p className={`font-medium text-sm truncate ${item.isCanceled ? "text-red-800 line-through" : ""}`}>
+                          {item.title}
+                        </p>
+                        {(item.isCanceled || item.isUpdated) && (
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            item.isCanceled ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+                          }`}>
+                            {item.isCanceled ? "בוטל" : "עודכן"}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-neutral-500">
                         {dayFmt.format(startDate)}
                         {!item.allDay && (

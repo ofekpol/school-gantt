@@ -80,7 +80,7 @@ export function YearCalendarGrid({
                         {day.events.slice(0, 4).map((chip) => (
                           <li
                             key={chip.id}
-                            title={chip.title}
+                            title={chip.isCanceled ? `מבוטל · ${chip.title}` : chip.isUpdated ? `עודכן · ${chip.title}` : chip.title}
                           >
                             <button
                               type="button"
@@ -88,14 +88,20 @@ export function YearCalendarGrid({
                               disabled={!onEventClick}
                               className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
                               style={{
-                                backgroundColor: chip.eventTypeColor,
-                                color: readableTextColor(chip.eventTypeColor),
+                                backgroundColor: chip.isCanceled ? "#fee2e2" : chip.eventTypeColor,
+                                color: chip.isCanceled ? "#991b1b" : readableTextColor(chip.eventTypeColor),
+                                textDecoration: chip.isCanceled ? "line-through" : "none",
                               }}
                             >
                               <span aria-hidden="true" className="event-chip-glyph">
                                 {chip.eventTypeGlyph}
                               </span>
                               <span className="truncate">{chip.title}</span>
+                              {(chip.isCanceled || chip.isUpdated) && (
+                                <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
+                                  {chip.isCanceled ? "בוטל" : "עודכן"}
+                                </span>
+                              )}
                             </button>
                           </li>
                         ))}

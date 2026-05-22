@@ -60,6 +60,7 @@ export async function GET(
     endAt: new Date(e.endAt),
     allDay: e.allDay,
     eventTypeLabelHe: e.eventTypeLabelHe,
+    canceled: e.isCanceled === true,
     // DTSTAMP must be stable for ETag — use event boundaries instead of
     // wall-clock now(). startAt is a reasonable monotonic surrogate.
     updatedAt: new Date(e.startAt),

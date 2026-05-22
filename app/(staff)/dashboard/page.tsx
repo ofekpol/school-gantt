@@ -67,7 +67,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     eventTypeColor: e.eventTypeColor,
     eventTypeGlyph: e.eventTypeGlyph,
     grades: e.grades,
-    canEdit: user.role === "admin" || editableEventIds.has(e.id),
+    status: e.status ?? "approved",
+    isCanceled: e.isCanceled === true,
+    isUpdated: e.isUpdated === true,
+    canEdit: e.isCanceled !== true && (user.role === "admin" || editableEventIds.has(e.id)),
   }));
 
   const weeklyModel =
@@ -168,6 +171,9 @@ function toCalendarInput(e: AgendaItem) {
     eventTypeLabelHe: e.eventTypeLabelHe,
     eventTypeColor: e.eventTypeColor,
     eventTypeGlyph: e.eventTypeGlyph,
+    status: e.status ?? "approved",
+    isCanceled: e.isCanceled === true,
+    isUpdated: e.isUpdated === true,
   };
 }
 
@@ -175,6 +181,7 @@ function StatusBadge({ status, label }: { status: string; label: string }) {
   const styles: Record<string, string> = {
     draft: "bg-neutral-100 text-neutral-700",
     approved: "bg-green-100 text-green-800",
+    canceled: "bg-red-100 text-red-800",
   };
   return (
     <span

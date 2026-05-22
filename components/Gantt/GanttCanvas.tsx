@@ -185,34 +185,53 @@ interface EventBarButtonProps {
 }
 
 function EventBarButton({ bar, zIndex, onSelect }: EventBarButtonProps) {
+  const isCanceled = bar.status === "canceled" || bar.isCanceled;
+  const label = isCanceled ? `מבוטל · ${bar.title}` : bar.isUpdated ? `עודכן · ${bar.title}` : bar.title;
+
   return (
     <button
       type="button"
       onClick={() => onSelect(bar.eventId)}
-      aria-label={bar.title}
+      aria-label={label}
+      title={label}
       style={{
         position: "absolute",
         top: HEADER_HEIGHT_PX + bar.rowStart * ROW_HEIGHT_PX + 8,
         height: bar.rowSpan * ROW_HEIGHT_PX - 16,
         insetInlineStart: `${bar.leftPct}%`,
         width: `max(${bar.widthPct}%, 12px)`,
-        background: `color-mix(in oklch, ${bar.eventTypeColor} 18%, white)`,
-        borderInlineEnd: `3px solid ${bar.eventTypeColor}`,
+        background: isCanceled
+          ? "repeating-linear-gradient(135deg, #fee2e2 0 8px, #fecaca 8px 10px)"
+          : `color-mix(in oklch, ${bar.eventTypeColor} 18%, white)`,
+        borderInlineEnd: isCanceled ? undefined : `3px solid ${bar.eventTypeColor}`,
         borderRadius: 5,
         padding: "0 8px 0 10px",
         fontSize: 12, fontWeight: 500,
         display: "flex", alignItems: "center", gap: 6,
         overflow: "hidden",
         cursor: "pointer", textAlign: "start",
-        color: "var(--sg-ink)",
-        border: "none",
+        color: isCanceled ? "#991b1b" : "var(--sg-ink)",
+        border: isCanceled ? "1px solid #fca5a5" : "none",
         zIndex,
       }}
     >
       <span style={{ fontSize: 11, flexShrink: 0 }}>{bar.eventTypeGlyph}</span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: isCanceled ? "line-through" : "none" }}>
         {bar.title}
       </span>
+      {(isCanceled || bar.isUpdated) && (
+        <span style={{
+          flexShrink: 0,
+          borderRadius: 999,
+          background: isCanceled ? "#fecaca" : "#bfdbfe",
+          color: isCanceled ? "#7f1d1d" : "#1e3a8a",
+          padding: "1px 5px",
+          fontSize: 9,
+          fontWeight: 700,
+        }}>
+          {isCanceled ? "בוטל" : "עודכן"}
+        </span>
+      )}
     </button>
   );
 }

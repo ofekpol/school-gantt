@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStaffUser } from "@/lib/auth/session";
 import { EventDraftSchema } from "@/lib/validations/events";
-import { updateDraft, softDelete } from "@/lib/events/crud";
+import { updateDraft, deleteOrCancelEvent } from "@/lib/events/crud";
 import {
   getEditorAllowedGrades,
   getEventForEditor,
@@ -99,7 +99,9 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const result = await softDelete(user.schoolId!, id, user.id);
-  if (!result.deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ deleted: true }, { status: 200 });
+  const result = await deleteOrCancelEvent(user.schoolId!, id, user.id, user.role === "admin");
+  if (result.status === "not_found") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json(result, { status: 200 });
 }

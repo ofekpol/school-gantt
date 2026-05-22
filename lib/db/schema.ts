@@ -25,6 +25,7 @@ export const eventStatusEnum = pgEnum("event_status", [
   "pending",
   "approved",
   "rejected",
+  "canceled",
 ]);
 export const scopeKindEnum = pgEnum("scope_kind", ["grade", "event_type"]);
 

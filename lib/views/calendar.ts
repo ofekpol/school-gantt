@@ -21,6 +21,9 @@ export interface CalendarInputEvent {
   eventTypeLabelHe: string;
   eventTypeColor: string;
   eventTypeGlyph: string;
+  status?: "approved" | "canceled";
+  isCanceled?: boolean;
+  isUpdated?: boolean;
 }
 
 export interface CalendarChip {
@@ -32,6 +35,9 @@ export interface CalendarChip {
   eventTypeColor: string;
   eventTypeGlyph: string;
   grades: number[];
+  status?: "approved" | "canceled";
+  isCanceled?: boolean;
+  isUpdated?: boolean;
 }
 
 export interface CalendarDay {
@@ -93,6 +99,9 @@ export function buildCalendarModel(input: BuildCalendarInput): CalendarModel {
         eventTypeColor: evt.eventTypeColor,
         eventTypeGlyph: evt.eventTypeGlyph,
         grades: evt.grades.slice().sort((a, b) => a - b),
+        status: evt.status,
+        isCanceled: evt.isCanceled,
+        isUpdated: evt.isUpdated,
       });
       eventsByDate.set(key, list);
       cursor += DAY_MS;
