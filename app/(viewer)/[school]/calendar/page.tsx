@@ -64,12 +64,6 @@ export default async function CalendarPage({ params, searchParams }: PageProps) 
 
   return (
     <main className="min-h-screen bg-neutral-100 print:bg-white">
-      <header className="bg-white border-b border-neutral-200 px-4 py-3 print:hidden">
-        <h1 className="text-lg font-bold">{school.name}</h1>
-        <p className="text-xs text-neutral-500">
-          {year.label} · {t("subtitle")}
-        </p>
-      </header>
       <div className="print:hidden">
         <FilterBar
           allGrades={ALL_GRADES}

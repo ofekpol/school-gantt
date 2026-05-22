@@ -29,7 +29,10 @@
     "eventTypes": "סוגי אירועים",
     "year": "שנת לימודים",
     "profile": "פרופיל",
-    "logout": "יציאה"
+    "logout": "יציאה",
+    "gantt": "גאנט",
+    "agenda": "סדר יום",
+    "calendar": "לוח שנה"
   },
   "grades": {
     "label_7": "ז",
