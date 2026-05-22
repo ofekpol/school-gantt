@@ -22,8 +22,7 @@ export default async function NewEventPage({ searchParams }: PageProps) {
   if (!user || !user.schoolId) redirect("/");
 
   const { resumeId, date } = await searchParams;
-  const initialDate =
-    typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+  const initialDate = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
 
   const [activeYear, eventTypeList, allowedGradesRaw] = await Promise.all([
     getActiveAcademicYear(user.schoolId),
@@ -46,8 +45,8 @@ export default async function NewEventPage({ searchParams }: PageProps) {
           const { event, grades } = result;
           return {
             title: event.title ?? undefined,
-            // Serialize as Jerusalem-tz ISO so WizardShell and Step5Time can
-            // slice [11:16] to recover the local time without a tz library.
+            // Serialize as Jerusalem-tz ISO so the editor can slice [11:16]
+            // to recover the local time without a tz library.
             startAt: event.startAt ? toJerusalemIso(event.startAt) : undefined,
             endAt: event.endAt ? toJerusalemIso(event.endAt) : undefined,
             allDay: event.allDay,
@@ -85,6 +84,6 @@ const JERUSALEM_FMT = new Intl.DateTimeFormat("sv-SE", {
 
 function toJerusalemIso(d: Date): string {
   // sv-SE produces "YYYY-MM-DD HH:MM:SS" — replace space, append fixed +02:00.
-  // The wizard uses a fixed +02:00 offset throughout (v1 approximation).
+  // The editor uses a fixed +02:00 offset throughout (v1 approximation).
   return JERUSALEM_FMT.format(d).replace(" ", "T") + "+02:00";
 }

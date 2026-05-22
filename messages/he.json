@@ -89,6 +89,8 @@
       "roleViewer": "צופה",
       "gradeScopes": "שכבות מורשות",
       "eventTypeScopes": "סוגי אירועים מורשים",
+      "edit": "עריכה",
+      "save": "שמירה",
       "deactivate": "השבת",
       "deactivated": "מושבת",
       "approve": "אשר",
@@ -165,6 +167,9 @@
     "empty": "אין אירועים עדיין. לחץ על \"אירוע חדש\" כדי להתחיל.",
     "resume": "המשך",
     "edit": "ערוך",
+    "save": "שמור",
+    "saving": "שומר…",
+    "cancelEdit": "בטל עריכה",
     "viewWeekly": "תצוגה שבועית",
     "viewMonthly": "תצוגה חודשית",
     "confirmNewEventTitle": "אירוע חדש",
@@ -262,6 +267,7 @@
       "startLabel": "שעת התחלה",
       "endLabel": "שעת סיום",
       "allDay": "כל היום",
+      "errorInvalid": "יש להזין שעה תקינה",
       "errorInverted": "שעת הסיום חייבת להיות אחרי שעת ההתחלה"
     },
     "step6": {
@@ -275,6 +281,20 @@
       "submit": "פרסם אירוע",
       "submitting": "מפרסם…",
       "submitError": "הפרסום נכשל"
+    },
+    "editor": {
+      "createEyebrow": "אירוע חדש",
+      "editEyebrow": "עריכת אירוע",
+      "untitled": "אירוע ללא שם",
+      "saveDraft": "שמור טיוטה",
+      "saved": "הטיוטה נשמרה",
+      "saveError": "שמירת הטיוטה נכשלה",
+      "titlePlaceholder": "מה שם האירוע?",
+      "detailsLabel": "תיאור",
+      "detailsPlaceholder": "פרטים נוספים, חדר, ציוד…",
+      "selectType": "בחר סוג אירוע",
+      "moreOptions": "אפשרויות נוספות",
+      "responsiblePlaceholder": "שם אחראי, אם צריך"
     }
   }
 }

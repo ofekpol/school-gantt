@@ -89,6 +89,8 @@
       "roleViewer": "Viewer",
       "gradeScopes": "Allowed Grades",
       "eventTypeScopes": "Allowed Event Types",
+      "edit": "Edit",
+      "save": "Save",
       "deactivate": "Deactivate",
       "deactivated": "Deactivated",
       "approve": "Approve",
@@ -165,6 +167,9 @@
     "empty": "No events yet. Click \"New event\" to start.",
     "resume": "Resume",
     "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancelEdit": "Cancel edit",
     "viewWeekly": "Weekly",
     "viewMonthly": "Monthly",
     "confirmNewEventTitle": "New event",
@@ -262,6 +267,7 @@
       "startLabel": "Start time",
       "endLabel": "End time",
       "allDay": "All-day",
+      "errorInvalid": "Please enter a valid time",
       "errorInverted": "End time must come after start time"
     },
     "step6": {
@@ -275,6 +281,20 @@
       "submit": "Publish event",
       "submitting": "Publishing…",
       "submitError": "Publish failed"
+    },
+    "editor": {
+      "createEyebrow": "New event",
+      "editEyebrow": "Edit event",
+      "untitled": "Untitled event",
+      "saveDraft": "Save draft",
+      "saved": "Draft saved",
+      "saveError": "Draft save failed",
+      "titlePlaceholder": "What is the event called?",
+      "detailsLabel": "Description",
+      "detailsPlaceholder": "Notes, room, equipment…",
+      "selectType": "Select event type",
+      "moreOptions": "More options",
+      "responsiblePlaceholder": "Responsible person, if needed"
     }
   }
 }

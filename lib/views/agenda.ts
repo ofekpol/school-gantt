@@ -15,6 +15,7 @@ export interface AgendaItem {
   allDay: boolean;
   description: string | null;
   location: string | null;
+  eventTypeId?: string;
   eventTypeKey: string;
   eventTypeLabelHe: string;
   eventTypeColor: string;
@@ -91,6 +92,7 @@ export async function getAgendaForSchool(
         allDay: events.allDay,
         description: events.description,
         location: events.location,
+        eventTypeId: eventTypes.id,
         eventTypeKey: eventTypes.key,
         eventTypeLabelHe: eventTypes.labelHe,
         eventTypeColor: eventTypes.colorHex,

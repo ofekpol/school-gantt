@@ -4,14 +4,13 @@ import { getTranslations } from "next-intl/server";
 import { getStaffUser } from "@/lib/auth/session";
 import {
   getActiveAcademicYear,
+  getEditorAllowedGrades,
   getEditorDashboardEvents,
+  listEventTypes,
 } from "@/lib/events/queries";
 import { getSchoolById } from "@/lib/db/schools";
 import { getAgendaForSchool, type AgendaItem } from "@/lib/views/agenda";
-import {
-  buildWeeklyModel,
-  parseWeekParam,
-} from "@/lib/views/gantt-weekly";
+import { buildWeeklyModel, parseWeekParam } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 
@@ -27,7 +26,7 @@ interface PageProps {
 
 /**
  * Staff/admin dashboard — school-wide weekly/monthly calendar.
- * Clicking a day opens a confirm popup → /events/new?date=YYYY-MM-DD.
+ * Clicking a day opens the quick event popup with that date selected.
  * Personal drafts live under a collapsible "My drafts" section.
  */
 export default async function DashboardPage({ searchParams }: PageProps) {
@@ -38,16 +37,22 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const view = sp.view === "monthly" ? "monthly" : "weekly";
 
-  const [school, activeYear, agendaItems, myEvents] = await Promise.all([
-    getSchoolById(user.schoolId),
-    getActiveAcademicYear(user.schoolId),
-    getAgendaForSchool(user.schoolId, {}),
-    getEditorDashboardEvents(user.schoolId, user.id),
-  ]);
+  const [school, activeYear, agendaItems, myEvents, eventTypeList, allowedGrades] =
+    await Promise.all([
+      getSchoolById(user.schoolId),
+      getActiveAcademicYear(user.schoolId),
+      getAgendaForSchool(user.schoolId, {}),
+      getEditorDashboardEvents(user.schoolId, user.id),
+      listEventTypes(user.schoolId),
+      user.role === "editor"
+        ? getEditorAllowedGrades(user.schoolId, user.id)
+        : Promise.resolve(ALL_GRADES),
+    ]);
 
   const t = await getTranslations("dashboard");
   const tc = await getTranslations("common");
 
+  const editableEventIds = new Set(myEvents.map((event) => event.id));
   const serializedEvents = agendaItems.map((e) => ({
     id: e.id,
     title: e.title,
@@ -56,11 +61,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     allDay: e.allDay,
     description: e.description,
     location: e.location,
+    eventTypeId: e.eventTypeId ?? "",
     eventTypeKey: e.eventTypeKey,
     eventTypeLabelHe: e.eventTypeLabelHe,
     eventTypeColor: e.eventTypeColor,
     eventTypeGlyph: e.eventTypeGlyph,
     grades: e.grades,
+    canEdit: user.role === "admin" || editableEventIds.has(e.id),
   }));
 
   const weeklyModel =
@@ -81,14 +88,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   return (
     <main className="pb-12">
-      <div className="px-6 pt-6 flex items-center justify-between">
+      <div className="flex items-center justify-between px-6 pt-6">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <Link
-          href="/events/new"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-        >
-          {t("newEvent")}
-        </Link>
       </div>
 
       {school && (
@@ -99,27 +100,30 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           events={serializedEvents}
           yearLabel={activeYear?.label ?? ""}
           schoolName={school.name}
+          yearBounds={
+            activeYear ? { startDate: activeYear.startDate, endDate: activeYear.endDate } : null
+          }
+          eventTypes={eventTypeList}
+          allowedGrades={allowedGrades}
         />
       )}
 
-      <section className="px-6 mt-10">
+      <section className="mt-10 px-6">
         <details>
-          <summary className="cursor-pointer text-base font-semibold mb-3">
+          <summary className="mb-3 cursor-pointer text-base font-semibold">
             {t("myDrafts")} ({myEvents.length})
           </summary>
           {myEvents.length === 0 ? (
-            <p className="text-neutral-500 mt-3">{t("empty")}</p>
+            <p className="mt-3 text-neutral-500">{t("empty")}</p>
           ) : (
-            <ul className="space-y-3 mt-3">
+            <ul className="mt-3 space-y-3">
               {myEvents.map((event) => (
                 <li
                   key={event.id}
                   className="flex items-center justify-between rounded-lg border border-neutral-200 p-4"
                 >
                   <div>
-                    <p className="font-medium">
-                      {event.title || tc("unnamed")}
-                    </p>
+                    <p className="font-medium">{event.title || tc("unnamed")}</p>
                     <p className="text-sm text-neutral-500">
                       {event.startAt
                         ? new Intl.DateTimeFormat("he-IL", {
@@ -131,12 +135,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                   <div className="flex items-center gap-3">
                     <StatusBadge
                       status={event.status}
-                      label={t(
-                        `status.${event.status}` as `status.${typeof event.status}`,
-                      )}
+                      label={t(`status.${event.status}` as `status.${typeof event.status}`)}
                     />
-                    {(event.status === "draft" ||
-                      event.status === "approved") && (
+                    {(event.status === "draft" || event.status === "approved") && (
                       <Link
                         href={`/events/new?resumeId=${event.id}`}
                         className="text-sm text-blue-600 hover:underline"

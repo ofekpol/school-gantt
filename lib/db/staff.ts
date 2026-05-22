@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import { supabaseAdmin } from "@/lib/db/supabase-admin";
 import { editorScopes, schools, staffUsers } from "@/lib/db/schema";
@@ -138,27 +138,33 @@ export async function updateStaffUser(
       fullName: string;
       role: "editor" | "admin" | "viewer";
       status: "pending" | "active" | "deactivated";
-      deactivatedAt: Date;
+      deactivatedAt: Date | null;
     }> = {};
     if (fields.fullName !== undefined) updates.fullName = fields.fullName;
     if (fields.role !== undefined) updates.role = fields.role;
     if (fields.deactivated) {
       updates.deactivatedAt = new Date();
       updates.status = "deactivated";
+    } else if (fields.deactivated === false) {
+      updates.deactivatedAt = null;
+      updates.status = "active";
     }
 
     if (Object.keys(updates).length > 0) {
       await tx.update(staffUsers).set(updates).where(eq(staffUsers.id, staffUserId));
     }
 
-    if (fields.gradeScopes !== undefined || fields.eventTypeScopes !== undefined) {
-      if (fields.gradeScopes !== undefined) {
-        await tx
-          .delete(editorScopes)
-          .where(
-            eq(editorScopes.staffUserId, staffUserId),
-          );
-        const gradeRows = fields.gradeScopes.map((g) => ({
+    const shouldRewriteScopes =
+      fields.gradeScopes !== undefined ||
+      fields.eventTypeScopes !== undefined ||
+      fields.role === "admin" ||
+      fields.role === "viewer";
+
+    if (shouldRewriteScopes) {
+      await tx.delete(editorScopes).where(eq(editorScopes.staffUserId, staffUserId));
+
+      if (fields.role === undefined || fields.role === "editor") {
+        const gradeRows = (fields.gradeScopes ?? []).map((g) => ({
           staffUserId,
           schoolId,
           scopeKind: "grade" as const,
@@ -171,9 +177,7 @@ export async function updateStaffUser(
           scopeValue: k,
         }));
         const all = [...gradeRows, ...etRows];
-        if (all.length > 0) {
-          await tx.insert(editorScopes).values(all);
-        }
+        if (all.length > 0) await tx.insert(editorScopes).values(all);
       }
     }
   });
@@ -237,10 +241,12 @@ export async function listStaffUsers(
     role: "editor" | "admin" | "viewer";
     deactivatedAt: Date | null;
     status: "pending" | "active" | "deactivated";
+    gradeScopes: number[];
+    eventTypeScopes: string[];
   }>
 > {
-  const rows = await withSchool(schoolId, (tx) =>
-    tx
+  return withSchool(schoolId, async (tx) => {
+    const rows = await tx
       .select({
         id: staffUsers.id,
         email: staffUsers.email,
@@ -249,7 +255,39 @@ export async function listStaffUsers(
         deactivatedAt: staffUsers.deactivatedAt,
         status: staffUsers.status,
       })
-      .from(staffUsers),
-  );
-  return rows;
+      .from(staffUsers);
+
+    if (rows.length === 0) return [];
+
+    const scopes = await tx
+      .select({
+        staffUserId: editorScopes.staffUserId,
+        scopeKind: editorScopes.scopeKind,
+        scopeValue: editorScopes.scopeValue,
+      })
+      .from(editorScopes)
+      .where(
+        inArray(
+          editorScopes.staffUserId,
+          rows.map((row) => row.id),
+        ),
+      );
+
+    const scopesByStaff = new Map<string, { gradeScopes: number[]; eventTypeScopes: string[] }>();
+    for (const row of rows) {
+      scopesByStaff.set(row.id, { gradeScopes: [], eventTypeScopes: [] });
+    }
+    for (const scope of scopes) {
+      const target = scopesByStaff.get(scope.staffUserId);
+      if (!target) continue;
+      if (scope.scopeKind === "grade") target.gradeScopes.push(Number(scope.scopeValue));
+      if (scope.scopeKind === "event_type") target.eventTypeScopes.push(scope.scopeValue);
+    }
+
+    return rows.map((row) => ({
+      ...row,
+      gradeScopes: scopesByStaff.get(row.id)?.gradeScopes.sort((a, b) => a - b) ?? [],
+      eventTypeScopes: scopesByStaff.get(row.id)?.eventTypeScopes.sort() ?? [],
+    }));
+  });
 }

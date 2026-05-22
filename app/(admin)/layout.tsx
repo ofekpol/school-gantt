@@ -32,7 +32,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         subtitle={user.email}
         navLinks={navLinks}
         currentPath={currentPath}
-        rightSlot={<LogoutButton label={t("logout")} />}
+        rightSlot={
+          <>
+            <span className="max-w-48 truncate text-sm font-medium text-neutral-900">
+              {user.fullName}
+            </span>
+            <LogoutButton label={t("logout")} />
+          </>
+        }
       />
       {children}
     </div>

@@ -32,6 +32,5 @@ export async function buildNavLinks(
   if (role === "admin") {
     links.push({ href: "/admin/year", label: t("year") });
   }
-  links.push({ href: "/profile", label: t("profile") });
   return links;
 }
