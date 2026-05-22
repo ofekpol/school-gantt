@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { after, type NextRequest, NextResponse } from "next/server";
 import { assertAdmin } from "@/lib/auth/admin";
 import { getStaffUser } from "@/lib/auth/session";
 import {
@@ -44,10 +44,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true });
   }
 
+  const role = parsed.data.role;
   const result = await approvePendingRegistration({
     pendingId: parsed.data.pendingId,
     schoolId: parsed.data.schoolId ?? user.schoolId,
-    role: parsed.data.role,
+    role,
     fullName: parsed.data.fullName,
     gradeScopes: parsed.data.gradeScopes,
     eventTypeScopes: parsed.data.eventTypeScopes,
@@ -55,11 +56,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
-  await sendApprovalEmail({
-    to: result.email,
-    fullName: result.fullName,
-    role: parsed.data.role,
-    loginUrl: `${appUrl}/auth/login`,
+  // Send approval email off the response critical path. DB commit already
+  // happened; a slow/failing Resend call must not delay or fail the approval.
+  after(async () => {
+    try {
+      await sendApprovalEmail({
+        to: result.email,
+        fullName: result.fullName,
+        role,
+        loginUrl: `${appUrl}/auth/login`,
+      });
+    } catch (err) {
+      console.error("sendApprovalEmail failed", err);
+    }
   });
 
   return NextResponse.json({ ok: true, staffUserId: result.staffUserId });
