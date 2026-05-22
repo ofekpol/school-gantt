@@ -25,10 +25,14 @@ interface SerializedEvent {
   allDay: boolean;
   description: string | null;
   location: string | null;
+  eventTypeId?: string;
   eventTypeKey: string;
   eventTypeLabelHe: string;
   eventTypeColor: string;
   eventTypeGlyph: string;
+  status?: "approved" | "canceled";
+  isCanceled?: boolean;
+  isUpdated?: boolean;
   grades: number[];
 }
 
@@ -36,9 +40,10 @@ interface Props {
   model: WeeklyModel;
   events: SerializedEvent[];
   onDayClick?: (isoDate: string) => void;
+  onEventClick?: (eventId: string) => void;
 }
 
-export function GanttWeekly({ model, events, onDayClick }: Props) {
+export function GanttWeekly({ model, events, onDayClick, onEventClick }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -55,6 +60,9 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
       ...e,
       startAt: new Date(e.startAt),
       endAt: new Date(e.endAt),
+      status: e.status ?? "approved",
+      isCanceled: e.isCanceled ?? false,
+      isUpdated: e.isUpdated ?? false,
     })),
     [events],
   );
@@ -75,6 +83,14 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
   }, [displayWeekStartMs, hydratedEvents, model]);
 
   const selected = selectedId ? (eventMap.get(selectedId) ?? null) : null;
+
+  function selectEvent(eventId: string) {
+    if (onEventClick) {
+      onEventClick(eventId);
+      return;
+    }
+    setSelectedId(eventId);
+  }
 
   function navigate(delta: number) {
     const next = new Date(displayModel.weekStart.getTime() + delta * 7 * 24 * 60 * 60 * 1000);
@@ -129,7 +145,7 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
               key={row.grade}
               row={row}
               days={displayModel.days}
-              onSelect={setSelectedId}
+              onSelect={selectEvent}
               onDayClick={onDayClick}
             />
           ))}
@@ -162,7 +178,7 @@ export function GanttWeekly({ model, events, onDayClick }: Props) {
         </div>
       </div>
 
-      <EventDrawer event={selected} onClose={() => setSelectedId(null)} />
+      {!onEventClick && <EventDrawer event={selected} onClose={() => setSelectedId(null)} />}
     </div>
   );
 }
@@ -318,13 +334,15 @@ function EventBarChip({ bar, onSelect }: { bar: WeeklyEventBar; onSelect: (id: s
   const isVacation = bar.eventTypeKey === "vacation" || bar.eventTypeKey === "bagrut";
   const isPending = bar.status === "pending";
   const isDraft = bar.status === "draft";
+  const isCanceled = bar.status === "canceled" || bar.isCanceled;
+  const label = isCanceled ? `מבוטל · ${bar.title}` : bar.isUpdated ? `עודכן · ${bar.title}` : bar.title;
 
   return (
     <button
       type="button"
       onClick={() => onSelect(bar.eventId)}
-      title={bar.title}
-      aria-label={bar.title}
+      title={label}
+      aria-label={label}
       style={{
         position: "absolute",
         insetInlineStart: `${bar.startPct}%`,
@@ -332,18 +350,22 @@ function EventBarChip({ bar, onSelect }: { bar: WeeklyEventBar; onSelect: (id: s
         minWidth: 48,
         top: ROW_PAD + bar.lane * (LANE_H + LANE_GAP),
         height: LANE_H,
-        background: isDraft
+        background: isCanceled
+          ? "repeating-linear-gradient(135deg, #fee2e2 0 8px, #fecaca 8px 10px)"
+          : isDraft
           ? "transparent"
           : isVacation
             ? bar.eventTypeColor
             : `color-mix(in oklch, ${bar.eventTypeColor} 18%, white)`,
-        color: isDraft ? bar.eventTypeColor : isVacation ? "white" : "var(--sg-ink)",
-        border: isDraft
+        color: isCanceled ? "#991b1b" : isDraft ? bar.eventTypeColor : isVacation ? "white" : "var(--sg-ink)",
+        border: isCanceled
+          ? "1px solid #fca5a5"
+          : isDraft
           ? `1.5px dashed ${bar.eventTypeColor}`
           : isPending
             ? `1px dashed ${bar.eventTypeColor}`
             : `none`,
-        borderInlineEnd: isDraft || isPending ? undefined : `3px solid ${bar.eventTypeColor}`,
+        borderInlineEnd: isCanceled || isDraft || isPending ? undefined : `3px solid ${bar.eventTypeColor}`,
         borderRadius: 5,
         padding: "0 8px 0 10px",
         fontSize: 12, fontWeight: 500,
@@ -358,9 +380,22 @@ function EventBarChip({ bar, onSelect }: { bar: WeeklyEventBar; onSelect: (id: s
       <span style={{ width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <EventTypeGlyph glyph={bar.eventTypeGlyph} color={isVacation ? "rgba(255,255,255,0.85)" : bar.eventTypeColor} />
       </span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, textDecoration: isCanceled ? "line-through" : "none" }}>
         {bar.title}
       </span>
+      {(isCanceled || bar.isUpdated) && (
+        <span style={{
+          flexShrink: 0,
+          borderRadius: 999,
+          background: isCanceled ? "#fecaca" : "#bfdbfe",
+          color: isCanceled ? "#7f1d1d" : "#1e3a8a",
+          padding: "1px 5px",
+          fontSize: 9,
+          fontWeight: 700,
+        }}>
+          {isCanceled ? "בוטל" : "עודכן"}
+        </span>
+      )}
     </button>
   );
 }
@@ -387,8 +422,8 @@ function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
         </h1>
       </div>
       <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-        <NavBtn onClick={onNext} aria-label="שבוע הבא">›</NavBtn>
-        <NavBtn onClick={onPrev} aria-label="שבוע קודם">‹</NavBtn>
+        <NavBtn onClick={onNext} aria-label="שבוע הבא">‹</NavBtn>
+        <NavBtn onClick={onPrev} aria-label="שבוע קודם">›</NavBtn>
         <div style={{ width: 1, height: 22, background: "var(--sg-hairline)", margin: "0 4px" }} />
         <PrintBtn />
       </div>

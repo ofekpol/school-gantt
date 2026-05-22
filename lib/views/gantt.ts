@@ -25,6 +25,9 @@ export interface GanttInputEvent {
   eventTypeLabelHe: string;
   eventTypeColor: string;
   eventTypeGlyph: string;
+  status?: "approved" | "canceled";
+  isCanceled?: boolean;
+  isUpdated?: boolean;
 }
 
 export interface GanttBar {
@@ -43,6 +46,9 @@ export interface GanttBar {
   eventTypeLabelHe: string;
   eventTypeColor: string;
   eventTypeGlyph: string;
+  status?: "approved" | "canceled";
+  isCanceled?: boolean;
+  isUpdated?: boolean;
 }
 
 export interface GanttMonth {
@@ -116,6 +122,9 @@ export function buildGanttModel(input: BuildGanttInput): GanttModel {
         eventTypeLabelHe: evt.eventTypeLabelHe,
         eventTypeColor: evt.eventTypeColor,
         eventTypeGlyph: evt.eventTypeGlyph,
+        status: evt.status,
+        isCanceled: evt.isCanceled,
+        isUpdated: evt.isUpdated,
       });
     }
   }

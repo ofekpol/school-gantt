@@ -11,6 +11,7 @@ vi.mock("@/lib/db/client", () => ({
 
 import {
   createDraft,
+  deleteOrCancelEvent,
   replaceEventGrades,
   softDelete,
   updateDraft,
@@ -262,6 +263,66 @@ describe("softDelete: ownership and status guards", () => {
       }),
     );
     expect(await softDelete(SCHOOL, EVENT, USER)).toEqual({ deleted: true });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// deleteOrCancelEvent
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("deleteOrCancelEvent: draft delete vs published cancel", () => {
+  it("soft-deletes draft events", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ id: EVENT, createdBy: USER, status: "draft" }],
+      }),
+    );
+    expect(await deleteOrCancelEvent(SCHOOL, EVENT, USER, false)).toEqual({ status: "deleted" });
+  });
+
+  it("marks approved events as canceled and writes a revision", async () => {
+    const valuesSpy = vi.fn().mockReturnValue(
+      Object.assign(Promise.resolve([]), {
+        returning: () => Promise.resolve([]),
+      }),
+    );
+
+    withSchoolMock.mockImplementation(
+      async (_: unknown, fn: TxCallback) =>
+        fn({
+          select: () => ({
+            from: () => ({
+              where: () => ({
+                limit: () =>
+                  Promise.resolve([
+                    {
+                      id: EVENT,
+                      createdBy: USER,
+                      status: "approved",
+                      version: 2,
+                    },
+                  ]),
+              }),
+            }),
+          }),
+          update: () => ({
+            set: () => ({
+              where: () => Promise.resolve([]),
+            }),
+          }),
+          insert: () => ({ values: valuesSpy }),
+        } as unknown as MockTx),
+    );
+
+    expect(await deleteOrCancelEvent(SCHOOL, EVENT, USER, false)).toEqual({ status: "canceled" });
+    expect(valuesSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: EVENT,
+        decision: "canceled",
+        submittedBy: USER,
+        decidedBy: USER,
+      }),
+    );
   });
 });
 

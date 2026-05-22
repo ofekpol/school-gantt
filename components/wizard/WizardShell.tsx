@@ -2,13 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Step1Date } from "./Step1Date";
-import { Step2Grades } from "./Step2Grades";
-import { Step3EventType } from "./Step3EventType";
-import { Step4Title } from "./Step4Title";
-import { Step5Time } from "./Step5Time";
-import { Step6Responsible } from "./Step6Responsible";
-import { Step7Summary } from "./Step7Summary";
+import { useTranslations } from "next-intl";
+import { X } from "lucide-react";
 
 export interface EventType {
   id: string;
@@ -46,8 +41,6 @@ export interface StepProps {
   onBack: () => void;
 }
 
-const TOTAL_STEPS = 7;
-
 /**
  * Maps wizard state to the EventDraftSchema PATCH body. The wizard tracks the
  * Step-6 fields as responsibleText/requirementsText, but they persist to the
@@ -68,11 +61,6 @@ function toApiBody(d: WizardData): Record<string, unknown> {
   return body;
 }
 
-/**
- * WizardShell — client-side orchestrator for the 7-step event creation wizard.
- * Autosaves to the API after every step (WIZARD-02).
- * On submit, calls POST /api/v1/events/:id/submit (WIZARD-06).
- */
 export function WizardShell({
   yearBounds,
   eventTypes,
@@ -82,7 +70,16 @@ export function WizardShell({
   initialDate,
 }: WizardShellProps) {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const tc = useTranslations("common");
+  const tg = useTranslations("grades");
+  const t1 = useTranslations("wizard.step1");
+  const t2 = useTranslations("wizard.step2");
+  const t3 = useTranslations("wizard.step3");
+  const t4 = useTranslations("wizard.step4");
+  const t5 = useTranslations("wizard.step5");
+  const t6 = useTranslations("wizard.step6");
+  const t7 = useTranslations("wizard.step7");
+  const te = useTranslations("wizard.editor");
   const [eventId, setEventId] = useState<string | null>(resumeId);
   const [data, setData] = useState<WizardData>(() => {
     if (!resumeDraft) return initialDate ? { date: initialDate } : {};
@@ -97,23 +94,21 @@ export function WizardShell({
       allDay: typeof resumeDraft.allDay === "boolean" ? resumeDraft.allDay : false,
       eventTypeId:
         typeof resumeDraft.eventTypeId === "string" ? resumeDraft.eventTypeId : undefined,
-      grades: Array.isArray(resumeDraft.grades)
-        ? (resumeDraft.grades as number[])
-        : undefined,
-      responsibleText:
-        typeof resumeDraft.location === "string" ? resumeDraft.location : undefined,
+      grades: Array.isArray(resumeDraft.grades) ? (resumeDraft.grades as number[]) : undefined,
+      responsibleText: typeof resumeDraft.location === "string" ? resumeDraft.location : undefined,
       requirementsText:
         typeof resumeDraft.description === "string" ? resumeDraft.description : undefined,
     };
   });
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const save = useCallback(
     async (patch: WizardData): Promise<string> => {
-      // Defer draft creation until eventTypeId is known (Step 3).
-      // POST /api/v1/events requires eventTypeId — steps 1 and 2 buffer locally.
       if (!eventId && !patch.eventTypeId) {
-        return "";
+        throw new Error("missing_event_type");
       }
       setSaving(true);
       try {
@@ -155,61 +150,340 @@ export function WizardShell({
     [eventId],
   );
 
-  const handleNext = useCallback(
-    async (stepData: WizardData) => {
-      const merged = { ...data, ...stepData };
-      setData(merged);
-      await save(merged);
-      setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+  const patchData = useCallback((patch: WizardData) => {
+    setData((current) => ({ ...current, ...patch }));
+    setNotice("");
+    setError("");
+  }, []);
+
+  const normalizedData = useCallback((): WizardData => {
+    const dateStr = data.date ?? "";
+    const allDay = data.allDay ?? false;
+    const startTime = data.startAt?.slice(11, 16) ?? "08:00";
+    const endTime = data.endAt?.slice(11, 16) ?? "09:00";
+    const startAt = dateStr
+      ? allDay
+        ? `${dateStr}T00:00:00+02:00`
+        : `${dateStr}T${startTime}:00+02:00`
+      : undefined;
+    const endAt = dateStr
+      ? allDay
+        ? `${dateStr}T23:59:59+02:00`
+        : `${dateStr}T${endTime}:00+02:00`
+      : undefined;
+
+    return {
+      ...data,
+      title: data.title?.trim(),
+      responsibleText: data.responsibleText?.trim(),
+      requirementsText: data.requirementsText?.trim() || undefined,
+      allDay,
+      startAt,
+      endAt,
+    };
+  }, [data]);
+
+  const validate = useCallback(
+    (draft: WizardData): string => {
+      if (!draft.title?.trim()) return t4("errorRequired");
+      if (draft.title.length > 120) return t4("errorTooLong");
+      if (!draft.date) return t1("errorRequired");
+      if (yearBounds && (draft.date < yearBounds.startDate || draft.date > yearBounds.endDate)) {
+        return t1("errorOutOfYear");
+      }
+      if (!draft.eventTypeId) return t3("errorRequired");
+      if (!draft.grades || draft.grades.length === 0) return t2("errorRequired");
+      if (!draft.allDay && draft.startAt && draft.endAt) {
+        const start = draft.startAt.slice(11, 16);
+        const end = draft.endAt.slice(11, 16);
+        if (start >= end) return t5("errorInverted");
+      }
+      return "";
     },
-    [data, save],
+    [t1, t2, t3, t4, t5, yearBounds],
   );
 
-  const handleBack = useCallback(() => setStep((s) => Math.max(s - 1, 1)), []);
+  const handleSaveDraft = useCallback(async () => {
+    const draft = normalizedData();
+    if (!draft.eventTypeId) {
+      setError(t3("errorRequired"));
+      return;
+    }
+    setError("");
+    try {
+      await save(draft);
+      setNotice(te("saved"));
+    } catch {
+      setError(te("saveError"));
+    }
+  }, [normalizedData, save, t3, te]);
 
   const handleSubmit = useCallback(async () => {
-    if (!eventId) return;
-    const res = await fetch(`/api/v1/events/${eventId}/submit`, { method: "POST" });
-    if (!res.ok) throw new Error("Submit failed");
-    router.push("/dashboard");
-  }, [eventId, router]);
+    const draft = normalizedData();
+    const validationError = validate(draft);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
-  const stepProps: StepProps = { data, onNext: handleNext, onBack: handleBack, saving };
+    setPublishing(true);
+    setError("");
+    try {
+      const id = await save(draft);
+      const res = await fetch(`/api/v1/events/${id}/submit`, { method: "POST" });
+      if (!res.ok) throw new Error("Submit failed");
+      router.push("/dashboard");
+    } catch {
+      setError(t7("submitError"));
+      setPublishing(false);
+    }
+  }, [normalizedData, router, save, t7, validate]);
+
+  const selectedEventType = eventTypes.find((type) => type.id === data.eventTypeId);
+  const startTime = data.startAt?.slice(11, 16) ?? "08:00";
+  const endTime = data.endAt?.slice(11, 16) ?? "09:00";
 
   return (
-    <main className="min-h-screen bg-neutral-50">
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <StepProgress current={step} total={TOTAL_STEPS} />
-        {step === 1 && <Step1Date {...stepProps} yearBounds={yearBounds} />}
-        {step === 2 && <Step2Grades {...stepProps} allowedGrades={allowedGrades} />}
-        {step === 3 && <Step3EventType {...stepProps} eventTypes={eventTypes} />}
-        {step === 4 && <Step4Title {...stepProps} />}
-        {step === 5 && <Step5Time {...stepProps} />}
-        {step === 6 && <Step6Responsible {...stepProps} />}
-        {step === 7 && (
-          <Step7Summary
-            {...stepProps}
-            eventTypes={eventTypes}
-            onSubmit={handleSubmit}
-          />
-        )}
+    <main
+      className="min-h-screen bg-[color-mix(in_oklch,var(--sg-bg)_72%,#000_28%)] px-3 py-5 sm:px-6"
+      dir="rtl"
+    >
+      <div className="mx-auto max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/5">
+        <header className="flex items-center justify-between border-b border-[var(--sg-hairline)] px-6 py-5 sm:px-10">
+          <h1 className="text-3xl font-semibold text-[var(--sg-ink)]">
+            {resumeId ? te("editEyebrow") : te("createEyebrow")}
+          </h1>
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            aria-label={tc("cancel")}
+            className="grid size-10 place-items-center rounded-full text-[var(--sg-ink-soft)] hover:bg-[var(--sg-surface-2)] hover:text-[var(--sg-ink)]"
+          >
+            <X className="size-7" aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="space-y-7 px-6 py-6 sm:px-10">
+          <Field label={t4("title")}>
+            <input
+              type="text"
+              value={data.title ?? ""}
+              maxLength={120}
+              onChange={(e) => patchData({ title: e.target.value })}
+              placeholder={te("titlePlaceholder")}
+              aria-label={t4("title")}
+              className="block min-h-14 w-full rounded-[18px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 text-lg transition outline-none focus:border-sky-400 focus:bg-white"
+              autoFocus
+            />
+          </Field>
+
+          <Field label={te("detailsLabel")}>
+            <textarea
+              value={data.requirementsText ?? ""}
+              maxLength={2000}
+              onChange={(e) => patchData({ requirementsText: e.target.value })}
+              rows={4}
+              placeholder={te("detailsPlaceholder")}
+              aria-label={te("detailsLabel")}
+              className="block w-full resize-y rounded-[18px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 py-3 text-base transition outline-none focus:border-sky-400 focus:bg-white"
+            />
+          </Field>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Field label={t1("title")}>
+              <input
+                type="date"
+                value={data.date ?? ""}
+                min={yearBounds?.startDate}
+                max={yearBounds?.endDate}
+                onChange={(e) => patchData({ date: e.target.value })}
+                aria-label={t1("title")}
+                className="block min-h-12 w-full rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 text-base transition outline-none focus:border-sky-400 focus:bg-white"
+              />
+            </Field>
+
+            <Field label={t5("title")}>
+              <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+                <input
+                  type="time"
+                  value={startTime}
+                  disabled={data.allDay}
+                  onChange={(e) =>
+                    patchData({
+                      startAt: `${data.date ?? ""}T${e.target.value}:00+02:00`,
+                    })
+                  }
+                  aria-label={t5("startLabel")}
+                  className="min-h-12 min-w-0 rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-3 text-base transition outline-none focus:border-sky-400 focus:bg-white disabled:opacity-45"
+                />
+                <input
+                  type="time"
+                  value={endTime}
+                  disabled={data.allDay}
+                  onChange={(e) =>
+                    patchData({
+                      endAt: `${data.date ?? ""}T${e.target.value}:00+02:00`,
+                    })
+                  }
+                  aria-label={t5("endLabel")}
+                  className="min-h-12 min-w-0 rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-3 text-base transition outline-none focus:border-sky-400 focus:bg-white disabled:opacity-45"
+                />
+                <label className="flex min-h-12 items-center gap-2 rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-3 text-sm text-[var(--sg-ink)]">
+                  <input
+                    type="checkbox"
+                    checked={data.allDay ?? false}
+                    onChange={(e) => patchData({ allDay: e.target.checked })}
+                  />
+                  <span className="whitespace-nowrap">{t5("allDay")}</span>
+                </label>
+              </div>
+            </Field>
+          </div>
+
+          <Field label={t3("title")}>
+            <select
+              value={data.eventTypeId ?? ""}
+              onChange={(e) => patchData({ eventTypeId: e.target.value || undefined })}
+              aria-label={t3("title")}
+              className="block min-h-12 w-full rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 text-base transition outline-none focus:border-sky-400 focus:bg-white"
+            >
+              <option value="">{te("selectType")}</option>
+              {eventTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.glyph} {type.labelHe}
+                </option>
+              ))}
+            </select>
+            <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label={t3("title")}>
+              {eventTypes.map((type) => {
+                const active = selectedEventType?.id === type.id;
+                return (
+                  <button
+                    key={type.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    title={type.labelHe}
+                    onClick={() => patchData({ eventTypeId: type.id })}
+                    className={`grid size-9 place-items-center rounded-full border-2 text-sm transition ${
+                      active
+                        ? "border-[var(--sg-ink)] bg-white shadow-sm"
+                        : "border-transparent hover:border-[var(--sg-hairline)]"
+                    }`}
+                  >
+                    <span
+                      className="block size-6 rounded-full"
+                      style={{ backgroundColor: type.colorHex }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <Field label={t2("title")}>
+            <div className="flex flex-wrap gap-2">
+              {allowedGrades.map((grade) => {
+                const active = data.grades?.includes(grade) ?? false;
+                return (
+                  <button
+                    key={grade}
+                    type="button"
+                    data-grade={grade}
+                    aria-pressed={active}
+                    onClick={() =>
+                      patchData({
+                        grades: active
+                          ? (data.grades ?? []).filter((g) => g !== grade)
+                          : [...(data.grades ?? []), grade],
+                      })
+                    }
+                    className={`min-h-11 min-w-12 rounded-full border-2 px-4 text-base font-medium transition ${
+                      active
+                        ? "border-[var(--sg-ink)] bg-[var(--sg-ink)] text-white"
+                        : "border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] text-[var(--sg-ink)] hover:border-sky-300"
+                    }`}
+                  >
+                    {tg(`label_${grade}` as `label_${7 | 8 | 9 | 10 | 11 | 12}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+
+          <details className="rounded-[18px] border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 py-3">
+            <summary className="cursor-pointer text-sm font-semibold text-[var(--sg-ink-mute)]">
+              {te("moreOptions")}
+            </summary>
+            <label className="mt-4 block">
+              <span className="text-xs font-bold tracking-wide text-[var(--sg-ink-soft)] uppercase">
+                {t6("title")}
+              </span>
+              <input
+                type="text"
+                value={data.responsibleText ?? ""}
+                maxLength={80}
+                onChange={(e) => patchData({ responsibleText: e.target.value })}
+                placeholder={te("responsiblePlaceholder")}
+                aria-label={t6("title")}
+                className="mt-2 block min-h-12 w-full rounded-[14px] border-2 border-[var(--sg-hairline)] bg-white px-4 text-base transition outline-none focus:border-sky-400"
+              />
+            </label>
+          </details>
+
+          {error && (
+            <p
+              role="alert"
+              className="rounded-[14px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {error}
+            </p>
+          )}
+
+          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--sg-hairline)] pt-6">
+            <div className="min-h-6 text-sm">
+              {notice && <span className="text-green-700">{notice}</span>}
+              {saving && <span className="text-[var(--sg-ink-soft)]">{tc("saving")}</span>}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="min-h-12 rounded-[14px] border-2 border-[var(--sg-hairline)] bg-white px-6 text-base font-medium text-[var(--sg-ink-mute)] hover:bg-[var(--sg-surface-2)]"
+              >
+                {tc("cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={saving || publishing}
+                className="min-h-12 rounded-[14px] border-2 border-[var(--sg-hairline)] bg-white px-6 text-base font-medium text-[var(--sg-ink)] hover:bg-[var(--sg-surface-2)] disabled:opacity-50"
+              >
+                {te("saveDraft")}
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={saving || publishing}
+                className="min-h-12 rounded-[14px] bg-sky-500 px-7 text-base font-bold text-white hover:bg-sky-600 disabled:opacity-50"
+              >
+                {publishing ? t7("submitting") : t7("submit")}
+              </button>
+            </div>
+          </footer>
+        </div>
       </div>
     </main>
   );
 }
 
-function StepProgress({ current, total }: { current: number; total: number }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mb-6 flex items-center gap-1">
-      {Array.from({ length: total }, (_, i) => (
-        <div
-          key={i}
-          className={`h-1.5 flex-1 rounded-full ${i < current ? "bg-blue-600" : "bg-neutral-200"}`}
-        />
-      ))}
-      <span className="ms-2 text-sm text-neutral-500">
-        {current}/{total}
+    <div className="block">
+      <span className="mb-2 block text-sm font-bold tracking-wide text-[var(--sg-ink-soft)] uppercase">
+        {label}
       </span>
+      {children}
     </div>
   );
 }

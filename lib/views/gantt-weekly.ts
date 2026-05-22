@@ -46,7 +46,9 @@ export interface WeeklyEventBar {
   eventTypeColor: string;
   eventTypeGlyph: string;
   eventTypeLabelHe: string;
-  status: "approved" | "pending" | "draft" | "rejected";
+  status: "approved" | "pending" | "draft" | "rejected" | "canceled";
+  isCanceled?: boolean;
+  isUpdated?: boolean;
   /** 0-based day index within the week (0=Sun, 6=Sat) */
   dayStart: number;
   dayEnd: number;
@@ -191,7 +193,9 @@ export function buildWeeklyModel(
         eventTypeColor: e.eventTypeColor,
         eventTypeGlyph: e.eventTypeGlyph,
         eventTypeLabelHe: e.eventTypeLabelHe,
-        status: "approved" as const,
+        status: e.isCanceled ? "canceled" as const : "approved" as const,
+        isCanceled: e.isCanceled,
+        isUpdated: e.isUpdated,
         dayStart: startDayIdx,
         dayEnd: endDayIdx,
         startPct,
