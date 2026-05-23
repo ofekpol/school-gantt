@@ -229,15 +229,29 @@ export function WizardShell({
     setPublishing(true);
     setError("");
     try {
-      const id = await save(draft);
-      const res = await fetch(`/api/v1/events/${id}/submit`, { method: "POST" });
+      const body = toApiBody(draft);
+      let res: Response;
+      if (!eventId) {
+        if (!draft.eventTypeId) throw new Error("missing_event_type");
+        res = await fetch("/api/v1/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...body, eventTypeId: draft.eventTypeId, publish: true }),
+        });
+      } else {
+        res = await fetch(`/api/v1/events/${eventId}/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
       if (!res.ok) throw new Error("Submit failed");
       router.push("/dashboard");
     } catch {
       setError(t7("submitError"));
       setPublishing(false);
     }
-  }, [normalizedData, router, save, t7, validate]);
+  }, [eventId, normalizedData, router, t7, validate]);
 
   const selectedEventType = eventTypes.find((type) => type.id === data.eventTypeId);
   const startTime = data.startAt?.slice(11, 16) ?? "08:00";

@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
   reactStrictMode: true,
   typedRoutes: true,
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "date-fns",
+      "drizzle-orm",
+      "next-intl",
+    ],
+  },
 };
 
 export default withNextIntl(nextConfig);
