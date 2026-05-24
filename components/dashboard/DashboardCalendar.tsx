@@ -10,6 +10,7 @@ import { QuickEventDialog } from "./QuickEventDialog";
 import type { WeeklyModel } from "@/lib/views/gantt-weekly";
 import type { CalendarMonth } from "@/lib/views/calendar";
 import type { EventType } from "@/components/wizard/WizardShell";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 interface SerializedEvent {
   id: string;
@@ -62,6 +63,7 @@ export function DashboardCalendar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const startRouteProgress = useRouteProgress();
   const t = useTranslations("dashboard");
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -72,8 +74,10 @@ export function DashboardCalendar({
     : null;
 
   function setView(next: "weekly" | "monthly") {
+    if (next === view) return;
     const params = new URLSearchParams(searchParams.toString());
     params.set("view", next);
+    startRouteProgress();
     router.replace(`${pathname}?${params.toString()}` as never, { scroll: false });
   }
 
@@ -115,6 +119,7 @@ export function DashboardCalendar({
         isUpdated: true,
       },
     }));
+    startRouteProgress(2500);
     router.refresh();
     return true;
   }
@@ -137,6 +142,7 @@ export function DashboardCalendar({
     } else {
       setSelectedEventId(null);
     }
+    startRouteProgress(2500);
     router.refresh();
     return true;
   }

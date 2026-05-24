@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/admin/ColorPicker";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 interface EventTypeRow {
   id: string;
@@ -47,12 +48,16 @@ const EMPTY_FORM: CreateForm = {
 
 export function EventTypeTable({ initial, canManage = true }: Props) {
   const t = useTranslations("admin.eventTypes");
+  const tc = useTranslations("common");
   const router = useRouter();
+  const startRouteProgress = useRouteProgress();
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState<CreateForm>(EMPTY_FORM);
   const [editState, setEditState] = useState<EditState | null>(null);
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -76,21 +81,27 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editState) return;
+    setSavingEdit(true);
     const res = await fetch(`/api/v1/admin/event-types/${editState.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(editState.form),
     });
+    setSavingEdit(false);
     if (res.ok) {
       setEditState(null);
+      startRouteProgress(2500);
       router.refresh();
     }
   }
 
   async function handleDelete(id: string) {
     setInlineError(null);
+    setDeletingId(id);
     const res = await fetch(`/api/v1/admin/event-types/${id}`, { method: "DELETE" });
+    setDeletingId(null);
     if (res.ok) {
+      startRouteProgress(2500);
       router.refresh();
     } else if (res.status === 409) {
       setInlineError(t("inUse"));
@@ -233,10 +244,10 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
                       }
                       className="border rounded px-2 py-1 w-16"
                     />
-                    <Button type="submit" size="sm">
-                      {t("save")}
+                    <Button type="submit" size="sm" disabled={savingEdit}>
+                      {savingEdit ? tc("saving") : t("save")}
                     </Button>
-                    <Button type="button" size="sm" variant="ghost" onClick={() => setEditState(null)}>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setEditState(null)} disabled={savingEdit}>
                       {t("cancel")}
                     </Button>
                   </form>
@@ -283,8 +294,9 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
                       size="sm"
                       variant="destructive"
                       onClick={() => handleDelete(row.id)}
+                      disabled={deletingId !== null}
                     >
-                      {t("delete")}
+                      {deletingId === row.id ? tc("loading") : t("delete")}
                     </Button>
                   </span>
                   )}

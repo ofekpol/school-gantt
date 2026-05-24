@@ -5,6 +5,7 @@ import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { formatGradeLabel } from "@/lib/grades";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
@@ -32,21 +33,30 @@ interface Props {
 
 export function StaffTable({ initialStaff, eventTypes }: Props) {
   const t = useTranslations("admin.staff");
+  const tc = useTranslations("common");
   const router = useRouter();
+  const startRouteProgress = useRouteProgress();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   async function handleDeactivate(id: string, deactivated: boolean) {
+    setBusyId(id);
     const res = await fetch(`/api/v1/admin/staff/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ deactivated }),
     });
-    if (res.ok) router.refresh();
+    setBusyId(null);
+    if (res.ok) {
+      startRouteProgress(2500);
+      router.refresh();
+    }
   }
 
   async function handleSave(row: StaffRow, form: FormData) {
     setError(null);
+    setBusyId(row.id);
     const role = String(form.get("role") ?? row.role);
     const gradeScopes = ALL_GRADES.filter((g) => form.get(`staff-grade-${row.id}-${g}`) === "on");
     const eventTypeScopes = eventTypes
@@ -62,8 +72,10 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
         eventTypeScopes,
       }),
     });
+    setBusyId(null);
     if (res.ok) {
       setEditingId(null);
+      startRouteProgress(2500);
       router.refresh();
       return;
     }
@@ -107,16 +119,16 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
                 <td className="py-2 pe-4">{roleLabel(s.role)}</td>
                 <td className="py-2 pe-4">{scopeLabel(s)}</td>
                 <td className="flex gap-2 py-2">
-                  <Button variant="ghost" size="sm" onClick={() => setEditingId(s.id)}>
+                  <Button variant="ghost" size="sm" onClick={() => setEditingId(s.id)} disabled={busyId !== null}>
                     {t("edit")}
                   </Button>
                   {s.deactivatedAt ? (
-                    <Button variant="ghost" size="sm" onClick={() => handleDeactivate(s.id, false)}>
-                      {t("deactivated")} ✕
+                    <Button variant="ghost" size="sm" onClick={() => handleDeactivate(s.id, false)} disabled={busyId !== null}>
+                      {busyId === s.id ? tc("loading") : `${t("deactivated")} x`}
                     </Button>
                   ) : (
-                    <Button variant="ghost" size="sm" onClick={() => handleDeactivate(s.id, true)}>
-                      {t("deactivate")}
+                    <Button variant="ghost" size="sm" onClick={() => handleDeactivate(s.id, true)} disabled={busyId !== null}>
+                      {busyId === s.id ? tc("loading") : t("deactivate")}
                     </Button>
                   )}
                 </td>
@@ -175,8 +187,10 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
                         </div>
                       </fieldset>
                       <div className="flex items-center gap-3">
-                        <Button type="submit">{t("save")}</Button>
-                        <Button type="button" variant="ghost" onClick={() => setEditingId(null)}>
+                        <Button type="submit" disabled={busyId === s.id}>
+                          {busyId === s.id ? tc("saving") : t("save")}
+                        </Button>
+                        <Button type="button" variant="ghost" onClick={() => setEditingId(null)} disabled={busyId === s.id}>
                           {t("cancel")}
                         </Button>
                         {error && <span className="text-sm text-red-500">{error}</span>}

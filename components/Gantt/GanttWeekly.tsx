@@ -8,6 +8,7 @@ import {
   type WeeklyEventBar,
 } from "@/lib/views/gantt-weekly";
 import { EventDrawer } from "./EventDrawer";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 /* ---- Layout constants ---- */
 const AXIS_H = 72;
@@ -49,6 +50,7 @@ export function GanttWeekly({ model, events, onDayClick, onEventClick }: Props) 
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const startRouteProgress = useRouteProgress();
   const [displayWeekStartMs, setDisplayWeekStartMs] = useState(() => model.weekStart.getTime());
 
   useEffect(() => {
@@ -98,6 +100,7 @@ export function GanttWeekly({ model, events, onDayClick, onEventClick }: Props) 
     const params = new URLSearchParams(searchParams.toString());
     params.set("week", iso);
     setDisplayWeekStartMs(next.getTime());
+    startRouteProgress();
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}` as never, { scroll: false });
     });

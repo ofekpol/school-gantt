@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { ZoomLevel } from "@/lib/views/gantt";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 interface Props {
   zoom: ZoomLevel;
@@ -17,12 +18,15 @@ export function ZoomToggle({ zoom }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
+  const startRouteProgress = useRouteProgress();
 
   function setZoom(next: ZoomLevel) {
+    if (next === zoom) return;
     const params = new URLSearchParams(searchParams.toString());
     if (next === "year") params.delete("zoom");
     else params.set("zoom", next);
     const qs = params.toString();
+    startRouteProgress();
     startTransition(() => {
       router.replace(
         (qs ? `${pathname}?${qs}` : pathname) as never,

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { formatGradeLabel, formatGradeList } from "@/lib/grades";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 interface Subscription {
   id: string;
@@ -35,7 +36,9 @@ const dateFmt = new Intl.DateTimeFormat("he-IL", {
 
 export function ProfileSubscriptions({ initial, eventTypes }: Props) {
   const t = useTranslations("profile");
+  const tc = useTranslations("common");
   const router = useRouter();
+  const startRouteProgress = useRouteProgress();
   const [creating, setCreating] = useState(false);
   const [selectedGrades, setSelectedGrades] = useState<Set<number>>(new Set());
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
@@ -72,6 +75,7 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
       setSelectedGrades(new Set());
       setSelectedTypes(new Set());
       setCreating(false);
+      startRouteProgress(2500);
       router.refresh();
     } else {
       setError(t("errorGeneric"));
@@ -89,6 +93,7 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
       // Optimistically remove the row immediately so the UI updates without
       // waiting for the Next.js router.refresh() round-trip.
       setRevokedIds((prev) => new Set(prev).add(id));
+      startRouteProgress(2500);
       router.refresh();
     } else {
       setError(t("errorGeneric"));
@@ -182,7 +187,7 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
               {t("cancel")}
             </Button>
             <Button onClick={handleCreate} disabled={busy}>
-              {t("create")}
+              {busy ? tc("saving") : t("create")}
             </Button>
           </div>
           {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
@@ -228,7 +233,7 @@ export function ProfileSubscriptions({ initial, eventTypes }: Props) {
                 onClick={() => handleRevoke(sub.id)}
                 disabled={busy}
               >
-                {t("revoke")}
+                {busy ? tc("loading") : t("revoke")}
               </Button>
             </li>
           ))}

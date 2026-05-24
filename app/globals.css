@@ -163,6 +163,18 @@
   100% { background-position:  200% 0; }
 }
 
+@keyframes sg-route-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+  55% {
+    transform: translateX(110%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
 .sg-skel {
   background: linear-gradient(
     90deg,

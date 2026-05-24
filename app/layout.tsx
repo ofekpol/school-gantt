@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { cn } from "@/lib/utils";
 import { dirFor, isLocale, DEFAULT_LOCALE } from "@/lib/i18n/config";
+import { RouteProgressProvider } from "@/components/RouteProgress";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -64,7 +65,9 @@ export default async function RootLayout({
           {t("skipToContent")}
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <div id="main">{children}</div>
+          <RouteProgressProvider>
+            <div id="main">{children}</div>
+          </RouteProgressProvider>
         </NextIntlClientProvider>
       </body>
     </html>

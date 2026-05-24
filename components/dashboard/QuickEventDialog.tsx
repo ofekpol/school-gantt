@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import type { EventType } from "@/components/wizard/WizardShell";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 interface Props {
   open: boolean;
@@ -52,6 +53,7 @@ export function QuickEventDialog({
   onClose,
 }: Props) {
   const router = useRouter();
+  const startRouteProgress = useRouteProgress();
   const tc = useTranslations("common");
   const tg = useTranslations("grades");
   const t1 = useTranslations("wizard.step1");
@@ -153,6 +155,7 @@ export function QuickEventDialog({
       if (!submitRes.ok) throw new Error("Failed to publish event");
 
       onClose();
+      startRouteProgress(2500);
       router.refresh();
     } catch {
       setError(t7("submitError"));

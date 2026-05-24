@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ZoomLevel } from "@/lib/views/gantt";
 import { formatGradeLabel } from "@/lib/grades";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 export interface FilterBarEventType {
   key: string;
@@ -39,11 +40,13 @@ export function FilterBar({
   const t = useTranslations("agenda.filter");
   const router = useRouter();
   const pathname = usePathname();
+  const startRouteProgress = useRouteProgress();
   const [q, setQ] = useState(searchQuery);
   useEffect(() => setQ(searchQuery), [searchQuery]);
 
   function commit(next: URLSearchParams) {
     const qs = next.toString();
+    startRouteProgress();
     router.replace((qs ? `${pathname}?${qs}` : pathname) as never, { scroll: false });
   }
 

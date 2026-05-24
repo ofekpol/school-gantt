@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { formatGradeLabel } from "@/lib/grades";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
@@ -15,7 +17,9 @@ interface EventTypeRow {
 
 export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
   const t = useTranslations("admin.staff");
+  const tc = useTranslations("common");
   const router = useRouter();
+  const startRouteProgress = useRouteProgress();
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
@@ -50,6 +54,7 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
     setUrl(data.url);
     setEmailSent(data.emailSent);
     setFormKey((k) => k + 1);
+    startRouteProgress(2500);
     router.refresh();
   }
 
@@ -79,7 +84,7 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
             className="w-24 rounded border px-2 py-1 text-base font-normal text-neutral-900"
           />
         </label>
-        <Button type="submit">{t("createInvite")}</Button>
+        <InviteSubmitButton label={t("createInvite")} loadingLabel={tc("saving")} />
       </div>
       <fieldset>
         <legend className="text-sm font-medium">{t("gradeScopes")}</legend>
@@ -109,5 +114,20 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
       )}
       {error && <p className="text-sm text-red-500">{error}</p>}
     </form>
+  );
+}
+
+function InviteSubmitButton({
+  label,
+  loadingLabel,
+}: {
+  label: string;
+  loadingLabel: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? loadingLabel : label}
+    </Button>
   );
 }

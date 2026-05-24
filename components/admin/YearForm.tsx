@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { useRouteProgress } from "@/components/RouteProgress";
 
 interface YearRow {
   id: string;
@@ -33,9 +34,12 @@ const EMPTY_FORM: CreateForm = {
 
 export function YearForm({ initial, activeId }: Props) {
   const t = useTranslations("admin.year");
+  const tc = useTranslations("common");
   const router = useRouter();
+  const startRouteProgress = useRouteProgress();
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleCreate(e: React.FormEvent) {
@@ -50,6 +54,7 @@ export function YearForm({ initial, activeId }: Props) {
     setCreating(false);
     if (res.status === 201) {
       setForm(EMPTY_FORM);
+      startRouteProgress(2500);
       router.refresh();
     } else {
       setError("Error creating year");
@@ -57,12 +62,17 @@ export function YearForm({ initial, activeId }: Props) {
   }
 
   async function handleSetActive(id: string) {
+    setActivatingId(id);
     const res = await fetch(`/api/v1/admin/years/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ setActive: true }),
     });
-    if (res.ok) router.refresh();
+    setActivatingId(null);
+    if (res.ok) {
+      startRouteProgress(2500);
+      router.refresh();
+    }
   }
 
   return (
@@ -91,8 +101,13 @@ export function YearForm({ initial, activeId }: Props) {
               <td className="py-2 pe-4">{row.endDate}</td>
               <td className="py-2">
                 {row.id !== activeId && (
-                  <Button size="sm" variant="ghost" onClick={() => handleSetActive(row.id)}>
-                    {t("setActive")}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleSetActive(row.id)}
+                    disabled={activatingId !== null}
+                  >
+                    {activatingId === row.id ? tc("loading") : t("setActive")}
                   </Button>
                 )}
               </td>
@@ -138,7 +153,7 @@ export function YearForm({ initial, activeId }: Props) {
         </label>
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={creating}>
-            {t("create")}
+            {creating ? tc("saving") : t("create")}
           </Button>
           {error && (
             <span role="alert" className="text-red-500 text-sm">
