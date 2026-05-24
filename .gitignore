@@ -26,3 +26,4 @@ test/e2e/.auth/
 *.rvf.lock
 ruvector.db
 agentdb*
+.vercel
