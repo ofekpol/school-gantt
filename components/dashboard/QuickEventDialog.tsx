@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import type { EventType } from "@/components/wizard/WizardShell";
-import { useRouteProgress } from "@/components/RouteProgress";
 
 interface Props {
   open: boolean;
@@ -14,6 +12,25 @@ interface Props {
   eventTypes: EventType[];
   allowedGrades: number[];
   onClose: () => void;
+  onPublished: (event: {
+    id: string;
+    title: string;
+    startAt: string;
+    endAt: string;
+    allDay: boolean;
+    description: string | null;
+    location: string | null;
+    eventTypeId: string;
+    eventTypeKey: string;
+    eventTypeLabelHe: string;
+    eventTypeColor: string;
+    eventTypeGlyph: string;
+    grades: number[];
+    status: "approved";
+    isCanceled: false;
+    isUpdated: false;
+    canEdit: true;
+  }) => void;
 }
 
 interface QuickEventData {
@@ -51,9 +68,8 @@ export function QuickEventDialog({
   eventTypes,
   allowedGrades,
   onClose,
+  onPublished,
 }: Props) {
-  const router = useRouter();
-  const startRouteProgress = useRouteProgress();
   const tc = useTranslations("common");
   const tg = useTranslations("grades");
   const t1 = useTranslations("wizard.step1");
@@ -126,37 +142,46 @@ export function QuickEventDialog({
 
     setPublishing(true);
     try {
-      const createRes = await fetch("/api/v1/events", {
+      const publishRes = await fetch("/api/v1/events/publish", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventTypeId: data.eventTypeId }),
-      });
-      if (!createRes.ok) throw new Error("Failed to create event");
-
-      const created = (await createRes.json()) as { id: string };
-      const patchRes = await fetch(`/api/v1/events/${created.id}`, {
-        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: data.title.trim(),
           description: data.description.trim() || undefined,
           location: data.responsibleText.trim() || undefined,
+          eventTypeId: data.eventTypeId,
           grades: data.grades,
           startAt,
           endAt,
           allDay: data.allDay,
         }),
       });
-      if (!patchRes.ok) throw new Error("Failed to save event");
+      if (!publishRes.ok) throw new Error("Failed to publish event");
 
-      const submitRes = await fetch(`/api/v1/events/${created.id}/submit`, {
-        method: "POST",
-      });
-      if (!submitRes.ok) throw new Error("Failed to publish event");
-
+      const created = (await publishRes.json()) as { id: string };
+      const selectedType = eventTypes.find((type) => type.id === data.eventTypeId);
+      if (selectedType) {
+        onPublished({
+          id: created.id,
+          title: data.title.trim(),
+          startAt,
+          endAt,
+          allDay: data.allDay,
+          description: data.description.trim() || null,
+          location: data.responsibleText.trim() || null,
+          eventTypeId: selectedType.id,
+          eventTypeKey: selectedType.key,
+          eventTypeLabelHe: selectedType.labelHe,
+          eventTypeColor: selectedType.colorHex,
+          eventTypeGlyph: selectedType.glyph,
+          grades: data.grades,
+          status: "approved",
+          isCanceled: false,
+          isUpdated: false,
+          canEdit: true,
+        });
+      }
       onClose();
-      startRouteProgress(2500);
-      router.refresh();
     } catch {
       setError(t7("submitError"));
       setPublishing(false);

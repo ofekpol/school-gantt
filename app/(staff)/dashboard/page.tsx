@@ -73,13 +73,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     canEdit: e.isCanceled !== true && (user.role === "admin" || editableEventIds.has(e.id)),
   }));
 
-  const weeklyModel =
-    view === "weekly"
-      ? buildWeeklyModel(parseWeekParam(sp.week), agendaItems, ALL_GRADES, new Date())
-      : undefined;
+  const weeklyModel = buildWeeklyModel(parseWeekParam(sp.week), agendaItems, ALL_GRADES, new Date());
 
   const months =
-    view === "monthly" && activeYear
+    activeYear
       ? buildCalendarModel({
           year: {
             startDate: activeYear.startDate,

@@ -2,7 +2,13 @@ import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
-import { createDraft, replaceEventGrades, softDelete, updateDraft } from "@/lib/events/crud";
+import {
+  createDraft,
+  createPublishedEvent,
+  replaceEventGrades,
+  softDelete,
+  updateDraft,
+} from "@/lib/events/crud";
 import { getEditorDashboardEvents, getEventForEditor } from "@/lib/events/queries";
 import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA, testSchoolB } from "./setup";
 
@@ -243,6 +249,60 @@ describe.skipIf(skipIfNoTestDb)(
       expect(event).toHaveProperty("updatedAt");
       expect(event).not.toHaveProperty("event_type_id");
       expect(event).not.toHaveProperty("updated_at");
+    });
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENTS-CRUD-05: createPublishedEvent one-step quick publish
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe.skipIf(skipIfNoTestDb)(
+  "EVENTS-CRUD-05: createPublishedEvent — one-step approved event",
+  () => {
+    let editorId: string;
+    let eventTypeId: string;
+
+    beforeAll(async () => {
+      if (shouldSkip()) return;
+      editorId = (await ensureEditor(testSchoolA, "quick-publish@test")).id;
+      eventTypeId = await firstEventType(testSchoolA);
+    });
+
+    it("creates an approved event with grades", async () => {
+      const result = await createPublishedEvent(testSchoolA, editorId, {
+        title: "Quick event",
+        eventTypeId,
+        grades: [8, 10],
+        startAt: "2031-02-03T08:00:00+02:00",
+        endAt: "2031-02-03T09:00:00+02:00",
+        allDay: false,
+        description: "Details",
+        location: "Gym",
+      });
+
+      expect(result.status).toBe("approved");
+      const row = await getEventForEditor(testSchoolA, result.id, editorId, false);
+      expect(row?.event.status).toBe("approved");
+      expect(row?.event.title).toBe("Quick event");
+      expect([...(row?.grades ?? [])].sort((a, b) => a - b)).toEqual([8, 10]);
+    });
+
+    it("writes a published revision row", async () => {
+      const result = await createPublishedEvent(testSchoolA, editorId, {
+        title: "Quick revision event",
+        eventTypeId,
+        grades: [9],
+        startAt: "2031-02-04T08:00:00+02:00",
+        endAt: "2031-02-04T09:00:00+02:00",
+      });
+
+      const revs = await testDb!
+        .select({ decision: schema.eventRevisions.decision })
+        .from(schema.eventRevisions)
+        .where(eq(schema.eventRevisions.eventId, result.id));
+      expect(revs).toHaveLength(1);
+      expect(revs[0].decision).toBe("published");
     });
   },
 );

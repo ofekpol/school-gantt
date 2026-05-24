@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { withSchool } from "@/lib/db/client";
 import { eventGrades, eventRevisions, events } from "@/lib/db/schema";
-import type { EventDraftInput } from "@/lib/validations/events";
+import type { EventDraftInput, EventQuickPublishInput } from "@/lib/validations/events";
 
 /**
  * Creates a new draft event row and returns its id + version.
@@ -30,6 +30,63 @@ export async function createDraft(
       .returning({ id: events.id, version: events.version }),
   );
   return { id: row.id, version: row.version };
+}
+
+/**
+ * Creates a complete approved event in one school-scoped transaction.
+ * Used by the dashboard quick-create path to avoid the draft -> patch -> submit
+ * request chain while preserving the same final event/revision shape.
+ */
+export async function createPublishedEvent(
+  schoolId: string,
+  createdBy: string,
+  input: EventQuickPublishInput,
+): Promise<{ id: string; version: number; status: "approved" }> {
+  return withSchool(schoolId, async (tx) => {
+    const [event] = await tx
+      .insert(events)
+      .values({
+        schoolId,
+        createdBy,
+        eventTypeId: input.eventTypeId,
+        title: input.title,
+        description: input.description,
+        location: input.location,
+        startAt: new Date(input.startAt),
+        endAt: new Date(input.endAt),
+        allDay: input.allDay ?? false,
+        status: "approved",
+        version: 1,
+      })
+      .returning({
+        id: events.id,
+        version: events.version,
+        eventTypeId: events.eventTypeId,
+        title: events.title,
+        description: events.description,
+        location: events.location,
+        startAt: events.startAt,
+        endAt: events.endAt,
+        allDay: events.allDay,
+        status: events.status,
+        createdBy: events.createdBy,
+        updatedAt: events.updatedAt,
+      });
+
+    await tx.insert(eventGrades).values(
+      input.grades.map((grade) => ({ eventId: event.id, grade, schoolId })),
+    );
+
+    await tx.insert(eventRevisions).values({
+      eventId: event.id,
+      schoolId,
+      snapshot: event as unknown as Record<string, unknown>,
+      decidedBy: createdBy,
+      decision: "published",
+    });
+
+    return { id: event.id, version: event.version, status: "approved" as const };
+  });
 }
 
 export type UpdateDraftResult =

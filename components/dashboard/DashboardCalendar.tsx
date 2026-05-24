@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
 import { EventDrawer } from "@/components/Gantt/EventDrawer";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
 import { QuickEventDialog } from "./QuickEventDialog";
-import type { WeeklyModel } from "@/lib/views/gantt-weekly";
+import { buildWeeklyModel, type WeeklyModel } from "@/lib/views/gantt-weekly";
+import { buildCalendarModel } from "@/lib/views/calendar";
 import type { CalendarMonth } from "@/lib/views/calendar";
 import type { EventType } from "@/components/wizard/WizardShell";
-import { useRouteProgress } from "@/components/RouteProgress";
 
 interface SerializedEvent {
   id: string;
@@ -62,23 +62,66 @@ export function DashboardCalendar({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const startRouteProgress = useRouteProgress();
+  const [, startTransition] = useTransition();
   const t = useTranslations("dashboard");
+  const [currentView, setCurrentView] = useState(view);
+  const [visibleEvents, setVisibleEvents] = useState(events);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [eventOverrides, setEventOverrides] = useState<Record<string, SerializedEvent>>({});
-  const selectedEventBase = events.find((event) => event.id === selectedEventId) ?? null;
-  const selectedEvent = selectedEventId
-    ? (eventOverrides[selectedEventId] ?? selectedEventBase)
-    : null;
+  const selectedEvent = visibleEvents.find((event) => event.id === selectedEventId) ?? null;
+  const hydratedEvents = useMemo(
+    () =>
+      visibleEvents.map((event) => ({
+        ...event,
+        startAt: new Date(event.startAt),
+        endAt: new Date(event.endAt),
+      })),
+    [visibleEvents],
+  );
+  const displayWeeklyModel = useMemo(() => {
+    if (!weeklyModel) return undefined;
+    return buildWeeklyModel(
+      weeklyModel.weekStart,
+      hydratedEvents,
+      weeklyModel.rows.map((row) => row.grade),
+      new Date(),
+    );
+  }, [hydratedEvents, weeklyModel]);
+  const displayMonths = useMemo(() => {
+    if (!yearBounds) return months;
+    return buildCalendarModel({
+      year: yearBounds,
+      events: hydratedEvents.map((event) => ({
+        id: event.id,
+        title: event.title,
+        startAt: event.startAt,
+        endAt: event.endAt,
+        allDay: event.allDay,
+        grades: event.grades,
+        eventTypeKey: event.eventTypeKey,
+        eventTypeLabelHe: event.eventTypeLabelHe,
+        eventTypeColor: event.eventTypeColor,
+        eventTypeGlyph: event.eventTypeGlyph,
+        status: event.status,
+        isCanceled: event.isCanceled,
+        isUpdated: event.isUpdated,
+      })),
+    }).months;
+  }, [hydratedEvents, months, yearBounds]);
+
+  useEffect(() => setCurrentView(view), [view]);
+  useEffect(() => setVisibleEvents(events), [events]);
+
+  function refreshInBackground() {
+    startTransition(() => router.refresh());
+  }
 
   function setView(next: "weekly" | "monthly") {
-    if (next === view) return;
-    const params = new URLSearchParams(searchParams.toString());
+    if (next === currentView) return;
+    const params = new URLSearchParams(window.location.search);
     params.set("view", next);
-    startRouteProgress();
-    router.replace(`${pathname}?${params.toString()}` as never, { scroll: false });
+    setCurrentView(next);
+    window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
   }
 
   function openNewEvent(dateIso: string) {
@@ -103,24 +146,26 @@ export function DashboardCalendar({
     });
     if (!res.ok) return false;
     const selectedType = eventTypes.find((type) => type.id === patch.eventTypeId);
-    setEventOverrides((current) => ({
-      ...current,
-      [selectedEvent.id]: {
-        ...selectedEvent,
-        ...patch,
-        description: patch.description ?? null,
-        location: patch.location ?? null,
-        eventTypeKey: selectedType?.key ?? selectedEvent.eventTypeKey,
-        eventTypeLabelHe: selectedType?.labelHe ?? selectedEvent.eventTypeLabelHe,
-        eventTypeColor: selectedType?.colorHex ?? selectedEvent.eventTypeColor,
-        eventTypeGlyph: selectedType?.glyph ?? selectedEvent.eventTypeGlyph,
-        status: "approved",
-        isCanceled: false,
-        isUpdated: true,
-      },
-    }));
-    startRouteProgress(2500);
-    router.refresh();
+    setVisibleEvents((current) =>
+      current.map((event) =>
+        event.id === selectedEvent.id
+          ? {
+              ...event,
+              ...patch,
+              description: patch.description ?? null,
+              location: patch.location ?? null,
+              eventTypeKey: selectedType?.key ?? event.eventTypeKey,
+              eventTypeLabelHe: selectedType?.labelHe ?? event.eventTypeLabelHe,
+              eventTypeColor: selectedType?.colorHex ?? event.eventTypeColor,
+              eventTypeGlyph: selectedType?.glyph ?? event.eventTypeGlyph,
+              status: "approved",
+              isCanceled: false,
+              isUpdated: true,
+            }
+          : event,
+      ),
+    );
+    refreshInBackground();
     return true;
   }
 
@@ -130,31 +175,34 @@ export function DashboardCalendar({
     if (!res.ok) return false;
     const body = (await res.json().catch(() => null)) as { status?: string } | null;
     if (body?.status === "canceled") {
-      setEventOverrides((current) => ({
-        ...current,
-        [selectedEvent.id]: {
-          ...selectedEvent,
-          status: "canceled",
-          isCanceled: true,
-          canEdit: false,
-        },
-      }));
+      setVisibleEvents((current) =>
+        current.map((event) =>
+          event.id === selectedEvent.id
+            ? { ...event, status: "canceled", isCanceled: true, canEdit: false }
+            : event,
+        ),
+      );
     } else {
       setSelectedEventId(null);
+      setVisibleEvents((current) => current.filter((event) => event.id !== selectedEvent.id));
     }
-    startRouteProgress(2500);
-    router.refresh();
+    refreshInBackground();
     return true;
+  }
+
+  function addPublishedEvent(event: SerializedEvent) {
+    setVisibleEvents((current) => [event, ...current.filter((item) => item.id !== event.id)]);
+    refreshInBackground();
   }
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-4">
         <div className="flex items-center gap-2">
-          <ToggleBtn active={view === "weekly"} onClick={() => setView("weekly")}>
+          <ToggleBtn active={currentView === "weekly"} onClick={() => setView("weekly")}>
             {t("viewWeekly")}
           </ToggleBtn>
-          <ToggleBtn active={view === "monthly"} onClick={() => setView("monthly")}>
+          <ToggleBtn active={currentView === "monthly"} onClick={() => setView("monthly")}>
             {t("viewMonthly")}
           </ToggleBtn>
         </div>
@@ -167,17 +215,18 @@ export function DashboardCalendar({
         </button>
       </div>
 
-      {view === "weekly" && weeklyModel && (
+      {currentView === "weekly" && displayWeeklyModel && (
         <GanttWeekly
-          model={weeklyModel}
-          events={events}
+          model={displayWeeklyModel}
+          events={visibleEvents}
           onDayClick={openNewEvent}
           onEventClick={setSelectedEventId}
+          navigationMode="local"
         />
       )}
-      {view === "monthly" && months && (
+      {currentView === "monthly" && displayMonths && (
         <YearCalendarGrid
-          months={months}
+          months={displayMonths}
           yearLabel={yearLabel}
           schoolName={schoolName}
           onDayClick={openNewEvent}
@@ -192,6 +241,7 @@ export function DashboardCalendar({
         eventTypes={eventTypes}
         allowedGrades={allowedGrades}
         onClose={() => setPendingDate(null)}
+        onPublished={addPublishedEvent}
       />
       <EventDrawer
         event={

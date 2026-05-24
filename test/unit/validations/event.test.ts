@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   EventDraftSchema,
+  EventQuickPublishSchema,
   EventSubmitSchema,
   ICalSubscriptionSchema,
   RejectSchema,
@@ -145,6 +146,53 @@ describe("EventSubmitSchema: strict publish schema (POST /api/v1/events/:id/subm
 
   it("rejects a grade outside the 7–12 range", () => {
     expect(EventSubmitSchema.safeParse({ ...VALID, grades: [5, 9] }).success).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EventQuickPublishSchema  (strict — one-step dashboard create + publish)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("EventQuickPublishSchema: strict quick publish schema (POST /api/v1/events/publish)", () => {
+  const VALID = {
+    title: "Field trip",
+    description: "Annual trip",
+    location: "Haifa",
+    startAt: VALID_DT,
+    endAt: END_DT,
+    allDay: false,
+    eventTypeId: VALID_UUID,
+    grades: [9],
+  };
+
+  it("accepts a fully populated valid payload", () => {
+    expect(EventQuickPublishSchema.safeParse(VALID).success).toBe(true);
+  });
+
+  it("accepts optional fields being omitted", () => {
+    const { description: _, location: __, allDay: ___, ...rest } = VALID;
+    expect(EventQuickPublishSchema.safeParse(rest).success).toBe(true);
+  });
+
+  it("rejects when title is missing", () => {
+    const { title: _, ...rest } = VALID;
+    expect(EventQuickPublishSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects when eventTypeId is missing", () => {
+    const { eventTypeId: _, ...rest } = VALID;
+    expect(EventQuickPublishSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects when grades array is empty", () => {
+    expect(EventQuickPublishSchema.safeParse({ ...VALID, grades: [] }).success).toBe(false);
+  });
+
+  it("rejects when startAt or endAt is missing", () => {
+    const { startAt: _, ...withoutStart } = VALID;
+    const { endAt: __, ...withoutEnd } = VALID;
+    expect(EventQuickPublishSchema.safeParse(withoutStart).success).toBe(false);
+    expect(EventQuickPublishSchema.safeParse(withoutEnd).success).toBe(false);
   });
 });
 

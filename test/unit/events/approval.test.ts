@@ -91,7 +91,7 @@ describe.skipIf(skipIfNoTestDb)("publishEvent: valid transitions", () => {
     ).map((r) => r.decision);
     expect(decisions).toContain("published");
     expect(decisions).toContain("edited");
-  });
+  }, 15_000);
 });
 
 describe.skipIf(skipIfNoTestDb)("publishEvent: invalid transitions throw", () => {

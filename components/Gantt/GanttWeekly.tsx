@@ -42,9 +42,16 @@ interface Props {
   events: SerializedEvent[];
   onDayClick?: (isoDate: string) => void;
   onEventClick?: (eventId: string) => void;
+  navigationMode?: "router" | "local";
 }
 
-export function GanttWeekly({ model, events, onDayClick, onEventClick }: Props) {
+export function GanttWeekly({
+  model,
+  events,
+  onDayClick,
+  onEventClick,
+  navigationMode = "router",
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -97,9 +104,17 @@ export function GanttWeekly({ model, events, onDayClick, onEventClick }: Props) 
   function navigate(delta: number) {
     const next = new Date(displayModel.weekStart.getTime() + delta * 7 * 24 * 60 * 60 * 1000);
     const iso = next.toISOString().slice(0, 10);
-    const params = new URLSearchParams(searchParams.toString());
+    const params =
+      navigationMode === "local"
+        ? new URLSearchParams(window.location.search)
+        : new URLSearchParams(searchParams.toString());
     params.set("week", iso);
     setDisplayWeekStartMs(next.getTime());
+    if (navigationMode === "local") {
+      const qs = params.toString();
+      window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
+      return;
+    }
     startRouteProgress();
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}` as never, { scroll: false });

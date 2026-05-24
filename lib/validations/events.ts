@@ -32,6 +32,19 @@ export const EventSubmitSchema = z.object({
 export type EventSubmitInput = z.infer<typeof EventSubmitSchema>;
 
 /**
+ * Strict schema for one-step quick publish from the dashboard.
+ * Unlike EventSubmitSchema, this includes the optional draft fields that are
+ * normally PATCHed before submit in the wizard flow.
+ */
+export const EventQuickPublishSchema = EventSubmitSchema.extend({
+  description: z.string().optional(),
+  location: z.string().max(255).optional(),
+  allDay: z.boolean().optional(),
+});
+
+export type EventQuickPublishInput = z.infer<typeof EventQuickPublishSchema>;
+
+/**
  * Reject reason payload — admin must explain rejection (PRD §6.3).
  * Editor sees this on /dashboard/rejected.
  */
