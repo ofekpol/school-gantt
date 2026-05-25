@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import { publishEvent } from "@/lib/events/approval";
 import { createDraft, updateDraft } from "@/lib/events/crud";
-import { getAgendaForSchool, groupByWeek } from "@/lib/views/agenda";
+import { getAgendaForSchool } from "@/lib/views/agenda";
+import { groupByWeek } from "@/lib/views/agenda-model";
 import { getSchoolBySlug } from "@/lib/db/schools";
 import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA, testSchoolB } from "./setup";
 

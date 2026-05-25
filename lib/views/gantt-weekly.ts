@@ -7,7 +7,7 @@
  * RTL layout: Sunday is at inline-start (right), Saturday at inline-end (left).
  */
 
-import type { AgendaItem } from "@/lib/views/agenda";
+import type { AgendaItem } from "@/lib/views/agenda-model";
 
 export const WEEK_DAY_START_HOUR = 7;
 export const WEEK_DAY_END_HOUR = 21;

@@ -21,17 +21,10 @@ export default async function ViewerSchoolLayout({ children, params }: Props) {
 
   if (!school) notFound();
 
-  const navLinks = [
-    { href: `/${slug}`,          label: t("gantt") },
-    { href: `/${slug}/calendar`, label: t("calendar") },
-    { href: `/${slug}/agenda`,   label: t("agenda") },
-  ];
-
   return (
     <>
       <AppHeader
         title={school.name}
-        navLinks={navLinks}
         rightSlot={session ? <LogoutButton label={t("logout")} /> : undefined}
       />
       {children}

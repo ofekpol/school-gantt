@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import type { AgendaItem } from "@/lib/views/agenda";
+import type { AgendaItem } from "@/lib/views/agenda-model";
 import { formatGradeList } from "@/lib/grades";
 
 interface SerializedAgendaItem extends Omit<AgendaItem, "startAt" | "endAt"> {
@@ -57,7 +57,11 @@ export function AgendaList({ weeks, emptyLabel }: Props) {
   return (
     <div className="px-4 pt-4 space-y-6">
       {weeks.map((week) => (
-        <section key={week.weekStart} aria-labelledby={`week-${week.weekStart}`}>
+        <section
+          key={week.weekStart}
+          aria-labelledby={`week-${week.weekStart}`}
+          style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
+        >
           <h2
             id={`week-${week.weekStart}`}
             className="text-sm font-semibold text-neutral-500 mb-2 sticky top-[57px] bg-neutral-50 py-1 z-[5]"
