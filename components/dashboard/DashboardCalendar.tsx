@@ -70,21 +70,26 @@ export function DashboardCalendar({
   const t = useTranslations("dashboard");
   const [currentView, setCurrentView] = useState(view);
   const [visibleEvents, setVisibleEvents] = useState(events);
+  const [selectedGradeState, setSelectedGradeState] = useState(selectedGrades);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const selectedEvent = visibleEvents.find((event) => event.id === selectedEventId) ?? null;
   const allowedGradeOptions = useMemo(
     () => Array.from(new Set(allowedGrades)).sort((a, b) => a - b),
     [allowedGrades],
   );
+  const displayEvents = useMemo(
+    () => visibleEvents.filter((event) => eventMatchesGrades(event, selectedGradeState)),
+    [selectedGradeState, visibleEvents],
+  );
+  const selectedEvent = displayEvents.find((event) => event.id === selectedEventId) ?? null;
   const hydratedEvents = useMemo(
     () =>
-      visibleEvents.map((event) => ({
+      displayEvents.map((event) => ({
         ...event,
         startAt: new Date(event.startAt),
         endAt: new Date(event.endAt),
       })),
-    [visibleEvents],
+    [displayEvents],
   );
   const displayWeeklyModel = useMemo(() => {
     if (!weeklyModel) return undefined;
@@ -119,6 +124,7 @@ export function DashboardCalendar({
 
   useEffect(() => setCurrentView(view), [view]);
   useEffect(() => setVisibleEvents(events), [events]);
+  useEffect(() => setSelectedGradeState(selectedGrades), [selectedGrades]);
 
   function refreshInBackground() {
     startTransition(() => router.refresh());
@@ -134,7 +140,7 @@ export function DashboardCalendar({
 
   function setGradeFilter(grade: number) {
     const params = new URLSearchParams(window.location.search);
-    const current = new Set(selectedGrades);
+    const current = new Set(selectedGradeState);
     if (current.has(grade)) current.delete(grade);
     else current.add(grade);
 
@@ -146,9 +152,10 @@ export function DashboardCalendar({
     for (const selectedGrade of nextGrades) params.append("grades", String(selectedGrade));
 
     const query = params.toString();
-    startTransition(() => {
-      router.replace((query ? `${pathname}?${query}` : pathname) as never, { scroll: false });
-    });
+    const nextSelection = nextGrades.length > 0 ? nextGrades : allowedGradeOptions;
+    setSelectedGradeState(nextSelection);
+    if (selectedEventId) setSelectedEventId(null);
+    window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
   }
 
   function openNewEvent(dateIso: string) {
@@ -187,11 +194,11 @@ export function DashboardCalendar({
       isUpdated: true,
     };
     setVisibleEvents((current) =>
-      eventMatchesGrades(updatedEvent, selectedGrades)
+      eventMatchesGrades(updatedEvent, selectedGradeState)
         ? current.map((event) => (event.id === selectedEvent.id ? updatedEvent : event))
         : current.filter((event) => event.id !== selectedEvent.id),
     );
-    if (!eventMatchesGrades(updatedEvent, selectedGrades)) setSelectedEventId(null);
+    if (!eventMatchesGrades(updatedEvent, selectedGradeState)) setSelectedEventId(null);
     refreshInBackground();
     return true;
   }
@@ -218,7 +225,7 @@ export function DashboardCalendar({
   }
 
   function addPublishedEvent(event: SerializedEvent) {
-    if (!eventMatchesGrades(event, selectedGrades)) {
+    if (!eventMatchesGrades(event, selectedGradeState)) {
       refreshInBackground();
       return;
     }
@@ -251,7 +258,7 @@ export function DashboardCalendar({
           <span className="text-sm font-medium text-neutral-600">{t("gradeFilterLabel")}</span>
           <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
             {allowedGradeOptions.map((grade) => {
-              const active = selectedGrades.includes(grade);
+              const active = selectedGradeState.includes(grade);
               return (
                 <button
                   key={grade}
@@ -276,7 +283,7 @@ export function DashboardCalendar({
       {currentView === "weekly" && displayWeeklyModel && (
         <GanttWeekly
           model={displayWeeklyModel}
-          events={visibleEvents}
+          events={displayEvents}
           onDayClick={openNewEvent}
           onEventClick={setSelectedEventId}
           navigationMode="local"

@@ -2,7 +2,7 @@ const VALID_GRADES = new Set([7, 8, 9, 10, 11, 12]);
 
 export interface DashboardGradeSelection {
   selectedGrades: number[];
-  queryGrades: number[];
+  dataGrades: number[];
 }
 
 export function getDashboardGradeSelection(
@@ -16,7 +16,7 @@ export function getDashboardGradeSelection(
 
   return {
     selectedGrades,
-    queryGrades: selectedGrades,
+    dataGrades: allowed,
   };
 }
 

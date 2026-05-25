@@ -50,7 +50,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   ]);
   const gradeSelection = getDashboardGradeSelection(allowedGrades, sp.grades);
   const agendaItems = await getAgendaForSchool(user.schoolId, {
-    grades: gradeSelection.queryGrades,
+    grades: gradeSelection.dataGrades,
   });
 
   const t = await getTranslations("dashboard");
