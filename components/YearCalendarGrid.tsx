@@ -35,7 +35,7 @@ export function YearCalendarGrid({
       {months.map((m) => (
         <section
           key={`${m.year}-${m.monthIndex}`}
-          className="calendar-month bg-white rounded-md border border-neutral-200 p-4 mb-6 print:mb-0 print:border-0 print:rounded-none"
+          className="calendar-month bg-white rounded-md border border-neutral-200 p-2 mb-4 sm:p-4 sm:mb-6 print:mb-0 print:border-0 print:rounded-none"
           aria-label={`${tm(String(m.monthIndex) as `${number}`)} ${m.year}`}
         >
           <header className="flex items-baseline justify-between mb-3 print:mb-2">
@@ -58,7 +58,7 @@ export function YearCalendarGrid({
               w.days.map((day, di) => (
                 <div
                   key={`${wi}-${di}`}
-                  className="calendar-day bg-white min-h-[88px] p-1 align-top"
+                  className="calendar-day bg-white min-h-[64px] p-0.5 align-top sm:min-h-[88px] sm:p-1"
                 >
                   {day && (
                     <>

@@ -128,9 +128,11 @@ export function GanttWeekly({
       {/* Week navigation */}
       <WeekNav model={displayModel} onPrev={() => navigate(-1)} onNext={() => navigate(1)} />
 
-      {/* Gantt body */}
+      {/* Gantt body — scrollable horizontally on narrow screens */}
+      <div className="overflow-x-auto px-2 pb-1 sm:px-6 sm:pb-0">
       <div style={{
-        margin: "0 24px 16px",
+        marginBottom: 16,
+        minWidth: 480,
         background: "var(--sg-surface)",
         border: "1px solid var(--sg-hairline)",
         borderRadius: 12,
@@ -195,6 +197,7 @@ export function GanttWeekly({
           ))}
         </div>
       </div>
+      </div>{/* end overflow-x-auto scroll wrapper */}
 
       {!onEventClick && <EventDrawer event={selected} onClose={() => setSelectedId(null)} />}
     </div>
@@ -427,10 +430,7 @@ interface WeekNavProps {
 
 function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 14,
-      padding: "14px 24px 12px",
-    }}>
+    <div className="flex items-center gap-3 px-3 py-3 sm:px-6" style={{ gap: 14 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
         <h1 style={{
           fontFamily: "var(--sg-font-display)", fontSize: 26, fontWeight: 600,
