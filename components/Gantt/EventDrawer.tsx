@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
-import type { AgendaItem } from "@/lib/views/agenda";
+import type { AgendaItem } from "@/lib/views/agenda-model";
 import { formatGradeLabel } from "@/lib/grades";
 import type { EventType } from "@/components/wizard/WizardShell";
 

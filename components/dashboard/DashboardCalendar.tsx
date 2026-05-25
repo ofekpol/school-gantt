@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
@@ -71,6 +71,7 @@ export function DashboardCalendar({
   const [currentView, setCurrentView] = useState(view);
   const [visibleEvents, setVisibleEvents] = useState(events);
   const [selectedGradeState, setSelectedGradeState] = useState(selectedGrades);
+  const deferredSelectedGrades = useDeferredValue(selectedGradeState);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const allowedGradeOptions = useMemo(
@@ -78,10 +79,14 @@ export function DashboardCalendar({
     [allowedGrades],
   );
   const displayEvents = useMemo(
-    () => visibleEvents.filter((event) => eventMatchesGrades(event, selectedGradeState)),
-    [selectedGradeState, visibleEvents],
+    () => visibleEvents.filter((event) => eventMatchesGrades(event, deferredSelectedGrades)),
+    [deferredSelectedGrades, visibleEvents],
   );
-  const selectedEvent = displayEvents.find((event) => event.id === selectedEventId) ?? null;
+  const eventMap = useMemo(
+    () => new Map(displayEvents.map((event) => [event.id, event])),
+    [displayEvents],
+  );
+  const selectedEvent = selectedEventId ? (eventMap.get(selectedEventId) ?? null) : null;
   const hydratedEvents = useMemo(
     () =>
       displayEvents.map((event) => ({
@@ -92,15 +97,16 @@ export function DashboardCalendar({
     [displayEvents],
   );
   const displayWeeklyModel = useMemo(() => {
-    if (!weeklyModel) return undefined;
+    if (!weeklyModel || currentView !== "weekly") return undefined;
     return buildWeeklyModel(
       weeklyModel.weekStart,
       hydratedEvents,
       weeklyModel.rows.map((row) => row.grade),
       new Date(),
     );
-  }, [hydratedEvents, weeklyModel]);
+  }, [currentView, hydratedEvents, weeklyModel]);
   const displayMonths = useMemo(() => {
+    if (currentView !== "monthly") return months;
     if (!yearBounds) return months;
     return buildCalendarModel({
       year: yearBounds,
@@ -120,7 +126,7 @@ export function DashboardCalendar({
         isUpdated: event.isUpdated,
       })),
     }).months;
-  }, [hydratedEvents, months, yearBounds]);
+  }, [currentView, hydratedEvents, months, yearBounds]);
 
   useEffect(() => setCurrentView(view), [view]);
   useEffect(() => setVisibleEvents(events), [events]);
@@ -134,7 +140,7 @@ export function DashboardCalendar({
     if (next === currentView) return;
     const params = new URLSearchParams(window.location.search);
     params.set("view", next);
-    setCurrentView(next);
+    startTransition(() => setCurrentView(next));
     window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
   }
 

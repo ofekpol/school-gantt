@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ZoomLevel } from "@/lib/views/gantt";
@@ -20,6 +20,13 @@ interface Props {
   selectedTypes: string[];
   searchQuery: string;
   zoom: ZoomLevel;
+  onChange?: (next: {
+    grades: number[];
+    types: string[];
+    q: string;
+    zoom: ZoomLevel;
+    week: string | null;
+  }) => void;
 }
 
 const ZOOM_OPTIONS: { value: ZoomLevel; label: string }[] = [
@@ -36,28 +43,53 @@ export function FilterBar({
   selectedTypes,
   searchQuery,
   zoom,
+  onChange,
 }: Props) {
   const t = useTranslations("agenda.filter");
   const router = useRouter();
   const pathname = usePathname();
   const startRouteProgress = useRouteProgress();
+  const [, startTransition] = useTransition();
   const [q, setQ] = useState(searchQuery);
+  const [localGrades, setLocalGrades] = useState(selectedGrades);
+  const [localTypes, setLocalTypes] = useState(selectedTypes);
+  const [localZoom, setLocalZoom] = useState(zoom);
+  const effectiveGrades = onChange ? localGrades : selectedGrades;
+  const effectiveTypes = onChange ? localTypes : selectedTypes;
+  const effectiveZoom = onChange ? localZoom : zoom;
   useEffect(() => setQ(searchQuery), [searchQuery]);
+  useEffect(() => setLocalGrades(selectedGrades), [selectedGrades]);
+  useEffect(() => setLocalTypes(selectedTypes), [selectedTypes]);
+  useEffect(() => setLocalZoom(zoom), [zoom]);
 
   function commit(next: URLSearchParams) {
+    if (onChange) {
+      const parsed = parseLocalParams(next);
+      setLocalGrades(parsed.grades);
+      setLocalTypes(parsed.types);
+      setLocalZoom(parsed.zoom);
+      startTransition(() => onChange(parsed));
+      return;
+    }
     const qs = next.toString();
     startRouteProgress();
     router.replace((qs ? `${pathname}?${qs}` : pathname) as never, { scroll: false });
   }
 
   function currentParams() {
+    if (onChange) return localParams({
+      selectedGrades: effectiveGrades,
+      selectedTypes: effectiveTypes,
+      searchQuery: q,
+      zoom: effectiveZoom,
+    });
     return new URLSearchParams(window.location.search);
   }
 
   function toggleGrade(g: number) {
     const next = currentParams();
     // Empty selection renders as "all on", so toggling starts from the full set.
-    const current = new Set(selectedGrades.length === 0 ? allGrades : selectedGrades);
+    const current = new Set(effectiveGrades.length === 0 ? allGrades : effectiveGrades);
     if (current.has(g)) current.delete(g); else current.add(g);
     // Full set === no filter; collapse back to an empty param.
     const values = current.size === allGrades.length ? [] : Array.from(current).map(String);
@@ -69,7 +101,7 @@ export function FilterBar({
     const next = currentParams();
     const allKeys = eventTypes.map((et) => et.key);
     // Empty selection renders as "all on", so toggling starts from the full set.
-    const current = new Set(selectedTypes.length === 0 ? allKeys : selectedTypes);
+    const current = new Set(effectiveTypes.length === 0 ? allKeys : effectiveTypes);
     if (current.has(key)) current.delete(key); else current.add(key);
     const values = current.size === allKeys.length ? [] : Array.from(current);
     setMulti(next, "types", values);
@@ -102,7 +134,7 @@ export function FilterBar({
         <span style={labelStyle}>שכבות</span>
         <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
           {allGrades.map((g) => {
-            const on = selectedGrades.length === 0 || selectedGrades.includes(g);
+            const on = effectiveGrades.length === 0 || effectiveGrades.includes(g);
             return (
               <button
                 key={g}
@@ -130,7 +162,7 @@ export function FilterBar({
         <span style={{ ...labelStyle, flexShrink: 0 }}>סוגים</span>
         <div className="flex gap-1.5">
           {eventTypes.map((et) => {
-            const on = selectedTypes.length === 0 || selectedTypes.includes(et.key);
+            const on = effectiveTypes.length === 0 || effectiveTypes.includes(et.key);
             return (
               <button
                 key={et.key}
@@ -200,15 +232,15 @@ export function FilterBar({
               key={opt.value}
               type="button"
               role="radio"
-              aria-checked={zoom === opt.value}
+              aria-checked={effectiveZoom === opt.value}
               onClick={() => setZoom(opt.value)}
               className="rounded-md px-3 py-1 text-[13px] font-medium cursor-pointer"
               style={{
                 appearance: "none",
                 border: "none",
-                background: zoom === opt.value ? "var(--sg-surface)" : "transparent",
-                color: zoom === opt.value ? "var(--sg-ink)" : "var(--sg-ink-mute)",
-                boxShadow: zoom === opt.value ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                background: effectiveZoom === opt.value ? "var(--sg-surface)" : "transparent",
+                color: effectiveZoom === opt.value ? "var(--sg-ink)" : "var(--sg-ink-mute)",
+                boxShadow: effectiveZoom === opt.value ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
                 transition: "background 0.1s, color 0.1s",
               }}
             >
@@ -219,6 +251,55 @@ export function FilterBar({
       </div>
     </section>
   );
+}
+
+function localParams({
+  selectedGrades,
+  selectedTypes,
+  searchQuery,
+  zoom,
+}: {
+  selectedGrades: number[];
+  selectedTypes: string[];
+  searchQuery: string;
+  zoom: ZoomLevel;
+}): URLSearchParams {
+  const params = new URLSearchParams();
+  setMulti(params, "grades", selectedGrades.map(String));
+  setMulti(params, "types", selectedTypes);
+  if (searchQuery.trim()) params.set("q", searchQuery.trim());
+  if (zoom !== "year") params.set("zoom", zoom);
+  return params;
+}
+
+function parseLocalParams(params: URLSearchParams): {
+  grades: number[];
+  types: string[];
+  q: string;
+  zoom: ZoomLevel;
+  week: string | null;
+} {
+  const zoomParam = params.get("zoom");
+  const nextZoom: ZoomLevel = zoomParam === "week" || zoomParam === "month" || zoomParam === "term" ? zoomParam : "year";
+  return {
+    grades: parseGradeParams(params.getAll("grades")),
+    types: parseTextParams(params.getAll("types")),
+    q: (params.get("q") ?? "").trim(),
+    zoom: nextZoom,
+    week: params.get("week"),
+  };
+}
+
+function parseGradeParams(values: string[]): number[] {
+  return values
+    .flatMap((value) => value.split(","))
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isInteger(value) && value >= 7 && value <= 12)
+    .sort((a, b) => a - b);
+}
+
+function parseTextParams(values: string[]): string[] {
+  return values.flatMap((value) => value.split(",")).map((value) => value.trim()).filter(Boolean).sort();
 }
 
 const labelStyle: React.CSSProperties = {

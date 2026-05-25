@@ -7,7 +7,7 @@ import {
   WEEK_DAY_END_HOUR,
   WEEK_DAY_START_HOUR,
 } from "@/lib/views/gantt-weekly";
-import type { AgendaItem } from "@/lib/views/agenda";
+import type { AgendaItem } from "@/lib/views/agenda-model";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 

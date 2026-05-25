@@ -27,6 +27,46 @@ test("PERF: Gantt at /demo-school paints under 2 s with 1k events", async ({ pag
   expect(elapsed).toBeLessThan(2_000);
 });
 
+test("PERF: public filter click responds under 250 ms", async ({ page }) => {
+  await page.goto("/demo-school/agenda", { waitUntil: "domcontentloaded" });
+  const elapsed = await page.evaluate(async () => {
+    const button = Array.from(document.querySelectorAll("button")).find(
+      (item) => item.textContent?.trim() === "י" && item.getAttribute("aria-pressed") !== null,
+    );
+    if (!button) throw new Error("grade filter missing");
+    if (button.getAttribute("aria-pressed") === "false") {
+      (button as HTMLButtonElement).click();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const t0 = performance.now();
+    (button as HTMLButtonElement).click();
+    while (performance.now() - t0 < 1_000 && button.getAttribute("aria-pressed") !== "false") {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return performance.now() - t0;
+  });
+  expect(elapsed).toBeLessThan(250);
+});
+
+test("PERF: public tab switch displays from local data under 500 ms", async ({ page }) => {
+  await page.goto("/demo-school/agenda", { waitUntil: "domcontentloaded" });
+  const elapsed = await page.evaluate(async () => {
+    const button = Array.from(document.querySelectorAll("button")).find(
+      (item) => item.textContent?.trim() === "גאנט" && item.getAttribute("aria-pressed") !== null,
+    );
+    if (!button) throw new Error("gantt tab missing");
+    const t0 = performance.now();
+    (button as HTMLButtonElement).click();
+    while (performance.now() - t0 < 1_000 && button.getAttribute("aria-pressed") !== "true") {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return performance.now() - t0;
+  });
+  await expect(page).toHaveURL(/\/demo-school(\?|$)/);
+  await expect(page.getByRole("button", { name: "גאנט" })).toHaveAttribute("aria-pressed", "true");
+  expect(elapsed).toBeLessThan(500);
+});
+
 test("PERF: iCal feed responds under 500 ms", async () => {
   if (!process.env.PERF_TOKEN) {
     test.skip(true, "PERF_TOKEN unset — set to a valid iCal token");

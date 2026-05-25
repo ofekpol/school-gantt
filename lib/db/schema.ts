@@ -191,6 +191,7 @@ export const events = pgTable(
     schoolIsolation,
     index("events_school_status_idx").on(t.schoolId, t.status),
     index("events_school_start_idx").on(t.schoolId, t.startAt),
+    index("events_public_filter_idx").on(t.schoolId, t.status, t.deletedAt, t.startAt),
   ],
 );
 
@@ -209,6 +210,7 @@ export const eventGrades = pgTable(
   (t) => [
     primaryKey({ columns: [t.eventId, t.grade] }),
     schoolIsolation,
+    index("event_grades_school_grade_event_idx").on(t.schoolId, t.grade, t.eventId),
   ],
 );
 
@@ -232,6 +234,7 @@ export const eventRevisions = pgTable(
   (t) => [
     schoolIsolation,
     index("event_revisions_event_created_idx").on(t.eventId, t.createdAt),
+    index("event_revisions_event_decision_idx").on(t.eventId, t.decision),
   ],
 );
 

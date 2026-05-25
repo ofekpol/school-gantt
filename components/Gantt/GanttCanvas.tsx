@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { AgendaItem } from "@/lib/views/agenda";
+import type { AgendaItem } from "@/lib/views/agenda-model";
 import type { GanttBar, GanttMonth, ZoomLevel } from "@/lib/views/gantt";
 import { zoomScale } from "@/lib/views/gantt";
 import { formatGradeLabel } from "@/lib/grades";

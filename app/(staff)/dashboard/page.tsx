@@ -9,7 +9,8 @@ import {
   listEventTypes,
 } from "@/lib/events/queries";
 import { getSchoolById } from "@/lib/db/schools";
-import { getAgendaForSchool, type AgendaItem } from "@/lib/views/agenda";
+import { getAgendaForSchool } from "@/lib/views/agenda";
+import type { AgendaItem } from "@/lib/views/agenda-model";
 import { buildWeeklyModel, parseWeekParam } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
 import { getDashboardGradeSelection } from "@/lib/dashboard/grade-filter";

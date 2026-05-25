@@ -35,9 +35,10 @@ test("FILTERS-PRD14: grade filter round-trips through the URL across views", asy
   }).toPass({ timeout: 20_000 });
   expect(page.url()).not.toMatch(/grades=10(&|$)/);
 
-  // Navigate to the Gantt with the same URL — the deselected grade must survive.
-  const url = page.url().replace("/agenda", "");
-  await page.goto(url);
+  // Switch to the Gantt locally — the deselected grade must survive without a
+  // server navigation wait.
+  await page.getByRole("button", { name: "גאנט" }).click();
+  await expect(page).toHaveURL(/\/demo-school(\?|$)/);
   const tenPill = page.getByRole("button", { name: "י", exact: true }).first();
   await expect(tenPill).toHaveAttribute("aria-pressed", "false");
 });

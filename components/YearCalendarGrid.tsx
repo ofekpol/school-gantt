@@ -36,6 +36,7 @@ export function YearCalendarGrid({
         <section
           key={`${m.year}-${m.monthIndex}`}
           className="calendar-month bg-white rounded-md border border-neutral-200 p-2 mb-4 sm:p-4 sm:mb-6 print:mb-0 print:border-0 print:rounded-none"
+          style={{ contentVisibility: "auto", containIntrinsicSize: "720px" }}
           aria-label={`${tm(String(m.monthIndex) as `${number}`)} ${m.year}`}
         >
           <header className="flex items-baseline justify-between mb-3 print:mb-2">
