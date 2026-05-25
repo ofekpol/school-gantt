@@ -3,6 +3,7 @@ import {
   filterPublicEvents,
   parsePublicViewerParams,
   serializePublicViewerParams,
+  shouldRefreshPublicEvents,
   toPublicEventPayload,
   type PublicViewerEvent,
 } from "@/lib/views/public-viewer";
@@ -72,6 +73,13 @@ describe("public viewer event filtering", () => {
     });
 
     expect(filtered.map((event) => event.id)).toEqual(["event-3"]);
+  });
+});
+
+describe("public viewer event refresh decisions", () => {
+  it("fetches full events only when the lightweight signature changes", () => {
+    expect(shouldRefreshPublicEvents("2:4:now", "2:4:now")).toBe(false);
+    expect(shouldRefreshPublicEvents("2:4:now", "3:5:later")).toBe(true);
   });
 });
 

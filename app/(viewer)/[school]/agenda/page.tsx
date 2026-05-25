@@ -25,6 +25,7 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
       year={data.year}
       eventTypes={data.eventTypes}
       initialEvents={data.events}
+      initialEventsSignature={data.eventSignature}
     />
   );
 }

@@ -28,6 +28,7 @@ export default async function GanttPage({ params, searchParams }: PageProps) {
       year={data.year}
       eventTypes={data.eventTypes}
       initialEvents={data.events}
+      initialEventsSignature={data.eventSignature}
     />
   );
 }

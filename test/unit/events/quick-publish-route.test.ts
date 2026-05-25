@@ -18,6 +18,11 @@ vi.mock("@/lib/events/crud", () => ({
   createPublishedEvent: (...args: unknown[]) => createPublishedEventMock(...args),
 }));
 
+const invalidatePublicViewerCacheMock = vi.fn();
+vi.mock("@/lib/views/public-viewer-data", () => ({
+  invalidatePublicViewerCache: (...args: unknown[]) => invalidatePublicViewerCacheMock(...args),
+}));
+
 import { POST } from "@/app/api/v1/events/publish/route";
 
 const VALID_BODY = {
@@ -35,6 +40,7 @@ const ACTIVE_EDITOR = {
   role: "editor",
   status: "active",
   mustChangePassword: false,
+  schoolSlug: "school-a",
 };
 
 describe("POST /api/v1/events/publish", () => {
@@ -43,6 +49,7 @@ describe("POST /api/v1/events/publish", () => {
     getActiveAcademicYearMock.mockReset();
     getEditorAllowedGradesMock.mockReset();
     createPublishedEventMock.mockReset();
+    invalidatePublicViewerCacheMock.mockReset();
     getActiveAcademicYearMock.mockResolvedValue({
       startDate: "2030-09-01",
       endDate: "2031-07-31",
@@ -122,5 +129,6 @@ describe("POST /api/v1/events/publish", () => {
       ACTIVE_EDITOR.id,
       VALID_BODY,
     );
+    expect(invalidatePublicViewerCacheMock).toHaveBeenCalledWith(ACTIVE_EDITOR.schoolSlug);
   });
 });

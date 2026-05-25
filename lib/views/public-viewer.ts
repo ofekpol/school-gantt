@@ -63,6 +63,13 @@ export function hydratePublicEvents(events: PublicViewerEvent[]): AgendaItem[] {
   }));
 }
 
+export function shouldRefreshPublicEvents(
+  currentSignature: string,
+  nextSignature: string,
+): boolean {
+  return currentSignature !== nextSignature;
+}
+
 export function toPublicEventPayload(
   event: Omit<AgendaItem, "startAt" | "endAt"> & { startAt: Date | string; endAt: Date | string },
 ): PublicViewerEvent {

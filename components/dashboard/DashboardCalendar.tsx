@@ -101,10 +101,10 @@ export function DashboardCalendar({
     return buildWeeklyModel(
       weeklyModel.weekStart,
       hydratedEvents,
-      weeklyModel.rows.map((row) => row.grade),
+      deferredSelectedGrades,
       new Date(),
     );
-  }, [currentView, hydratedEvents, weeklyModel]);
+  }, [currentView, deferredSelectedGrades, hydratedEvents, weeklyModel]);
   const displayMonths = useMemo(() => {
     if (currentView !== "monthly") return months;
     if (!yearBounds) return months;

@@ -26,6 +26,7 @@ export default async function CalendarPage({ params, searchParams }: PageProps) 
       year={data.year}
       eventTypes={data.eventTypes}
       initialEvents={data.events}
+      initialEventsSignature={data.eventSignature}
     />
   );
 }

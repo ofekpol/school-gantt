@@ -16,12 +16,16 @@ import {
   hydratePublicEvents,
   parsePublicViewerParams,
   serializePublicViewerParams,
+  shouldRefreshPublicEvents,
   type PublicViewerEvent,
   type PublicViewerParams,
   type PublicViewerView,
 } from "@/lib/views/public-viewer";
 import type { PublicViewerEventType, PublicViewerYear } from "@/lib/views/public-viewer-data";
-import { PublicViewerEventsResponseSchema } from "@/lib/validations/public-viewer";
+import {
+  PublicViewerEventSignatureResponseSchema,
+  PublicViewerEventsResponseSchema,
+} from "@/lib/validations/public-viewer";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
@@ -33,6 +37,7 @@ interface Props {
   year: PublicViewerYear;
   eventTypes: PublicViewerEventType[];
   initialEvents: PublicViewerEvent[];
+  initialEventsSignature: string;
 }
 
 export function PublicViewerShell({
@@ -43,6 +48,7 @@ export function PublicViewerShell({
   year,
   eventTypes,
   initialEvents,
+  initialEventsSignature,
 }: Props) {
   const nav = useTranslations("nav");
   const gantt = useTranslations("gantt");
@@ -50,6 +56,7 @@ export function PublicViewerShell({
   const [view, setViewState] = useState(initialView);
   const [params, setParamsState] = useState(initialParams);
   const [events, setEvents] = useState(initialEvents);
+  const [eventsSignature, setEventsSignature] = useState(initialEventsSignature);
   const [, startTransition] = useTransition();
   const deferredView = useDeferredValue(view);
   const deferredParams = useDeferredValue(params);
@@ -86,19 +93,16 @@ export function PublicViewerShell({
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      void refreshEvents(schoolSlug).then((nextEvents) => {
-        if (!nextEvents) return;
+      void refreshEventsIfChanged(schoolSlug, eventsSignature).then((result) => {
+        if (!result) return;
         startTransition(() => {
-          setEvents((current) => (
-            publicEventSignature(current) === publicEventSignature(nextEvents)
-              ? current
-              : nextEvents
-          ));
+          setEventsSignature(result.signature);
+          if (result.events) setEvents(result.events);
         });
       });
     }, 5_000);
     return () => window.clearInterval(interval);
-  }, [schoolSlug, startTransition]);
+  }, [eventsSignature, schoolSlug, startTransition]);
 
   const updateUrl = useCallback((nextView: PublicViewerView, nextParams: PublicViewerParams, mode: "push" | "replace") => {
     const query = serializePublicViewerParams(nextParams);
@@ -246,11 +250,33 @@ const MemoGantt = memo(function MemoGantt({
 });
 
 async function refreshEvents(schoolSlug: string): Promise<PublicViewerEvent[] | null> {
-  const response = await fetch(`/api/v1/public/${schoolSlug}/events`, { cache: "no-store" });
+  const response = await fetch(`/api/v1/public/${schoolSlug}/events`);
   if (!response.ok) return null;
   const json = await response.json().catch(() => null);
   const parsed = PublicViewerEventsResponseSchema.safeParse(json);
   return parsed.success ? parsed.data.events : null;
+}
+
+async function refreshEventsIfChanged(
+  schoolSlug: string,
+  currentSignature: string,
+): Promise<{ signature: string; events: PublicViewerEvent[] | null } | null> {
+  const nextSignature = await refreshEventsSignature(schoolSlug);
+  if (!nextSignature) return null;
+  if (!shouldRefreshPublicEvents(currentSignature, nextSignature)) {
+    return { signature: nextSignature, events: null };
+  }
+
+  const events = await refreshEvents(schoolSlug);
+  return events ? { signature: nextSignature, events } : null;
+}
+
+async function refreshEventsSignature(schoolSlug: string): Promise<string | null> {
+  const response = await fetch(`/api/v1/public/${schoolSlug}/events/signature`);
+  if (!response.ok) return null;
+  const json = await response.json().catch(() => null);
+  const parsed = PublicViewerEventSignatureResponseSchema.safeParse(json);
+  return parsed.success ? parsed.data.signature : null;
 }
 
 function pathForView(schoolSlug: string, view: PublicViewerView): string {
@@ -263,8 +289,4 @@ function viewFromPath(pathname: string, schoolSlug: string): PublicViewerView {
   if (pathname === `/${schoolSlug}/calendar`) return "calendar";
   if (pathname === `/${schoolSlug}/agenda`) return "agenda";
   return "gantt";
-}
-
-function publicEventSignature(events: PublicViewerEvent[]): string {
-  return events.map((event) => `${event.id}:${event.startAt}:${event.endAt}:${event.status}:${event.isUpdated}`).join("|");
 }

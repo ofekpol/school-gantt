@@ -6,6 +6,7 @@ import {
   getEditorAllowedGrades,
   getEventForEditor,
 } from "@/lib/events/queries";
+import { invalidatePublicViewerCache } from "@/lib/views/public-viewer-data";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -85,6 +86,7 @@ export async function PATCH(
   if (result.status === "conflict") {
     return NextResponse.json({ error: "version_conflict" }, { status: 409 });
   }
+  invalidatePublicViewerCache(user.schoolSlug);
   return NextResponse.json({ version: result.version }, { status: 200 });
 }
 
@@ -103,5 +105,6 @@ export async function DELETE(
   if (result.status === "not_found") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+  invalidatePublicViewerCache(user.schoolSlug);
   return NextResponse.json(result, { status: 200 });
 }

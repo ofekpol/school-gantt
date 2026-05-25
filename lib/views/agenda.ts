@@ -121,4 +121,38 @@ export async function getAgendaForSchool(
   });
 }
 
+export async function getAgendaSignatureForSchool(
+  schoolId: string,
+  filters: Pick<AgendaFilters, "yearBounds">,
+): Promise<string> {
+  return withSchool(schoolId, async (tx) => {
+    const conditions = [
+      inArray(events.status, ["approved", "canceled"]),
+      isNull(events.deletedAt),
+    ];
+
+    if (filters.yearBounds) {
+      const { startDate, endDate } = filters.yearBounds;
+      conditions.push(
+        between(events.startAt, new Date(startDate), new Date(`${endDate}T23:59:59Z`)),
+      );
+    }
+
+    const [row] = await tx
+      .select({
+        count: sql<string>`count(*)::text`,
+        versionSum: sql<string>`coalesce(sum(${events.version}), 0)::text`,
+        maxUpdatedAt: sql<Date | null>`max(${events.updatedAt})`,
+      })
+      .from(events)
+      .where(and(...conditions));
+
+    return [
+      row?.count ?? "0",
+      row?.versionSum ?? "0",
+      row?.maxUpdatedAt ? row.maxUpdatedAt.toISOString() : "none",
+    ].join(":");
+  });
+}
+
 export { groupByWeek } from "@/lib/views/agenda-model";

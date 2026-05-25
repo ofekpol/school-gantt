@@ -4,6 +4,7 @@ import { publishEvent } from "@/lib/events/approval";
 import { updateDraft } from "@/lib/events/crud";
 import { EventDraftSchema } from "@/lib/validations/events";
 import { getEditorAllowedGrades } from "@/lib/events/queries";
+import { invalidatePublicViewerCache } from "@/lib/views/public-viewer-data";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -61,6 +62,7 @@ export async function POST(
 
     // All active staff publish directly — no admin-queue step.
     await publishEvent(user.schoolId!, id, user.id);
+    invalidatePublicViewerCache(user.schoolSlug);
     return NextResponse.json({ ok: true, status: "approved" }, { status: 200 });
   } catch (e) {
     if (e instanceof Response) {

@@ -3,6 +3,7 @@ import { getStaffUser } from "@/lib/auth/session";
 import { createPublishedEvent } from "@/lib/events/crud";
 import { getActiveAcademicYear, getEditorAllowedGrades } from "@/lib/events/queries";
 import { EventQuickPublishSchema } from "@/lib/validations/events";
+import { invalidatePublicViewerCache } from "@/lib/views/public-viewer-data";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await getStaffUser();
@@ -41,5 +42,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const event = await createPublishedEvent(user.schoolId!, user.id, parsed.data);
+  invalidatePublicViewerCache(user.schoolSlug);
   return NextResponse.json(event, { status: 201 });
 }

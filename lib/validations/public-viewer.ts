@@ -23,4 +23,10 @@ export const PublicViewerEventsResponseSchema = z.object({
   events: z.array(PublicViewerEventSchema),
 });
 
+export const PublicViewerEventSignatureResponseSchema = z.object({
+  signature: z.string(),
+});
+
 export type PublicViewerEventsResponse = z.infer<typeof PublicViewerEventsResponseSchema>;
+export type PublicViewerEventSignatureResponse =
+  z.infer<typeof PublicViewerEventSignatureResponseSchema>;
