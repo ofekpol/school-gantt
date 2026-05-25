@@ -12,6 +12,7 @@ import { getSchoolById } from "@/lib/db/schools";
 import { getAgendaForSchool, type AgendaItem } from "@/lib/views/agenda";
 import { buildWeeklyModel, parseWeekParam } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
+import { getDashboardGradeSelection } from "@/lib/dashboard/grade-filter";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
@@ -21,6 +22,7 @@ interface PageProps {
     view?: string;
     week?: string;
     month?: string;
+    grades?: string | string[];
   }>;
 }
 
@@ -37,17 +39,19 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const view = sp.view === "monthly" ? "monthly" : "weekly";
 
-  const [school, activeYear, agendaItems, myEvents, eventTypeList, allowedGrades] =
-    await Promise.all([
-      getSchoolById(user.schoolId),
-      getActiveAcademicYear(user.schoolId),
-      getAgendaForSchool(user.schoolId, {}),
-      getEditorDashboardEvents(user.schoolId, user.id),
-      listEventTypes(user.schoolId),
-      user.role === "editor"
-        ? getEditorAllowedGrades(user.schoolId, user.id)
-        : Promise.resolve(ALL_GRADES),
-    ]);
+  const [school, activeYear, myEvents, eventTypeList, allowedGrades] = await Promise.all([
+    getSchoolById(user.schoolId),
+    getActiveAcademicYear(user.schoolId),
+    getEditorDashboardEvents(user.schoolId, user.id),
+    listEventTypes(user.schoolId),
+    user.role === "editor"
+      ? getEditorAllowedGrades(user.schoolId, user.id)
+      : Promise.resolve(ALL_GRADES),
+  ]);
+  const gradeSelection = getDashboardGradeSelection(allowedGrades, sp.grades);
+  const agendaItems = await getAgendaForSchool(user.schoolId, {
+    grades: gradeSelection.queryGrades,
+  });
 
   const t = await getTranslations("dashboard");
   const tc = await getTranslations("common");
@@ -73,7 +77,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     canEdit: e.isCanceled !== true && (user.role === "admin" || editableEventIds.has(e.id)),
   }));
 
-  const weeklyModel = buildWeeklyModel(parseWeekParam(sp.week), agendaItems, ALL_GRADES, new Date());
+  const weeklyModel = buildWeeklyModel(
+    parseWeekParam(sp.week),
+    agendaItems,
+    gradeSelection.selectedGrades,
+    new Date(),
+  );
 
   const months =
     activeYear
@@ -105,6 +114,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           }
           eventTypes={eventTypeList}
           allowedGrades={allowedGrades}
+          selectedGrades={gradeSelection.selectedGrades}
         />
       )}
 

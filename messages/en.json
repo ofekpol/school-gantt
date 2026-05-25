@@ -181,6 +181,8 @@
     "updated": "Updated",
     "viewWeekly": "Weekly",
     "viewMonthly": "Monthly",
+    "gradeFilterLabel": "Grades",
+    "gradeFilterOption": "Show grade {grade}",
     "confirmNewEventTitle": "New event",
     "confirmNewEvent": "Create a new event on {date}?",
     "myDrafts": "My events",

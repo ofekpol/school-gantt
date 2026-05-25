@@ -11,6 +11,8 @@ import { buildWeeklyModel, type WeeklyModel } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
 import type { CalendarMonth } from "@/lib/views/calendar";
 import type { EventType } from "@/components/wizard/WizardShell";
+import { formatGradeLabel } from "@/lib/grades";
+import { shouldShowDashboardGradeFilter } from "@/lib/dashboard/grade-filter";
 
 interface SerializedEvent {
   id: string;
@@ -42,6 +44,7 @@ interface Props {
   yearBounds: { startDate: string; endDate: string } | null;
   eventTypes: EventType[];
   allowedGrades: number[];
+  selectedGrades: number[];
 }
 
 /**
@@ -59,6 +62,7 @@ export function DashboardCalendar({
   yearBounds,
   eventTypes,
   allowedGrades,
+  selectedGrades,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -69,6 +73,10 @@ export function DashboardCalendar({
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const selectedEvent = visibleEvents.find((event) => event.id === selectedEventId) ?? null;
+  const allowedGradeOptions = useMemo(
+    () => Array.from(new Set(allowedGrades)).sort((a, b) => a - b),
+    [allowedGrades],
+  );
   const hydratedEvents = useMemo(
     () =>
       visibleEvents.map((event) => ({
@@ -124,6 +132,25 @@ export function DashboardCalendar({
     window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
   }
 
+  function setGradeFilter(grade: number) {
+    const params = new URLSearchParams(window.location.search);
+    const current = new Set(selectedGrades);
+    if (current.has(grade)) current.delete(grade);
+    else current.add(grade);
+
+    params.delete("grades");
+    const nextGrades =
+      current.size === 0 || current.size === allowedGradeOptions.length
+        ? []
+        : Array.from(current).sort((a, b) => a - b);
+    for (const selectedGrade of nextGrades) params.append("grades", String(selectedGrade));
+
+    const query = params.toString();
+    startTransition(() => {
+      router.replace((query ? `${pathname}?${query}` : pathname) as never, { scroll: false });
+    });
+  }
+
   function openNewEvent(dateIso: string) {
     setPendingDate(dateIso);
   }
@@ -146,25 +173,25 @@ export function DashboardCalendar({
     });
     if (!res.ok) return false;
     const selectedType = eventTypes.find((type) => type.id === patch.eventTypeId);
+    const updatedEvent = {
+      ...selectedEvent,
+      ...patch,
+      description: patch.description ?? null,
+      location: patch.location ?? null,
+      eventTypeKey: selectedType?.key ?? selectedEvent.eventTypeKey,
+      eventTypeLabelHe: selectedType?.labelHe ?? selectedEvent.eventTypeLabelHe,
+      eventTypeColor: selectedType?.colorHex ?? selectedEvent.eventTypeColor,
+      eventTypeGlyph: selectedType?.glyph ?? selectedEvent.eventTypeGlyph,
+      status: "approved" as const,
+      isCanceled: false,
+      isUpdated: true,
+    };
     setVisibleEvents((current) =>
-      current.map((event) =>
-        event.id === selectedEvent.id
-          ? {
-              ...event,
-              ...patch,
-              description: patch.description ?? null,
-              location: patch.location ?? null,
-              eventTypeKey: selectedType?.key ?? event.eventTypeKey,
-              eventTypeLabelHe: selectedType?.labelHe ?? event.eventTypeLabelHe,
-              eventTypeColor: selectedType?.colorHex ?? event.eventTypeColor,
-              eventTypeGlyph: selectedType?.glyph ?? event.eventTypeGlyph,
-              status: "approved",
-              isCanceled: false,
-              isUpdated: true,
-            }
-          : event,
-      ),
+      eventMatchesGrades(updatedEvent, selectedGrades)
+        ? current.map((event) => (event.id === selectedEvent.id ? updatedEvent : event))
+        : current.filter((event) => event.id !== selectedEvent.id),
     );
+    if (!eventMatchesGrades(updatedEvent, selectedGrades)) setSelectedEventId(null);
     refreshInBackground();
     return true;
   }
@@ -191,6 +218,10 @@ export function DashboardCalendar({
   }
 
   function addPublishedEvent(event: SerializedEvent) {
+    if (!eventMatchesGrades(event, selectedGrades)) {
+      refreshInBackground();
+      return;
+    }
     setVisibleEvents((current) => [event, ...current.filter((item) => item.id !== event.id)]);
     refreshInBackground();
   }
@@ -214,6 +245,33 @@ export function DashboardCalendar({
           {t("newEvent")}
         </button>
       </div>
+
+      {shouldShowDashboardGradeFilter(allowedGradeOptions) && (
+        <div className="flex flex-wrap items-center gap-2 px-6 pt-4">
+          <span className="text-sm font-medium text-neutral-600">{t("gradeFilterLabel")}</span>
+          <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
+            {allowedGradeOptions.map((grade) => {
+              const active = selectedGrades.includes(grade);
+              return (
+                <button
+                  key={grade}
+                  type="button"
+                  onClick={() => setGradeFilter(grade)}
+                  aria-pressed={active}
+                  aria-label={t("gradeFilterOption", { grade: formatGradeLabel(grade) })}
+                  className={`h-8 min-w-11 rounded-md border px-3 text-sm font-semibold transition-colors ${
+                    active
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+                  }`}
+                >
+                  {formatGradeLabel(grade)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {currentView === "weekly" && displayWeeklyModel && (
         <GanttWeekly
@@ -239,7 +297,7 @@ export function DashboardCalendar({
         dateIso={pendingDate}
         yearBounds={yearBounds}
         eventTypes={eventTypes}
-        allowedGrades={allowedGrades}
+        allowedGrades={allowedGradeOptions}
         onClose={() => setPendingDate(null)}
         onPublished={addPublishedEvent}
       />
@@ -255,13 +313,17 @@ export function DashboardCalendar({
         }
         canEdit={selectedEvent?.canEdit ?? false}
         eventTypes={eventTypes}
-        allowedGrades={allowedGrades}
+        allowedGrades={allowedGradeOptions}
         onSave={saveSelectedEvent}
         onDelete={deleteSelectedEvent}
         onClose={() => setSelectedEventId(null)}
       />
     </div>
   );
+}
+
+function eventMatchesGrades(event: Pick<SerializedEvent, "grades">, selectedGrades: number[]) {
+  return event.grades.some((grade) => selectedGrades.includes(grade));
 }
 
 function ToggleBtn({

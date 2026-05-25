@@ -181,6 +181,8 @@
     "updated": "עודכן",
     "viewWeekly": "תצוגה שבועית",
     "viewMonthly": "תצוגה חודשית",
+    "gradeFilterLabel": "שכבות",
+    "gradeFilterOption": "הצג שכבה {grade}",
     "confirmNewEventTitle": "אירוע חדש",
     "confirmNewEvent": "ליצור אירוע חדש בתאריך {date}?",
     "myDrafts": "האירועים שלי",
