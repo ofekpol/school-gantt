@@ -94,20 +94,13 @@ export function FilterBar({
   return (
     <section
       aria-label={t("ariaLabel")}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 24,
-        padding: "14px 24px",
-        background: "var(--sg-surface)",
-        borderBottom: "1px solid var(--sg-hairline)",
-        flexWrap: "wrap",
-      }}
+      className="flex flex-wrap items-center gap-3 px-3 py-3 sm:gap-x-6 sm:px-6"
+      style={{ background: "var(--sg-surface)", borderBottom: "1px solid var(--sg-hairline)" }}
     >
       {/* Grade chips */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div className="flex items-center gap-2">
         <span style={labelStyle}>שכבות</span>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
           {allGrades.map((g) => {
             const on = selectedGrades.length === 0 || selectedGrades.includes(g);
             return (
@@ -132,10 +125,10 @@ export function FilterBar({
         </div>
       </div>
 
-      {/* Event-type chips */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflow: "hidden" }}>
-        <span style={labelStyle}>סוגים</span>
-        <div style={{ display: "flex", gap: 6, flexWrap: "nowrap", overflow: "hidden" }}>
+      {/* Event-type chips — full row on mobile, inline on desktop */}
+      <div className="flex basis-full items-center gap-2 overflow-x-auto overflow-y-hidden sm:basis-auto sm:flex-1 sm:min-w-0">
+        <span style={{ ...labelStyle, flexShrink: 0 }}>סוגים</span>
+        <div className="flex gap-1.5">
           {eventTypes.map((et) => {
             const on = selectedTypes.length === 0 || selectedTypes.includes(et.key);
             return (
@@ -157,74 +150,72 @@ export function FilterBar({
         </div>
       </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <label htmlFor="filter-q" className="sr-only">{t("searchLabel")}</label>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          height: 32, padding: "0 12px",
-          border: "1px solid var(--sg-hairline)",
-          borderRadius: 8,
-          background: "var(--sg-surface-2)",
-          fontSize: 13,
-          color: "var(--sg-ink-mute)",
-          minWidth: 200,
-        }}>
-          <SearchIcon />
-          <input
-            id="filter-q"
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="חיפוש אירוע…"
+      {/* Search + Zoom — share a row on mobile, separate flex items on desktop */}
+      <div className="flex basis-full items-center gap-3 sm:contents">
+        {/* Search */}
+        <form onSubmit={handleSearch} className="flex flex-1 items-center gap-2 sm:flex-none">
+          <label htmlFor="filter-q" className="sr-only">{t("searchLabel")}</label>
+          <div
+            className="flex flex-1 items-center gap-2 sm:flex-none"
             style={{
-              flex: 1, border: "none", background: "transparent",
-              outline: "none", font: "inherit", color: "inherit",
-              textAlign: "start",
-            }}
-          />
-        </div>
-        <button type="submit" style={{ display: "none" }} aria-hidden="true" />
-      </form>
-
-      {/* Zoom segmented */}
-      <div
-        role="radiogroup"
-        aria-label="זום"
-        style={{
-          display: "inline-flex",
-          background: "var(--sg-surface-2)",
-          border: "1px solid var(--sg-hairline)",
-          borderRadius: 8,
-          padding: 3,
-          gap: 2,
-          flexShrink: 0,
-        }}
-      >
-        {ZOOM_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            role="radio"
-            aria-checked={zoom === opt.value}
-            onClick={() => setZoom(opt.value)}
-            style={{
-              appearance: "none",
-              border: "none",
-              padding: "5px 14px",
-              borderRadius: 5,
+              height: 32, padding: "0 12px",
+              border: "1px solid var(--sg-hairline)",
+              borderRadius: 8,
+              background: "var(--sg-surface-2)",
               fontSize: 13,
-              fontWeight: 500,
-              cursor: "pointer",
-              background: zoom === opt.value ? "var(--sg-surface)" : "transparent",
-              color: zoom === opt.value ? "var(--sg-ink)" : "var(--sg-ink-mute)",
-              boxShadow: zoom === opt.value ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-              transition: "background 0.1s, color 0.1s",
+              color: "var(--sg-ink-mute)",
+              minWidth: 0,
             }}
           >
-            {opt.label}
-          </button>
-        ))}
+            <SearchIcon />
+            <input
+              id="filter-q"
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="חיפוש אירוע…"
+              className="w-full sm:w-44"
+              style={{
+                flex: 1, border: "none", background: "transparent",
+                outline: "none", font: "inherit", color: "inherit",
+                textAlign: "start", minWidth: 0,
+              }}
+            />
+          </div>
+          <button type="submit" className="sr-only" aria-hidden="true" />
+        </form>
+
+        {/* Zoom segmented */}
+        <div
+          role="radiogroup"
+          aria-label="זום"
+          className="flex shrink-0 items-center rounded-lg p-0.5 gap-0.5"
+          style={{
+            background: "var(--sg-surface-2)",
+            border: "1px solid var(--sg-hairline)",
+          }}
+        >
+          {ZOOM_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={zoom === opt.value}
+              onClick={() => setZoom(opt.value)}
+              className="rounded-md px-3 py-1 text-[13px] font-medium cursor-pointer"
+              style={{
+                appearance: "none",
+                border: "none",
+                background: zoom === opt.value ? "var(--sg-surface)" : "transparent",
+                color: zoom === opt.value ? "var(--sg-ink)" : "var(--sg-ink-mute)",
+                boxShadow: zoom === opt.value ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                transition: "background 0.1s, color 0.1s",
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );

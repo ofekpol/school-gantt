@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Geist, Frank_Ruhl_Libre, Heebo, IBM_Plex_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
@@ -33,6 +33,11 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "School Gantt",
   description: "Multi-tenant school event calendar",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({
