@@ -1,6 +1,5 @@
 "use client";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useRouteProgress } from "@/components/RouteProgress";
@@ -12,10 +11,10 @@ export function LogoutButton({ label }: { label: string }) {
 
   async function handleLogout() {
     setLoading(true);
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    await fetch("/api/v1/auth/logout", { method: "POST" });
     startRouteProgress();
-    router.push("/auth/login");
+    router.replace("/auth/login");
+    router.refresh();
   }
 
   return (

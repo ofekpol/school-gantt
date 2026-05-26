@@ -49,6 +49,7 @@ export function EmailPasswordSignInForm() {
 
       // Keep loading=true — page unmounts on navigation, no need to reset.
       router.replace(data.redirectTo ?? "/dashboard");
+      router.refresh();
     } catch {
       setLoading(false);
     }
