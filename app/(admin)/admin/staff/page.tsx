@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { Clock, MailPlus, UserCheck, Users } from "lucide-react";
+import type { ReactNode } from "react";
 import { getStaffUser } from "@/lib/auth/session";
 import { listStaffUsers } from "@/lib/db/staff";
 import { listInvitesForSchool } from "@/lib/db/invites";
@@ -28,23 +30,89 @@ export default async function AdminStaffPage() {
   ]);
 
   const t = await getTranslations("admin.staff");
+  const activeCount = staff.filter((member) => !member.deactivatedAt).length;
+  const editorCount = staff.filter(
+    (member) => member.role === "editor" && !member.deactivatedAt,
+  ).length;
+  const openInviteCount = invites.filter(
+    (invite) => !invite.usedAt && new Date(invite.expiresAt) > new Date(),
+  ).length;
 
   return (
-    <main className="space-y-8 p-6">
-      <h1 className="text-2xl font-bold mb-4">{t("title")}</h1>
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">{t("activeStaff")}</h2>
+    <main className="space-y-6 bg-neutral-50 p-4 text-neutral-950 md:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+          <p className="mt-1 text-sm text-neutral-600">{t("subtitle")}</p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <StaffStat
+          icon={<Users className="size-4" />}
+          label={t("totalStaff")}
+          value={staff.length}
+        />
+        <StaffStat
+          icon={<UserCheck className="size-4" />}
+          label={t("activeStaff")}
+          value={activeCount}
+        />
+        <StaffStat icon={<Users className="size-4" />} label={t("editors")} value={editorCount} />
+        <StaffStat
+          icon={<Clock className="size-4" />}
+          label={t("pendingRequests")}
+          value={pendingRegs.length}
+        />
+      </div>
+
+      <section className="space-y-3">
+        <SectionHeader title={t("activeStaff")} count={staff.length} />
         <StaffTable initialStaff={staff} eventTypes={eventTypes} />
       </section>
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">{t("pendingRequests")}</h2>
+
+      <section className="space-y-3">
+        <SectionHeader title={t("pendingRequests")} count={pendingRegs.length} />
         <PendingRequestsTable pending={pendingRegs} eventTypes={eventTypes} />
       </section>
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">{t("invites")}</h2>
-        <InviteForm eventTypes={eventTypes} />
-        <InviteTable invites={invites} />
+
+      <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4">
+        <SectionHeader
+          title={t("invites")}
+          count={openInviteCount}
+          icon={<MailPlus className="size-4" />}
+        />
+        <div className="space-y-4">
+          <InviteForm eventTypes={eventTypes} />
+          <InviteTable invites={invites} />
+        </div>
       </section>
     </main>
+  );
+}
+
+function StaffStat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="flex items-center gap-2 text-sm text-neutral-600">
+        <span className="text-neutral-500">{icon}</span>
+        {label}
+      </div>
+      <div className="mt-2 text-2xl font-semibold text-neutral-950 tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function SectionHeader({ title, count, icon }: { title: string; count: number; icon?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <h2 className="flex items-center gap-2 text-lg font-semibold">
+        {icon}
+        {title}
+      </h2>
+      <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-600">
+        {count}
+      </span>
+    </div>
   );
 }
