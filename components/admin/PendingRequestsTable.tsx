@@ -46,6 +46,7 @@ export function PendingRequestsTable({
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
+  const [approvalRole, setApprovalRole] = useState<"editor" | "admin" | "viewer">("viewer");
 
   useEffect(() => {
     if (!activeId) return;
@@ -60,11 +61,13 @@ export function PendingRequestsTable({
     if (busyId) return;
     setError(null);
     setBusyId(row.id);
-    const role = String(form.get("role") ?? "viewer");
-    const gradeScopes = ALL_GRADES.filter((g) => form.get(`grade-${g}`) === "on");
-    const eventTypeScopes = eventTypes
-      .filter((et) => form.get(`type-${et.key}`) === "on")
-      .map((et) => et.key);
+    const role = String(form.get("role") ?? "viewer") as "editor" | "admin" | "viewer";
+    const gradeScopes =
+      role === "editor" ? ALL_GRADES.filter((g) => form.get(`grade-${g}`) === "on") : [];
+    const eventTypeScopes =
+      role === "editor"
+        ? eventTypes.filter((et) => form.get(`type-${et.key}`) === "on").map((et) => et.key)
+        : [];
     try {
       const res = await fetch("/api/v1/admin/staff/pending", {
         method: "POST",
@@ -165,7 +168,10 @@ export function PendingRequestsTable({
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
-                onClick={() => setActiveId(row.id)}
+                onClick={() => {
+                  setApprovalRole("viewer");
+                  setActiveId(row.id);
+                }}
                 disabled={busyId !== null || isPending}
               >
                 {t("approve")}
@@ -237,7 +243,10 @@ export function PendingRequestsTable({
                 <span className="text-sm font-medium text-neutral-700">{t("role")}</span>
                 <select
                   name="role"
-                  defaultValue="viewer"
+                  value={approvalRole}
+                  onChange={(event) =>
+                    setApprovalRole(event.target.value as "editor" | "admin" | "viewer")
+                  }
                   className="h-10 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-900 focus:ring-3 focus:ring-neutral-200"
                 >
                   <option value="viewer">{t("roleViewer")}</option>
@@ -247,38 +256,40 @@ export function PendingRequestsTable({
               </label>
             </div>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              <fieldset className="rounded-lg border border-neutral-200 p-3">
-                <legend className="px-1 text-sm font-medium text-neutral-800">
-                  {t("gradeScopes")}
-                </legend>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {ALL_GRADES.map((g) => (
-                    <label
-                      key={g}
-                      className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-sm"
-                    >
-                      <input type="checkbox" name={`grade-${g}`} /> {formatGradeLabel(g)}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <fieldset className="rounded-lg border border-neutral-200 p-3">
-                <legend className="px-1 text-sm font-medium text-neutral-800">
-                  {t("eventTypeScopes")}
-                </legend>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {eventTypes.map((et) => (
-                    <label
-                      key={et.key}
-                      className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-sm"
-                    >
-                      <input type="checkbox" name={`type-${et.key}`} /> {et.labelHe}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            </div>
+            {approvalRole === "editor" && (
+              <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                <fieldset className="rounded-lg border border-neutral-200 p-3">
+                  <legend className="px-1 text-sm font-medium text-neutral-800">
+                    {t("gradeScopes")}
+                  </legend>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {ALL_GRADES.map((g) => (
+                      <label
+                        key={g}
+                        className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-sm"
+                      >
+                        <input type="checkbox" name={`grade-${g}`} /> {formatGradeLabel(g)}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset className="rounded-lg border border-neutral-200 p-3">
+                  <legend className="px-1 text-sm font-medium text-neutral-800">
+                    {t("eventTypeScopes")}
+                  </legend>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {eventTypes.map((et) => (
+                      <label
+                        key={et.key}
+                        className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-sm"
+                      >
+                        <input type="checkbox" name={`type-${et.key}`} /> {et.labelHe}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              </div>
+            )}
 
             <div className="mt-5 grid gap-2 rounded-lg bg-neutral-50 p-3 text-sm text-neutral-700 sm:grid-cols-3">
               <ModalHint icon={<Users className="size-4" />} text={t("viewerHint")} />

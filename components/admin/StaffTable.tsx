@@ -83,11 +83,17 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
   async function handleSave(row: StaffRow, form: FormData) {
     setError(null);
     setBusyId(row.id);
-    const role = String(form.get("role") ?? row.role);
-    const gradeScopes = ALL_GRADES.filter((g) => form.get(`staff-grade-${row.id}-${g}`) === "on");
-    const eventTypeScopes = eventTypes
-      .filter((et) => form.get(`staff-type-${row.id}-${et.key}`) === "on")
-      .map((et) => et.key);
+    const role = String(form.get("role") ?? row.role) as StaffRow["role"];
+    const gradeScopes =
+      role === "editor"
+        ? ALL_GRADES.filter((g) => form.get(`staff-grade-${row.id}-${g}`) === "on")
+        : [];
+    const eventTypeScopes =
+      role === "editor"
+        ? eventTypes
+            .filter((et) => form.get(`staff-type-${row.id}-${et.key}`) === "on")
+            .map((et) => et.key)
+        : [];
     const res = await fetch(`/api/v1/admin/staff/${row.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -336,6 +342,11 @@ function EditStaffForm({
 }) {
   const t = useTranslations("admin.staff");
   const tc = useTranslations("common");
+  const [role, setRole] = useState<StaffRow["role"]>(row.role);
+
+  useEffect(() => {
+    setRole(row.role);
+  }, [row.id, row.role]);
 
   return (
     <form action={(form) => onSave(row, form)} className="mt-5 space-y-4">
@@ -353,7 +364,8 @@ function EditStaffForm({
           <span className="text-sm font-medium text-neutral-700">{t("role")}</span>
           <select
             name="role"
-            defaultValue={row.role}
+            value={role}
+            onChange={(event) => setRole(event.target.value as StaffRow["role"])}
             className="h-10 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-900 focus:ring-3 focus:ring-neutral-200"
           >
             <option value="viewer">{t("roleViewer")}</option>
@@ -362,7 +374,7 @@ function EditStaffForm({
           </select>
         </label>
       </div>
-      <ScopeFields row={row} eventTypes={eventTypes} />
+      {role === "editor" && <ScopeFields row={row} eventTypes={eventTypes} />}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={busy}>
           {busy ? tc("saving") : t("save")}
