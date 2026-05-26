@@ -1,6 +1,6 @@
 import "server-only";
 import { eq, isNull } from "drizzle-orm";
-import { db } from "@/lib/db/client";
+import { db, withSchool } from "@/lib/db/client";
 import { supabaseAdmin } from "@/lib/db/supabase-admin";
 import { editorScopes, pendingRegistrations, staffUsers } from "@/lib/db/schema";
 
@@ -61,17 +61,17 @@ export async function approvePendingRegistration(params: {
   eventTypeScopes?: string[];
   approvedBy: string;
 }): Promise<{ staffUserId: string; email: string; fullName: string }> {
-  return db.transaction(async (tx) => {
-    const [pending] = await tx
-      .select()
-      .from(pendingRegistrations)
-      .where(eq(pendingRegistrations.id, params.pendingId))
-      .limit(1);
+  const [pending] = await db
+    .select()
+    .from(pendingRegistrations)
+    .where(eq(pendingRegistrations.id, params.pendingId))
+    .limit(1);
 
-    if (!pending || pending.reviewOutcome) {
-      throw new Error("pending_registration_not_found");
-    }
+  if (!pending || pending.reviewOutcome) {
+    throw new Error("pending_registration_not_found");
+  }
 
+  await withSchool(params.schoolId, async (tx) => {
     await tx
       .insert(staffUsers)
       .values({
@@ -107,22 +107,22 @@ export async function approvePendingRegistration(params: {
     if (scopeRows.length > 0) {
       await tx.insert(editorScopes).values(scopeRows).onConflictDoNothing();
     }
-
-    await tx
-      .update(pendingRegistrations)
-      .set({
-        reviewedAt: new Date(),
-        reviewedBy: params.approvedBy,
-        reviewOutcome: "approved",
-      })
-      .where(eq(pendingRegistrations.id, params.pendingId));
-
-    return {
-      staffUserId: pending.authUserId,
-      email: pending.email,
-      fullName: params.fullName,
-    };
   });
+
+  await db
+    .update(pendingRegistrations)
+    .set({
+      reviewedAt: new Date(),
+      reviewedBy: params.approvedBy,
+      reviewOutcome: "approved",
+    })
+    .where(eq(pendingRegistrations.id, params.pendingId));
+
+  return {
+    staffUserId: pending.authUserId,
+    email: pending.email,
+    fullName: params.fullName,
+  };
 }
 
 export async function rejectPendingRegistration(params: {
