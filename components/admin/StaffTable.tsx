@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Fragment, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Filter, Search, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { Filter, Search, ShieldCheck, UserCheck, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatGradeLabel } from "@/lib/grades";
 import { useRouteProgress } from "@/components/RouteProgress";
@@ -55,6 +55,16 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
     const status = staff.deactivatedAt ? "deactivated" : "active";
     return matchesQuery && matchesRole && (statusFilter === "all" || statusFilter === status);
   });
+  const editingRow = initialStaff.find((staff) => staff.id === editingId) ?? null;
+
+  useEffect(() => {
+    if (!editingId) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setEditingId(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editingId]);
 
   async function handleDeactivate(id: string, deactivated: boolean) {
     setBusyId(id);
@@ -171,70 +181,60 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
           </thead>
           <tbody>
             {filteredStaff.map((s) => (
-              <Fragment key={s.id}>
-                <tr className="border-b border-neutral-100 align-top transition hover:bg-neutral-50">
-                  <td className="py-4 ps-4 pe-4">
-                    <div className="font-medium text-neutral-950">{s.fullName}</div>
-                    <div className="mt-1 text-xs text-neutral-500">{s.email}</div>
-                  </td>
-                  <td className="py-4 pe-4">
-                    <RoleBadge role={s.role} label={roleLabel(s.role)} />
-                  </td>
-                  <td className="py-4 pe-4">
-                    <StatusBadge
-                      active={!s.deactivatedAt}
-                      activeLabel={t("active")}
-                      deactivatedLabel={t("deactivated")}
-                    />
-                  </td>
-                  <td className="max-w-[320px] py-4 pe-4 text-neutral-700">{scopeLabel(s)}</td>
-                  <td className="py-4 pe-4">
-                    <div className="flex flex-wrap gap-2">
+              <tr
+                key={s.id}
+                className="border-b border-neutral-100 align-top transition hover:bg-neutral-50"
+              >
+                <td className="py-4 ps-4 pe-4">
+                  <div className="font-medium text-neutral-950">{s.fullName}</div>
+                  <div className="mt-1 text-xs text-neutral-500">{s.email}</div>
+                </td>
+                <td className="py-4 pe-4">
+                  <RoleBadge role={s.role} label={roleLabel(s.role)} />
+                </td>
+                <td className="py-4 pe-4">
+                  <StatusBadge
+                    active={!s.deactivatedAt}
+                    activeLabel={t("active")}
+                    deactivatedLabel={t("deactivated")}
+                  />
+                </td>
+                <td className="max-w-[320px] py-4 pe-4 text-neutral-700">{scopeLabel(s)}</td>
+                <td className="py-4 pe-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setError(null);
+                        setEditingId(s.id);
+                      }}
+                      disabled={busyId !== null}
+                    >
+                      {t("edit")}
+                    </Button>
+                    {s.deactivatedAt ? (
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => setEditingId(s.id)}
+                        onClick={() => handleDeactivate(s.id, false)}
                         disabled={busyId !== null}
                       >
-                        {t("edit")}
+                        {busyId === s.id ? tc("loading") : t("reactivate")}
                       </Button>
-                      {s.deactivatedAt ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeactivate(s.id, false)}
-                          disabled={busyId !== null}
-                        >
-                          {busyId === s.id ? tc("loading") : t("reactivate")}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeactivate(s.id, true)}
-                          disabled={busyId !== null}
-                        >
-                          {busyId === s.id ? tc("loading") : t("deactivate")}
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-                {editingId === s.id && (
-                  <tr className="border-b border-neutral-200 bg-neutral-50">
-                    <td colSpan={5} className="p-4">
-                      <EditStaffForm
-                        row={s}
-                        eventTypes={eventTypes}
-                        busy={busyId === s.id}
-                        error={error}
-                        onCancel={() => setEditingId(null)}
-                        onSave={handleSave}
-                      />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeactivate(s.id, true)}
+                        disabled={busyId !== null}
+                      >
+                        {busyId === s.id ? tc("loading") : t("deactivate")}
+                      </Button>
+                    )}
+                  </div>
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>
@@ -242,6 +242,47 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
 
       {filteredStaff.length === 0 && (
         <div className="px-4 py-10 text-center text-sm text-neutral-500">{t("noStaffMatches")}</div>
+      )}
+
+      {editingRow && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-staff-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setEditingId(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-neutral-200 bg-white p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 id="edit-staff-title" className="text-lg font-semibold text-neutral-950">
+                  {t("editUserTitle")}
+                </h3>
+                <p className="mt-1 text-sm break-all text-neutral-600">{editingRow.email}</p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setEditingId(null)}
+                aria-label={t("cancel")}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+            <EditStaffForm
+              row={editingRow}
+              eventTypes={eventTypes}
+              busy={busyId === editingRow.id}
+              error={error}
+              onCancel={() => setEditingId(null)}
+              onSave={handleSave}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -297,28 +338,29 @@ function EditStaffForm({
   const tc = useTranslations("common");
 
   return (
-    <form
-      action={(form) => onSave(row, form)}
-      className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4"
-    >
+    <form action={(form) => onSave(row, form)} className="mt-5 space-y-4">
       <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px]">
-        <input
-          name="fullName"
-          defaultValue={row.fullName}
-          aria-label={t("fullName")}
-          className="h-10 rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-900 focus:ring-3 focus:ring-neutral-200"
-          required
-        />
-        <select
-          name="role"
-          defaultValue={row.role}
-          aria-label={t("role")}
-          className="h-10 rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-900 focus:ring-3 focus:ring-neutral-200"
-        >
-          <option value="viewer">{t("roleViewer")}</option>
-          <option value="editor">{t("roleEditor")}</option>
-          <option value="admin">{t("roleAdmin")}</option>
-        </select>
+        <label className="space-y-1.5">
+          <span className="text-sm font-medium text-neutral-700">{t("fullName")}</span>
+          <input
+            name="fullName"
+            defaultValue={row.fullName}
+            className="h-10 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-900 focus:ring-3 focus:ring-neutral-200"
+            required
+          />
+        </label>
+        <label className="space-y-1.5">
+          <span className="text-sm font-medium text-neutral-700">{t("role")}</span>
+          <select
+            name="role"
+            defaultValue={row.role}
+            className="h-10 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-900 focus:ring-3 focus:ring-neutral-200"
+          >
+            <option value="viewer">{t("roleViewer")}</option>
+            <option value="editor">{t("roleEditor")}</option>
+            <option value="admin">{t("roleAdmin")}</option>
+          </select>
+        </label>
       </div>
       <ScopeFields row={row} eventTypes={eventTypes} />
       <div className="flex flex-wrap items-center gap-3">

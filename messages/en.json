@@ -96,6 +96,7 @@
       "gradeScopes": "Allowed Grades",
       "eventTypeScopes": "Allowed Event Types",
       "edit": "Edit",
+      "editUserTitle": "Edit User",
       "save": "Save",
       "deactivate": "Deactivate",
       "reactivate": "Reactivate",
