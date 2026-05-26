@@ -142,7 +142,7 @@ export async function getAgendaSignatureForSchool(
       .select({
         count: sql<string>`count(*)::text`,
         versionSum: sql<string>`coalesce(sum(${events.version}), 0)::text`,
-        maxUpdatedAt: sql<Date | null>`max(${events.updatedAt})`,
+        maxUpdatedAt: sql<string | null>`to_char(max(${events.updatedAt}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
       })
       .from(events)
       .where(and(...conditions));
@@ -150,7 +150,7 @@ export async function getAgendaSignatureForSchool(
     return [
       row?.count ?? "0",
       row?.versionSum ?? "0",
-      row?.maxUpdatedAt ? row.maxUpdatedAt.toISOString() : "none",
+      row?.maxUpdatedAt ?? "none",
     ].join(":");
   });
 }
