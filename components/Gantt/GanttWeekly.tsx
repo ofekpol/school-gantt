@@ -243,20 +243,20 @@ function DayAxis({ days, onDayClick }: { days: WeeklyModel["days"]; onDayClick?:
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span style={{
               fontFamily: "var(--sg-font-display)", fontSize: 28, fontWeight: 700, lineHeight: 1,
-              color: d.isToday ? "var(--sg-accent-ink)" : d.isWeekend ? "var(--sg-ink-soft)" : "var(--sg-ink)",
+              color: d.isToday ? "var(--sg-accent-ink)" : d.isWeekend ? "var(--sg-ink-mute)" : "var(--sg-ink)",
             }}>
               {d.dayOfMonth}
             </span>
             <span style={{
               fontFamily: "var(--sg-font-display)", fontSize: 15, fontWeight: 500,
-              color: d.isToday ? "var(--sg-accent-ink)" : d.isWeekend ? "var(--sg-ink-soft)" : "var(--sg-ink-mute)",
+              color: d.isToday ? "var(--sg-accent-ink)" : "var(--sg-ink-mute)",
             }}>
               {d.hebrewName}
             </span>
           </div>
           <div style={{
             fontFamily: "var(--sg-font-mono)", fontSize: 10, letterSpacing: "0.06em",
-            color: d.isToday ? "var(--sg-accent)" : "var(--sg-ink-soft)",
+            color: d.isToday ? "var(--sg-accent)" : "var(--sg-ink-mute)",
             display: "flex", alignItems: "center", gap: 6,
           }}>
             <span>{d.monoName}</span>
