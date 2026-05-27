@@ -8,13 +8,21 @@ import { dirFor, isLocale, DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { RouteProgressProvider } from "@/components/RouteProgress";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+// Only Heebo (UI) is preloaded — it's the body font for every Hebrew
+// page above the fold. Display / mono / sans-latin fonts load on demand
+// with display: swap to avoid CLS, eliminating ~8 unused-preload warnings.
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  preload: false,
+});
 
 const frankRuhlLibre = Frank_Ruhl_Libre({
   subsets: ["hebrew", "latin"],
   weight: ["400", "500", "700", "900"],
   variable: "--font-display",
   display: "swap",
+  preload: false,
 });
 
 const heebo = Heebo({
@@ -29,6 +37,7 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   variable: "--font-mono",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

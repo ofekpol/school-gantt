@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   buildWeeklyModel,
   type WeeklyModel,
@@ -243,20 +244,20 @@ function DayAxis({ days, onDayClick }: { days: WeeklyModel["days"]; onDayClick?:
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span style={{
               fontFamily: "var(--sg-font-display)", fontSize: 28, fontWeight: 700, lineHeight: 1,
-              color: d.isToday ? "var(--sg-accent-ink)" : d.isWeekend ? "var(--sg-ink-soft)" : "var(--sg-ink)",
+              color: d.isToday ? "var(--sg-accent-ink)" : d.isWeekend ? "var(--sg-ink-mute)" : "var(--sg-ink)",
             }}>
               {d.dayOfMonth}
             </span>
             <span style={{
               fontFamily: "var(--sg-font-display)", fontSize: 15, fontWeight: 500,
-              color: d.isToday ? "var(--sg-accent-ink)" : d.isWeekend ? "var(--sg-ink-soft)" : "var(--sg-ink-mute)",
+              color: d.isToday ? "var(--sg-accent-ink)" : "var(--sg-ink-mute)",
             }}>
               {d.hebrewName}
             </span>
           </div>
           <div style={{
             fontFamily: "var(--sg-font-mono)", fontSize: 10, letterSpacing: "0.06em",
-            color: d.isToday ? "var(--sg-accent)" : "var(--sg-ink-soft)",
+            color: d.isToday ? "var(--sg-accent)" : "var(--sg-ink-mute)",
             display: "flex", alignItems: "center", gap: 6,
           }}>
             <span>{d.monoName}</span>
@@ -306,6 +307,7 @@ interface GradeRowProps {
 }
 
 function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
+  const t = useTranslations("gantt");
   return (
     <div style={{
       height: ROW_H, position: "relative",
@@ -320,9 +322,13 @@ function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
           <button
             key={d.dayIndex}
             type="button"
-            onClick={() => onDayClick?.(isoDate(d.date))}
+            onClick={onDayClick ? () => onDayClick(isoDate(d.date)) : undefined}
             disabled={!onDayClick}
-            aria-label={onDayClick ? `אירוע חדש ב-${isoDate(d.date)}` : undefined}
+            aria-label={
+              onDayClick
+                ? t("newEventOnDate", { date: isoDate(d.date) })
+                : t("cellLabel", { date: isoDate(d.date), grade: row.grade })
+            }
             style={{
               borderInlineStart: "1px solid var(--sg-hairline-2)",
               borderTop: "none", borderBottom: "none", borderInlineEnd: "none",

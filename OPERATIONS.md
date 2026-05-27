@@ -18,6 +18,8 @@ Copy `.env.example` to `.env.local` and fill these in:
 
 Never commit `.env.local`. The `.env.example` file is the canonical list of expected variables.
 
+> ⚠️ **Never point integration tests at prod.** `DATABASE_URL` and `TEST_DATABASE_URL` must resolve to different Supabase projects. Vitest specs under `test/integration/` create events, academic years, invites, etc. without teardown — running them against prod pollutes the public viewer. If you need to clean up prior pollution, see `scripts/cleanup-e2e-pollution.sql` (dry-run by default; export `CONFIRM=1` to commit).
+
 ## 2. Supabase setup (one-time per tenant)
 
 1. Create a new Supabase project.
