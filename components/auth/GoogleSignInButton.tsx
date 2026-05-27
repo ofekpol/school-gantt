@@ -14,8 +14,7 @@ export function GoogleSignInButton({ next, token }: GoogleSignInButtonProps) {
   async function handleSignIn() {
     setLoading(true);
     const supabase = createSupabaseBrowserClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
-    const callbackUrl = new URL("/auth/callback", appUrl);
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
     if (next) callbackUrl.searchParams.set("next", next);
     if (token) callbackUrl.searchParams.set("invite_token", token);
 
