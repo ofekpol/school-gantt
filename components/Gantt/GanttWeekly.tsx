@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   buildWeeklyModel,
   type WeeklyModel,
@@ -306,6 +307,7 @@ interface GradeRowProps {
 }
 
 function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
+  const t = useTranslations("gantt");
   return (
     <div style={{
       height: ROW_H, position: "relative",
@@ -324,8 +326,8 @@ function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
             disabled={!onDayClick}
             aria-label={
               onDayClick
-                ? `אירוע חדש ב-${isoDate(d.date)}`
-                : `${isoDate(d.date)}, שכבה ${row.grade}`
+                ? t("newEventOnDate", { date: isoDate(d.date) })
+                : t("cellLabel", { date: isoDate(d.date), grade: row.grade })
             }
             style={{
               borderInlineStart: "1px solid var(--sg-hairline-2)",

@@ -238,6 +238,8 @@
     "empty": "No approved events in the current year.",
     "zoomLabel": "Zoom level",
     "gradesColumnLabel": "Grades",
+    "newEventOnDate": "New event on {date}",
+    "cellLabel": "{date}, grade {grade}",
     "drawer": {
       "date": "Date",
       "type": "Type",

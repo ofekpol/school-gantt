@@ -238,6 +238,8 @@
     "empty": "אין אירועים מאושרים בשנה הנוכחית.",
     "zoomLabel": "רמת הגדלה",
     "gradesColumnLabel": "שכבות",
+    "newEventOnDate": "אירוע חדש ב-{date}",
+    "cellLabel": "{date}, שכבה {grade}",
     "drawer": {
       "date": "תאריך",
       "type": "סוג",
