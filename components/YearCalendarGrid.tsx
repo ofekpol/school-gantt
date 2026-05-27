@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import type { CalendarMonth } from "@/lib/views/calendar";
 import { readableTextColor } from "@/lib/colors";
+import { findCurrentMonthStart } from "@/lib/views/current-period";
 
 interface Props {
   months: CalendarMonth[];
@@ -29,13 +31,35 @@ export function YearCalendarGrid({
   const tm = useTranslations("months");
   const tw = useTranslations("weekdays");
   const tc = useTranslations("common");
+  const monthRefs = useRef(new Map<string, HTMLElement>());
+  const currentMonthStart = findCurrentMonthStart(
+    months.map((month, index) => ({
+      startDate: `${month.year}-${String(month.monthIndex).padStart(2, "0")}-01`,
+      monthIndex: month.monthIndex,
+      leftPct: index,
+      widthPct: 1,
+    })),
+  );
+
+  useEffect(() => {
+    if (!currentMonthStart) return;
+    monthRefs.current.get(currentMonthStart)?.scrollIntoView({
+      block: "start",
+      behavior: "auto",
+    });
+  }, [currentMonthStart]);
 
   return (
     <div className="year-calendar p-4">
       {months.map((m) => (
         <section
           key={`${m.year}-${m.monthIndex}`}
-          className="calendar-month bg-white rounded-md border border-neutral-200 p-2 mb-4 sm:p-4 sm:mb-6 print:mb-0 print:border-0 print:rounded-none"
+          ref={(node) => {
+            const key = `${m.year}-${String(m.monthIndex).padStart(2, "0")}-01`;
+            if (node) monthRefs.current.set(key, node);
+            else monthRefs.current.delete(key);
+          }}
+          className="calendar-month scroll-mt-28 bg-white rounded-md border border-neutral-200 p-2 mb-4 sm:p-4 sm:mb-6 print:mb-0 print:border-0 print:rounded-none"
           style={{ contentVisibility: "auto", containIntrinsicSize: "720px" }}
           aria-label={`${tm(String(m.monthIndex) as `${number}`)} ${m.year}`}
         >

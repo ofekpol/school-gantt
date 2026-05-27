@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import { formatGradeList } from "@/lib/grades";
+import { findCurrentAgendaWeekStart } from "@/lib/views/current-period";
 
 interface SerializedAgendaItem extends Omit<AgendaItem, "startAt" | "endAt"> {
   startAt: Date | string;
@@ -47,6 +48,16 @@ const timeFmt = new Intl.DateTimeFormat("he-IL", {
 export function AgendaList({ weeks, emptyLabel }: Props) {
   const t = useTranslations("agenda");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const weekRefs = useRef(new Map<string, HTMLElement>());
+  const currentWeekStart = findCurrentAgendaWeekStart(weeks);
+
+  useEffect(() => {
+    if (!currentWeekStart) return;
+    weekRefs.current.get(currentWeekStart)?.scrollIntoView({
+      block: "start",
+      behavior: "auto",
+    });
+  }, [currentWeekStart]);
 
   if (weeks.length === 0) {
     return (
@@ -59,8 +70,12 @@ export function AgendaList({ weeks, emptyLabel }: Props) {
       {weeks.map((week) => (
         <section
           key={week.weekStart}
+          ref={(node) => {
+            if (node) weekRefs.current.set(week.weekStart, node);
+            else weekRefs.current.delete(week.weekStart);
+          }}
           aria-labelledby={`week-${week.weekStart}`}
-          style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
+          style={{ contentVisibility: "auto", containIntrinsicSize: "360px", scrollMarginTop: 112 }}
         >
           <h2
             id={`week-${week.weekStart}`}

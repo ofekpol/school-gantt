@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import type { GanttBar, GanttMonth, ZoomLevel } from "@/lib/views/gantt";
 import { zoomScale } from "@/lib/views/gantt";
 import { formatGradeLabel } from "@/lib/grades";
 import { EventDrawer } from "./EventDrawer";
+import { findCurrentMonthStart } from "@/lib/views/current-period";
 
 const ROW_HEIGHT_PX = 72;
 const HEADER_HEIGHT_PX = 48;
@@ -45,6 +46,8 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
   const tg = useTranslations("gantt");
   const scale = zoomScale(zoom);
   const trackWidthPct = scale * 100;
+  const monthRefs = useRef(new Map<string, HTMLDivElement>());
+  const currentMonthStart = findCurrentMonthStart(months);
 
   const eventMap = useMemo(() => {
     const m = new Map<string, AgendaItem>();
@@ -56,6 +59,15 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? (eventMap.get(selectedId) ?? null) : null;
+
+  useEffect(() => {
+    if (!currentMonthStart) return;
+    monthRefs.current.get(currentMonthStart)?.scrollIntoView({
+      inline: "center",
+      block: "nearest",
+      behavior: "auto",
+    });
+  }, [currentMonthStart]);
 
   if (bars.length === 0) {
     return <EmptyState label={emptyLabel} />;
@@ -82,16 +94,23 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
             {months.map((m) => {
               const info = HE_MONTHS[m.monthIndex];
               return (
-                <div key={m.startDate} style={{
-                  position: "absolute",
-                  top: 0, bottom: 0,
-                  insetInlineStart: `${m.leftPct}%`,
-                  width: `${m.widthPct}%`,
-                  borderInlineStart: "1px solid var(--sg-hairline-2)",
-                  display: "flex", flexDirection: "column",
-                  justifyContent: "flex-end",
-                  padding: "0 12px 8px",
-                }}>
+                <div
+                  key={m.startDate}
+                  ref={(node) => {
+                    if (node) monthRefs.current.set(m.startDate, node);
+                    else monthRefs.current.delete(m.startDate);
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: 0, bottom: 0,
+                    insetInlineStart: `${m.leftPct}%`,
+                    width: `${m.widthPct}%`,
+                    borderInlineStart: "1px solid var(--sg-hairline-2)",
+                    display: "flex", flexDirection: "column",
+                    justifyContent: "flex-end",
+                    padding: "0 12px 8px",
+                  }}
+                >
                   <span style={{
                     fontFamily: "var(--sg-font-display)", fontSize: 14, fontWeight: 600,
                     color: "var(--sg-ink)", display: "block",
