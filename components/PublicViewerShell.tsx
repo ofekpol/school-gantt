@@ -140,6 +140,7 @@ export function PublicViewerShell({
         selectedTypes={params.types}
         searchQuery={params.q}
         zoom={params.zoom}
+        zoomOptions={zoomOptionsForView(view)}
         onChange={setParams}
       />
       {deferredView === "gantt" && (
@@ -302,4 +303,10 @@ function viewFromPath(pathname: string, schoolSlug: string): PublicViewerView {
   if (pathname === `/${schoolSlug}/calendar`) return "calendar";
   if (pathname === `/${schoolSlug}/agenda`) return "agenda";
   return "gantt";
+}
+
+function zoomOptionsForView(view: PublicViewerView) {
+  if (view === "calendar") return [];
+  if (view === "agenda") return ["week", "month"] as const;
+  return undefined;
 }

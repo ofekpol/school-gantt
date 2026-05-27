@@ -70,7 +70,7 @@ export function AgendaList({ weeks, emptyLabel, mode = "week" }: Props) {
   return (
     <div className="px-4 pt-4">
       <section key={period.key} aria-labelledby={`agenda-period-${period.key}`}>
-        <header className="mb-3 flex items-center justify-between gap-3">
+        <header className="mb-3 flex items-center justify-center gap-2">
           <PeriodButton
             label={t(mode === "month" ? "previousMonth" : "previousWeek")}
             disabled={selectedIndex === 0}
@@ -80,7 +80,7 @@ export function AgendaList({ weeks, emptyLabel, mode = "week" }: Props) {
           </PeriodButton>
           <h2
             id={`agenda-period-${period.key}`}
-            className="text-center text-sm font-semibold text-neutral-500"
+            className="min-w-36 text-center text-sm font-semibold text-neutral-500"
           >
             {period.label}
           </h2>

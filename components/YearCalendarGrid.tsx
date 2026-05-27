@@ -57,7 +57,7 @@ export function YearCalendarGrid({
         className="calendar-month rounded-md border border-neutral-200 bg-white p-2 sm:p-4 print:border-0 print:rounded-none"
         aria-label={`${tm(String(month.monthIndex) as `${number}`)} ${month.year}`}
       >
-        <header className="mb-3 flex items-center justify-between gap-3 print:mb-2">
+        <header className="mb-3 flex items-center justify-center gap-2 print:mb-2">
           <PeriodButton
             label={tv("previousMonth")}
             disabled={selectedIndex === 0}
@@ -65,7 +65,7 @@ export function YearCalendarGrid({
           >
             <ChevronRight className="size-4" aria-hidden="true" />
           </PeriodButton>
-          <div className="text-center">
+          <div className="min-w-36 text-center">
             <h2 className="text-lg font-bold">
               {tm(String(month.monthIndex) as `${number}`)} {month.year}
             </h2>

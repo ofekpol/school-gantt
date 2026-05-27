@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PublicViewerShell } from "@/components/PublicViewerShell";
 import type { PublicViewerEvent } from "@/lib/views/public-viewer";
 
@@ -64,6 +64,10 @@ const event: PublicViewerEvent = {
   isUpdated: false,
 };
 
+afterEach(() => {
+  cleanup();
+});
+
 describe("PublicViewerShell grade filter", () => {
   it("removes deselected grades from the Gantt rows immediately", async () => {
     const user = userEvent.setup();
@@ -96,3 +100,45 @@ describe("PublicViewerShell grade filter", () => {
     expect(screen.getByText("grade-8")).toBeInTheDocument();
   });
 });
+
+describe("PublicViewerShell zoom controls", () => {
+  it("hides zoom controls on calendar view", () => {
+    renderPublicViewer("calendar");
+
+    expect(screen.queryByRole("radiogroup", { name: "זום" })).not.toBeInTheDocument();
+  });
+
+  it("limits agenda zoom controls to week and month", () => {
+    renderPublicViewer("agenda");
+
+    expect(screen.getByRole("radio", { name: "שבוע" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "חודש" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "סמסטר" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "שנה" })).not.toBeInTheDocument();
+  });
+});
+
+function renderPublicViewer(initialView: "gantt" | "calendar" | "agenda") {
+  window.history.replaceState(null, "", `/demo-school${initialView === "gantt" ? "" : `/${initialView}`}`);
+
+  return render(
+    <PublicViewerShell
+      schoolSlug="demo-school"
+      schoolName="Demo School"
+      initialView={initialView}
+      initialParams={{ grades: [], types: [], q: "", zoom: "year", week: null }}
+      year={{ label: "2026", startDate: "2026-09-01", endDate: "2027-07-31" }}
+      eventTypes={[{
+        id: "type-1",
+        key: "trip",
+        labelHe: "טיול",
+        labelEn: "Trip",
+        colorHex: "#0ea5e9",
+        glyph: "compass",
+        sortOrder: 1,
+      }]}
+      initialEvents={[event]}
+      initialEventsSignature="1:1:now"
+    />,
+  );
+}

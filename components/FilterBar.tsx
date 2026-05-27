@@ -20,6 +20,7 @@ interface Props {
   selectedTypes: string[];
   searchQuery: string;
   zoom: ZoomLevel;
+  zoomOptions?: readonly ZoomLevel[];
   onChange?: (next: {
     grades: number[];
     types: string[];
@@ -43,6 +44,7 @@ export function FilterBar({
   selectedTypes,
   searchQuery,
   zoom,
+  zoomOptions,
   onChange,
 }: Props) {
   const t = useTranslations("agenda.filter");
@@ -56,7 +58,11 @@ export function FilterBar({
   const [localZoom, setLocalZoom] = useState(zoom);
   const effectiveGrades = onChange ? localGrades : selectedGrades;
   const effectiveTypes = onChange ? localTypes : selectedTypes;
-  const effectiveZoom = onChange ? localZoom : zoom;
+  const visibleZoomOptions = zoomOptions
+    ? ZOOM_OPTIONS.filter((option) => zoomOptions.includes(option.value))
+    : ZOOM_OPTIONS;
+  const rawZoom = onChange ? localZoom : zoom;
+  const effectiveZoom = normalizeZoom(rawZoom, visibleZoomOptions);
   useEffect(() => setQ(searchQuery), [searchQuery]);
   useEffect(() => setLocalGrades(selectedGrades), [selectedGrades]);
   useEffect(() => setLocalTypes(selectedTypes), [selectedTypes]);
@@ -217,37 +223,38 @@ export function FilterBar({
           <button type="submit" className="sr-only" aria-hidden="true" />
         </form>
 
-        {/* Zoom segmented */}
-        <div
-          role="radiogroup"
-          aria-label="זום"
-          className="flex shrink-0 items-center rounded-lg p-0.5 gap-0.5"
-          style={{
-            background: "var(--sg-surface-2)",
-            border: "1px solid var(--sg-hairline)",
-          }}
-        >
-          {ZOOM_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              role="radio"
-              aria-checked={effectiveZoom === opt.value}
-              onClick={() => setZoom(opt.value)}
-              className="rounded-md px-3 py-1 text-[13px] font-medium cursor-pointer"
-              style={{
-                appearance: "none",
-                border: "none",
-                background: effectiveZoom === opt.value ? "var(--sg-surface)" : "transparent",
-                color: effectiveZoom === opt.value ? "var(--sg-ink)" : "var(--sg-ink-mute)",
-                boxShadow: effectiveZoom === opt.value ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                transition: "background 0.1s, color 0.1s",
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        {visibleZoomOptions.length > 0 && (
+          <div
+            role="radiogroup"
+            aria-label="זום"
+            className="flex shrink-0 items-center rounded-lg p-0.5 gap-0.5"
+            style={{
+              background: "var(--sg-surface-2)",
+              border: "1px solid var(--sg-hairline)",
+            }}
+          >
+            {visibleZoomOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={effectiveZoom === opt.value}
+                onClick={() => setZoom(opt.value)}
+                className="rounded-md px-3 py-1 text-[13px] font-medium cursor-pointer"
+                style={{
+                  appearance: "none",
+                  border: "none",
+                  background: effectiveZoom === opt.value ? "var(--sg-surface)" : "transparent",
+                  color: effectiveZoom === opt.value ? "var(--sg-ink)" : "var(--sg-ink-mute)",
+                  boxShadow: effectiveZoom === opt.value ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  transition: "background 0.1s, color 0.1s",
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -347,4 +354,11 @@ function SearchIcon() {
 function setMulti(params: URLSearchParams, key: string, values: string[]): void {
   params.delete(key);
   for (const v of values.slice().sort()) params.append(key, v);
+}
+
+function normalizeZoom(
+  zoom: ZoomLevel,
+  options: { value: ZoomLevel; label: string }[],
+): ZoomLevel {
+  return options.some((option) => option.value === zoom) ? zoom : options[0]?.value ?? zoom;
 }
