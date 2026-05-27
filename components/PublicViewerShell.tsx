@@ -81,6 +81,10 @@ export function PublicViewerShell({
     () => hydratePublicEvents(filteredEvents),
     [filteredEvents],
   );
+  const visibleGrades = useMemo(
+    () => (params.grades.length > 0 ? params.grades : ALL_GRADES),
+    [params.grades],
+  );
 
   useEffect(() => {
     const syncFromLocation = () => {
@@ -144,6 +148,7 @@ export function PublicViewerShell({
           serializedEvents={filteredEvents}
           year={year}
           params={params}
+          grades={visibleGrades}
           emptyLabel={gantt("empty")}
         />
       )}
@@ -219,30 +224,32 @@ const MemoGantt = memo(function MemoGantt({
   serializedEvents,
   year,
   params,
+  grades,
   emptyLabel,
 }: {
   events: ReturnType<typeof hydratePublicEvents>;
   serializedEvents: PublicViewerEvent[];
   year: PublicViewerYear;
   params: PublicViewerParams;
+  grades: number[];
   emptyLabel: string;
 }) {
   if (params.zoom === "week") {
     const model = buildWeeklyModel(
       parseWeekParam(params.week ?? undefined),
       events,
-      ALL_GRADES,
+      grades,
       new Date(),
     );
     return <GanttWeekly model={model} events={serializedEvents} navigationMode="local" />;
   }
-  const model = buildGanttModel({ year, grades: ALL_GRADES, events });
+  const model = buildGanttModel({ year, grades, events });
   return (
     <GanttCanvas
       events={serializedEvents}
       bars={model.bars}
       months={model.months}
-      grades={ALL_GRADES}
+      grades={grades}
       zoom={params.zoom}
       emptyLabel={emptyLabel}
     />
