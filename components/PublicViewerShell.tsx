@@ -160,7 +160,11 @@ export function PublicViewerShell({
         />
       )}
       {deferredView === "agenda" && (
-        <MemoAgenda events={hydratedEvents} emptyLabel={agenda("empty")} />
+        <MemoAgenda
+          events={hydratedEvents}
+          emptyLabel={agenda("empty")}
+          mode={params.zoom === "month" ? "month" : "week"}
+        />
       )}
     </main>
   );
@@ -199,11 +203,13 @@ function ViewTabs({
 const MemoAgenda = memo(function MemoAgenda({
   events,
   emptyLabel,
+  mode,
 }: {
   events: ReturnType<typeof hydratePublicEvents>;
   emptyLabel: string;
+  mode: "week" | "month";
 }) {
-  return <AgendaList weeks={groupByWeek(events)} emptyLabel={emptyLabel} />;
+  return <AgendaList weeks={groupByWeek(events)} emptyLabel={emptyLabel} mode={mode} />;
 });
 
 const MemoCalendar = memo(function MemoCalendar({

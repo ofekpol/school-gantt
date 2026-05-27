@@ -217,6 +217,12 @@
     "empty": "No events match the current filter.",
     "noDetails": "No additional details.",
     "location": "Location",
+    "canceled": "Canceled",
+    "updated": "Updated",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
     "filter": {
       "ariaLabel": "Event filters",
       "searchLabel": "Search by title",
@@ -254,7 +260,12 @@
   },
   "calendar": {
     "subtitle": "Printable yearly calendar",
-    "noActiveYear": "No active academic year has been configured."
+    "noActiveYear": "No active academic year has been configured.",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "newEventOnDate": "New event on {date}",
+    "canceled": "Canceled",
+    "updated": "Updated"
   },
   "profile": {
     "title": "My profile",

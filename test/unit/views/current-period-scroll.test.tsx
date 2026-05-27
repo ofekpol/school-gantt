@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { AgendaList } from "@/components/AgendaList";
 import { GanttCanvas } from "@/components/Gantt/GanttCanvas";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
@@ -22,11 +22,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   vi.useRealTimers();
 });
 
 describe("current period scrolling", () => {
-  it("scrolls the yearly calendar to the current month", () => {
+  it("shows the current calendar month and switches months with arrows", async () => {
     render(
       <YearCalendarGrid
         months={[calendarMonth(9), calendarMonth(10), calendarMonth(11)]}
@@ -35,10 +36,16 @@ describe("current period scrolling", () => {
       />,
     );
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "auto" });
+    expect(screen.getByRole("heading", { name: "10 2026" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "9 2026" })).not.toBeInTheDocument();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "previousMonth" }));
+
+    expect(screen.getByRole("heading", { name: "9 2026" })).toBeInTheDocument();
   });
 
-  it("scrolls the agenda to the current or next rendered week", () => {
+  it("shows the current agenda week and switches weeks with arrows", async () => {
     render(
       <AgendaList
         weeks={[agendaWeek("2026-10-11"), agendaWeek("2026-10-18")]}
@@ -46,7 +53,30 @@ describe("current period scrolling", () => {
       />,
     );
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "auto" });
+    expect(screen.getByRole("heading", { name: /11 באוק׳/ })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /18 באוק׳/ })).not.toBeInTheDocument();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "nextWeek" }));
+
+    expect(screen.getByRole("heading", { name: /18 באוק׳/ })).toBeInTheDocument();
+  });
+
+  it("shows one agenda month at a time in monthly mode", () => {
+    render(
+      <AgendaList
+        weeks={[agendaWeek("2026-10-11"), agendaWeek("2026-11-01")]}
+        emptyLabel="empty"
+        mode="month"
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "אוקטובר 2026" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "נובמבר 2026" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "nextMonth" }));
+
+    expect(screen.getByRole("heading", { name: "נובמבר 2026" })).toBeInTheDocument();
   });
 
   it("scrolls the non-week Gantt timeline to the current month", () => {
@@ -85,16 +115,16 @@ function calendarMonth(monthIndex: number): CalendarMonth {
 function agendaWeek(weekStart: string): AgendaWeek {
   return {
     weekStart,
-    items: [event()],
+    items: [event(`${weekStart}T09:00:00.000Z`)],
   };
 }
 
-function event() {
+function event(startAt = "2026-10-15T09:00:00.000Z") {
   return {
     id: "event-1",
     title: "טיול",
-    startAt: new Date("2026-10-15T09:00:00.000Z"),
-    endAt: new Date("2026-10-15T10:00:00.000Z"),
+    startAt: new Date(startAt),
+    endAt: new Date(new Date(startAt).getTime() + 60 * 60 * 1000),
     allDay: false,
     description: null,
     location: null,

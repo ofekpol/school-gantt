@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarMonth } from "@/lib/views/calendar";
 import { readableTextColor } from "@/lib/colors";
 import { findCurrentMonthStart } from "@/lib/views/current-period";
@@ -15,11 +16,9 @@ interface Props {
 }
 
 /**
- * Renders one printable page per month. Day cells show truncated event chips
- * colored by event type. The print stylesheet adds page breaks between
- * months and adjusts cell size for A4 / A3. Monochrome fallback uses the
- * event-type glyph + dashed border so chips remain distinguishable when
- * printed in black-and-white.
+ * Renders one month at a time. Day cells show truncated event chips colored by
+ * event type. Monochrome fallback uses the event-type glyph + dashed border so
+ * chips remain distinguishable when printed in black-and-white.
  */
 export function YearCalendarGrid({
   months,
@@ -31,7 +30,7 @@ export function YearCalendarGrid({
   const tm = useTranslations("months");
   const tw = useTranslations("weekdays");
   const tc = useTranslations("common");
-  const monthRefs = useRef(new Map<string, HTMLElement>());
+  const tv = useTranslations("calendar");
   const currentMonthStart = findCurrentMonthStart(
     months.map((month, index) => ({
       startDate: `${month.year}-${String(month.monthIndex).padStart(2, "0")}-01`,
@@ -40,110 +39,163 @@ export function YearCalendarGrid({
       widthPct: 1,
     })),
   );
+  const [selectedIndex, setSelectedIndex] = useState(() =>
+    initialMonthIndex(months, currentMonthStart),
+  );
 
   useEffect(() => {
-    if (!currentMonthStart) return;
-    monthRefs.current.get(currentMonthStart)?.scrollIntoView({
-      block: "start",
-      behavior: "auto",
-    });
-  }, [currentMonthStart]);
+    setSelectedIndex((current) => Math.min(current, Math.max(months.length - 1, 0)));
+  }, [months.length]);
+
+  const month = months[selectedIndex];
+
+  if (!month) return null;
 
   return (
     <div className="year-calendar p-4">
-      {months.map((m) => (
-        <section
-          key={`${m.year}-${m.monthIndex}`}
-          ref={(node) => {
-            const key = `${m.year}-${String(m.monthIndex).padStart(2, "0")}-01`;
-            if (node) monthRefs.current.set(key, node);
-            else monthRefs.current.delete(key);
-          }}
-          className="calendar-month scroll-mt-28 bg-white rounded-md border border-neutral-200 p-2 mb-4 sm:p-4 sm:mb-6 print:mb-0 print:border-0 print:rounded-none"
-          style={{ contentVisibility: "auto", containIntrinsicSize: "720px" }}
-          aria-label={`${tm(String(m.monthIndex) as `${number}`)} ${m.year}`}
-        >
-          <header className="flex items-baseline justify-between mb-3 print:mb-2">
+      <section
+        className="calendar-month rounded-md border border-neutral-200 bg-white p-2 sm:p-4 print:border-0 print:rounded-none"
+        aria-label={`${tm(String(month.monthIndex) as `${number}`)} ${month.year}`}
+      >
+        <header className="mb-3 flex items-center justify-between gap-3 print:mb-2">
+          <PeriodButton
+            label={tv("previousMonth")}
+            disabled={selectedIndex === 0}
+            onClick={() => setSelectedIndex((index) => Math.max(index - 1, 0))}
+          >
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </PeriodButton>
+          <div className="text-center">
             <h2 className="text-lg font-bold">
-              {tm(String(m.monthIndex) as `${number}`)} {m.year}
+              {tm(String(month.monthIndex) as `${number}`)} {month.year}
             </h2>
             <p className="hidden print:block text-xs text-neutral-500">
               {schoolName} · {yearLabel}
             </p>
-          </header>
-          <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-neutral-500 mb-1">
-            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="py-1">
-                {tw(`short_${i}` as `short_${0 | 1 | 2 | 3 | 4 | 5 | 6}`)}
-              </div>
-            ))}
           </div>
-          <div className="grid grid-cols-7 gap-px bg-neutral-200">
-            {m.weeks.flatMap((w, wi) =>
-              w.days.map((day, di) => (
-                <div
-                  key={`${wi}-${di}`}
-                  className="calendar-day bg-white min-h-[64px] p-0.5 align-top sm:min-h-[88px] sm:p-1"
-                >
-                  {day && (
-                    <>
-                      {onDayClick ? (
-                        <button
-                          type="button"
-                          onClick={() => onDayClick(day.date)}
-                          aria-label={`אירוע חדש ב-${day.date}`}
-                          className="text-[11px] font-medium text-neutral-700 mb-0.5 hover:text-blue-600 cursor-pointer w-full text-start"
+          <PeriodButton
+            label={tv("nextMonth")}
+            disabled={selectedIndex === months.length - 1}
+            onClick={() => setSelectedIndex((index) => Math.min(index + 1, months.length - 1))}
+          >
+            <ChevronLeft className="size-4" aria-hidden="true" />
+          </PeriodButton>
+        </header>
+        <div className="mb-1 grid grid-cols-7 gap-px text-center text-xs font-medium text-neutral-500">
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="py-1">
+              {tw(`short_${i}` as `short_${0 | 1 | 2 | 3 | 4 | 5 | 6}`)}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-px bg-neutral-200">
+          {month.weeks.flatMap((w, wi) =>
+            w.days.map((day, di) => (
+              <div
+                key={`${wi}-${di}`}
+                className="calendar-day min-h-[64px] bg-white p-0.5 align-top sm:min-h-[88px] sm:p-1"
+              >
+                {day && (
+                  <>
+                    {onDayClick ? (
+                      <button
+                        type="button"
+                        onClick={() => onDayClick(day.date)}
+                        aria-label={tv("newEventOnDate", { date: day.date })}
+                        className="mb-0.5 w-full cursor-pointer text-start text-[11px] font-medium text-neutral-700 hover:text-blue-600"
+                      >
+                        {day.dayOfMonth}
+                      </button>
+                    ) : (
+                      <div className="mb-0.5 text-[11px] font-medium text-neutral-700">
+                        {day.dayOfMonth}
+                      </div>
+                    )}
+                    <ul className="space-y-0.5">
+                      {day.events.slice(0, 4).map((chip) => (
+                        <li
+                          key={chip.id}
+                          title={eventTitle(chip.title, chip.isCanceled, chip.isUpdated, tv)}
                         >
-                          {day.dayOfMonth}
-                        </button>
-                      ) : (
-                        <div className="text-[11px] font-medium text-neutral-700 mb-0.5">
-                          {day.dayOfMonth}
-                        </div>
-                      )}
-                      <ul className="space-y-0.5">
-                        {day.events.slice(0, 4).map((chip) => (
-                          <li
-                            key={chip.id}
-                            title={chip.isCanceled ? `מבוטל · ${chip.title}` : chip.isUpdated ? `עודכן · ${chip.title}` : chip.title}
+                          <button
+                            type="button"
+                            onClick={() => onEventClick?.(chip.eventId)}
+                            disabled={!onEventClick}
+                            className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
+                            style={{
+                              backgroundColor: chip.isCanceled ? "#fee2e2" : chip.eventTypeColor,
+                              color: chip.isCanceled ? "#991b1b" : readableTextColor(chip.eventTypeColor),
+                              textDecoration: chip.isCanceled ? "line-through" : "none",
+                            }}
                           >
-                            <button
-                              type="button"
-                              onClick={() => onEventClick?.(chip.eventId)}
-                              disabled={!onEventClick}
-                              className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
-                              style={{
-                                backgroundColor: chip.isCanceled ? "#fee2e2" : chip.eventTypeColor,
-                                color: chip.isCanceled ? "#991b1b" : readableTextColor(chip.eventTypeColor),
-                                textDecoration: chip.isCanceled ? "line-through" : "none",
-                              }}
-                            >
-                              <span aria-hidden="true" className="event-chip-glyph">
-                                {chip.eventTypeGlyph}
+                            <span aria-hidden="true" className="event-chip-glyph">
+                              {chip.eventTypeGlyph}
+                            </span>
+                            <span className="truncate">{chip.title}</span>
+                            {(chip.isCanceled || chip.isUpdated) && (
+                              <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
+                                {chip.isCanceled ? tv("canceled") : tv("updated")}
                               </span>
-                              <span className="truncate">{chip.title}</span>
-                              {(chip.isCanceled || chip.isUpdated) && (
-                                <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
-                                  {chip.isCanceled ? "בוטל" : "עודכן"}
-                                </span>
-                              )}
-                            </button>
-                          </li>
-                        ))}
-                        {day.events.length > 4 && (
-                          <li className="text-[9px] text-neutral-500">
-                            {tc("more", { count: day.events.length - 4 })}
-                          </li>
-                        )}
-                      </ul>
-                    </>
-                  )}
-                </div>
-              )),
-            )}
-          </div>
-        </section>
-      ))}
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                      {day.events.length > 4 && (
+                        <li className="text-[9px] text-neutral-500">
+                          {tc("more", { count: day.events.length - 4 })}
+                        </li>
+                      )}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )),
+          )}
+        </div>
+      </section>
     </div>
   );
+}
+
+function PeriodButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-700 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 print:hidden"
+    >
+      {children}
+    </button>
+  );
+}
+
+function initialMonthIndex(months: CalendarMonth[], currentMonthStart: string | null): number {
+  if (!currentMonthStart) return 0;
+  const index = months.findIndex(
+    (month) => `${month.year}-${String(month.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
+  );
+  return index >= 0 ? index : 0;
+}
+
+function eventTitle(
+  title: string,
+  isCanceled: boolean | undefined,
+  isUpdated: boolean | undefined,
+  t: ReturnType<typeof useTranslations<"calendar">>,
+): string {
+  if (isCanceled) return `${t("canceled")} · ${title}`;
+  if (isUpdated) return `${t("updated")} · ${title}`;
+  return title;
 }

@@ -217,6 +217,12 @@
     "empty": "אין אירועים תואמים לסינון הנוכחי.",
     "noDetails": "אין פרטים נוספים.",
     "location": "מיקום",
+    "canceled": "בוטל",
+    "updated": "עודכן",
+    "previousWeek": "שבוע קודם",
+    "nextWeek": "שבוע הבא",
+    "previousMonth": "חודש קודם",
+    "nextMonth": "חודש הבא",
     "filter": {
       "ariaLabel": "סינון אירועים",
       "searchLabel": "חיפוש לפי שם",
@@ -254,7 +260,12 @@
   },
   "calendar": {
     "subtitle": "לוח שנה מודפס",
-    "noActiveYear": "טרם הוגדרה שנת לימודים פעילה."
+    "noActiveYear": "טרם הוגדרה שנת לימודים פעילה.",
+    "previousMonth": "חודש קודם",
+    "nextMonth": "חודש הבא",
+    "newEventOnDate": "אירוע חדש ב-{date}",
+    "canceled": "מבוטל",
+    "updated": "עודכן"
   },
   "profile": {
     "title": "הפרופיל שלי",
