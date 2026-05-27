@@ -9,7 +9,7 @@ export function getPostLoginRedirect(user: StaffUserRecord | null): Route {
   if (!user.schoolId) return "/auth/pending";
 
   if (user.role === "viewer") {
-    return user.schoolSlug ? (`/${user.schoolSlug}/calendar` as Route) : "/auth/pending";
+    return user.schoolSlug ? (`/${user.schoolSlug}` as Route) : "/auth/pending";
   }
 
   return "/dashboard";

@@ -102,7 +102,7 @@ describe("POST /api/v1/auth/signin", () => {
     expect(body.redirectTo).toBe("/dashboard");
   });
 
-  it("redirects viewers to their school calendar after sign in", async () => {
+  it("redirects viewers to their school Gantt after sign in", async () => {
     getStaffMock.mockResolvedValue({
       id: "u1",
       status: "active",
@@ -125,7 +125,7 @@ describe("POST /api/v1/auth/signin", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe("ok");
-    expect(body.redirectTo).toBe("/demo-school/calendar");
+    expect(body.redirectTo).toBe("/demo-school");
   });
 
   it("returns 401 when staff_users row not found (no account)", async () => {
