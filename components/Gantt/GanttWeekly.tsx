@@ -316,31 +316,28 @@ function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
         position: "absolute", inset: 0,
         display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
       }}>
-        {days.map((d) => {
-          const cellStyle = {
-            borderInlineStart: "1px solid var(--sg-hairline-2)",
-            background: d.isWeekend
-              ? "repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in oklch, var(--sg-bg-deep) 80%, transparent) 8px 9px)"
-              : "transparent",
-          };
-          if (!onDayClick) {
-            return <div key={d.dayIndex} aria-hidden="true" style={cellStyle} />;
-          }
-          return (
-            <button
-              key={d.dayIndex}
-              type="button"
-              onClick={() => onDayClick(isoDate(d.date))}
-              aria-label={`אירוע חדש ב-${isoDate(d.date)}`}
-              style={{
-                ...cellStyle,
-                borderTop: "none", borderBottom: "none", borderInlineEnd: "none",
-                cursor: "pointer",
-                padding: 0,
-              }}
-            />
-          );
-        })}
+        {days.map((d) => (
+          <button
+            key={d.dayIndex}
+            type="button"
+            onClick={onDayClick ? () => onDayClick(isoDate(d.date)) : undefined}
+            disabled={!onDayClick}
+            aria-label={
+              onDayClick
+                ? `אירוע חדש ב-${isoDate(d.date)}`
+                : `${isoDate(d.date)}, שכבה ${row.grade}`
+            }
+            style={{
+              borderInlineStart: "1px solid var(--sg-hairline-2)",
+              borderTop: "none", borderBottom: "none", borderInlineEnd: "none",
+              background: d.isWeekend
+                ? "repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in oklch, var(--sg-bg-deep) 80%, transparent) 8px 9px)"
+                : "transparent",
+              cursor: onDayClick ? "pointer" : "default",
+              padding: 0,
+            }}
+          />
+        ))}
       </div>
 
       {/* Event bars */}
