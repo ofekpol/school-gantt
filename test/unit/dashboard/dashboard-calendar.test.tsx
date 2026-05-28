@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 import { buildWeeklyModel } from "@/lib/views/gantt-weekly";
 
@@ -38,6 +38,10 @@ vi.mock("@/components/dashboard/QuickEventDialog", () => ({
 
 const allGrades = [7, 8, 9, 10, 11, 12];
 
+afterEach(() => {
+  cleanup();
+});
+
 describe("DashboardCalendar grade filter", () => {
   it("removes deselected grades from the weekly rows immediately", async () => {
     const user = userEvent.setup();
@@ -67,5 +71,34 @@ describe("DashboardCalendar grade filter", () => {
 
     expect(screen.queryByText("grade-7")).not.toBeInTheDocument();
     expect(screen.getByText("grade-8")).toBeInTheDocument();
+  });
+});
+
+describe("DashboardCalendar read-only mode", () => {
+  it("hides event creation controls for viewers", () => {
+    const weeklyModel = buildWeeklyModel(
+      new Date(Date.UTC(2026, 4, 24)),
+      [],
+      allGrades,
+      new Date(Date.UTC(2026, 4, 25)),
+    );
+
+    render(
+      <DashboardCalendar
+        view="weekly"
+        weeklyModel={weeklyModel}
+        months={[]}
+        events={[]}
+        yearLabel="2026"
+        schoolName="Demo School"
+        yearBounds={null}
+        eventTypes={[]}
+        allowedGrades={allGrades}
+        selectedGrades={allGrades}
+        canCreateEvents={false}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "newEvent" })).not.toBeInTheDocument();
   });
 });

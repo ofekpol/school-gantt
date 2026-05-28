@@ -18,7 +18,6 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   if (user.status === "pending") redirect("/auth/pending");
   if (user.status === "deactivated") redirect("/auth/deactivated");
   if (user.mustChangePassword) redirect("/auth/change-password");
-  if (user.role === "viewer") redirect(user.schoolSlug ? `/${user.schoolSlug}` : "/auth/pending");
   const [navLinks, currentPath, t] = await Promise.all([
     buildNavLinks(user.role),
     getCurrentPath(),

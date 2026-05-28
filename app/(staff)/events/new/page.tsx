@@ -20,6 +20,7 @@ interface PageProps {
 export default async function NewEventPage({ searchParams }: PageProps) {
   const user = await getStaffUser();
   if (!user || !user.schoolId) redirect("/");
+  if (user.role === "viewer") redirect("/dashboard");
 
   const { resumeId, date } = await searchParams;
   const initialDate = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;

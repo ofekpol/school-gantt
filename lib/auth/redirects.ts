@@ -8,9 +8,5 @@ export function getPostLoginRedirect(user: StaffUserRecord | null): Route {
   if (user.mustChangePassword) return "/auth/change-password";
   if (!user.schoolId) return "/auth/pending";
 
-  if (user.role === "viewer") {
-    return user.schoolSlug ? (`/${user.schoolSlug}` as Route) : "/auth/pending";
-  }
-
   return "/dashboard";
 }

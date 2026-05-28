@@ -116,6 +116,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           eventTypes={eventTypeList}
           allowedGrades={allowedGrades}
           selectedGrades={gradeSelection.selectedGrades}
+          canCreateEvents={user.role !== "viewer"}
         />
       )}
 

@@ -45,6 +45,7 @@ interface Props {
   eventTypes: EventType[];
   allowedGrades: number[];
   selectedGrades: number[];
+  canCreateEvents?: boolean;
 }
 
 /**
@@ -63,6 +64,7 @@ export function DashboardCalendar({
   eventTypes,
   allowedGrades,
   selectedGrades,
+  canCreateEvents = true,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -250,13 +252,15 @@ export function DashboardCalendar({
             {t("viewMonthly")}
           </ToggleBtn>
         </div>
-        <button
-          type="button"
-          onClick={() => openNewEvent(new Date().toISOString().slice(0, 10))}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-        >
-          {t("newEvent")}
-        </button>
+        {canCreateEvents && (
+          <button
+            type="button"
+            onClick={() => openNewEvent(new Date().toISOString().slice(0, 10))}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+          >
+            {t("newEvent")}
+          </button>
+        )}
       </div>
 
       {shouldShowDashboardGradeFilter(allowedGradeOptions) && (
@@ -290,7 +294,7 @@ export function DashboardCalendar({
         <GanttWeekly
           model={displayWeeklyModel}
           events={displayEvents}
-          onDayClick={openNewEvent}
+          onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
           navigationMode="local"
         />
@@ -300,20 +304,22 @@ export function DashboardCalendar({
           months={displayMonths}
           yearLabel={yearLabel}
           schoolName={schoolName}
-          onDayClick={openNewEvent}
+          onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
         />
       )}
 
-      <QuickEventDialog
-        open={pendingDate !== null}
-        dateIso={pendingDate}
-        yearBounds={yearBounds}
-        eventTypes={eventTypes}
-        allowedGrades={allowedGradeOptions}
-        onClose={() => setPendingDate(null)}
-        onPublished={addPublishedEvent}
-      />
+      {canCreateEvents && (
+        <QuickEventDialog
+          open={pendingDate !== null}
+          dateIso={pendingDate}
+          yearBounds={yearBounds}
+          eventTypes={eventTypes}
+          allowedGrades={allowedGradeOptions}
+          onClose={() => setPendingDate(null)}
+          onPublished={addPublishedEvent}
+        />
+      )}
       <EventDrawer
         event={
           selectedEvent

@@ -230,13 +230,13 @@ test.describe("VIEWER: viewer staff account experience", () => {
     }
   });
 
-  test("VIEWER-01: visiting /events/new redirects to public school page", async ({
+  test("VIEWER-01: visiting /events/new redirects to the read-only dashboard", async ({
     page,
   }) => {
     await page.goto("/events/new");
-    // Staff layout redirects viewer to /{schoolSlug}
+    // Viewers can use the dashboard, but cannot enter the event wizard.
     await expect(page).not.toHaveURL(/\/events\/new/, { timeout: 5_000 });
-    await expect(page.url()).toMatch(/demo-school|auth/);
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test("VIEWER-02: approved event appears on a public view (agenda)", async ({
