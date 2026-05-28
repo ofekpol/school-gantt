@@ -158,6 +158,52 @@ Events from the previous year remain readable but read-only.
 - Every school-data query must run inside `db.withSchool(schoolId, fn)`. Two known exceptions live in `lib/db/schools.ts` (slug lookup) and `lib/ical/subscriptions.ts` (token lookup) — both are keyed on a cryptographically-scoped value, document the why inline, and never read another tenant's data.
 - All status transitions go through `lib/events/approval.ts`. Never set `events.status` directly in a route handler.
 
-## 11. Versioning + releases
+## 12. Provisioning a new school (production tenant)
+
+For real (non-demo) schools, use `scripts/provision-school.ts` rather than the seed. The CLI creates the `schools` row, the active `academic_years` row, the 11 default `event_types`, and a Supabase Auth + `staff_users` admin record, then generates a one-time magic-link email via Resend.
+
+```bash
+pnpm provision:school \
+  --slug=kfar-galim \
+  --name="כפר גלים" \
+  --year-label=2026-2027 \
+  --year-start=2026-09-01 \
+  --year-end=2027-07-31 \
+  --admin-email=admin@example.com \
+  --admin-name="ישראל ישראלי"
+```
+
+Flags:
+
+| Flag | Required | Notes |
+|------|----------|-------|
+| `--slug` | yes | URL segment; `^[a-z0-9-]+$` |
+| `--name` | yes | Display name (Hebrew OK) |
+| `--year-label` | yes | e.g. `2026-2027` |
+| `--year-start` | yes | ISO `YYYY-MM-DD` |
+| `--year-end` | yes | ISO `YYYY-MM-DD`, after `--year-start` |
+| `--admin-email` | yes | First admin's real email |
+| `--admin-name` | yes | First admin's full name |
+| `--locale` | no | `he` (default) or `en` |
+| `--timezone` | no | default `Asia/Jerusalem` |
+| `--skip-email` | no | Print magic link to stdout instead of sending via Resend |
+
+Required env vars at run time: `DATABASE_URL` (prod pooler), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL`, and (unless `--skip-email`) `RESEND_API_KEY` + `RESEND_FROM_EMAIL`.
+
+Behavior:
+
+- Conflict on existing slug → exits 1 with `school with slug "..." already exists — refusing to clobber`.
+- Admin Supabase Auth user is created **without a password** — first sign-in is via the emailed magic link (1 h expiry, Supabase default).
+- After first sign-in the admin invites further staff via `/admin/staff` (the standard invite flow); the CLI never creates editors directly.
+
+Production cutover (one-time, per new Supabase project):
+
+1. Create the prod Supabase project; copy URL + anon + service-role keys + pooler `DATABASE_URL`.
+2. Update Vercel **Production** env vars to point at the prod Supabase. Keep **Preview** scope pointed at the dev Supabase.
+3. Apply migrations: `DATABASE_URL=<prod-pooler-url> pnpm db:migrate`.
+4. Run `pnpm provision:school …` with prod env loaded.
+5. `vercel --prod` to redeploy with the new env.
+
+## 13. Versioning + releases
 
 The repo is single-tenant per Vercel project — production state lives in the linked Supabase project. There is no separate version number. Schema migrations are forward-only.
