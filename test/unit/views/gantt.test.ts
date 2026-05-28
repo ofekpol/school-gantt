@@ -155,4 +155,45 @@ describe("buildGanttModel: positions events by date offset within the year", () 
     expect(model.months[0].monthIndex).toBe(9); // September
     expect(model.months[10].monthIndex).toBe(7); // July
   });
+
+  it("assigns different lanes to overlapping events in the same grade", () => {
+    const model = buildGanttModel({
+      year: YEAR,
+      grades: [7, 8, 9, 10, 11, 12],
+      events: [
+        eventForGrade("a", 10, "2026-10-01T08:00:00+03:00", "2026-10-03T16:00:00+03:00"),
+        eventForGrade("b", 10, "2026-10-02T08:00:00+03:00", "2026-10-04T16:00:00+03:00"),
+        eventForGrade("c", 10, "2026-10-05T08:00:00+03:00", "2026-10-06T16:00:00+03:00"),
+      ],
+    });
+
+    const lanes = new Map(model.bars.map((bar) => [bar.id, bar.lane]));
+
+    expect(lanes.get("a")).toBe(0);
+    expect(lanes.get("b")).toBe(1);
+    expect(lanes.get("c")).toBe(0);
+    expect(model.bars.every((bar) => bar.laneCount === 2)).toBe(true);
+  });
 });
+
+function eventForGrade(
+  id: string,
+  grade: number,
+  startAt: string,
+  endAt: string,
+): GanttInputEvent {
+  return {
+    id,
+    title: id,
+    startAt: new Date(startAt),
+    endAt: new Date(endAt),
+    allDay: false,
+    description: null,
+    location: null,
+    grades: [grade],
+    eventTypeKey: TYPE.key,
+    eventTypeLabelHe: TYPE.labelHe,
+    eventTypeColor: TYPE.colorHex,
+    eventTypeGlyph: TYPE.glyph,
+  };
+}

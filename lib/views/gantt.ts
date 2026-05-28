@@ -42,6 +42,10 @@ export interface GanttBar {
   rowStart: number;
   /** Number of rows this bar covers. */
   rowSpan: number;
+  /** Stacking lane inside the grade row for collision avoidance. */
+  lane: number;
+  /** Number of lanes needed by the busiest grade row this bar touches. */
+  laneCount: number;
   eventTypeKey: string;
   eventTypeLabelHe: string;
   eventTypeColor: string;
@@ -118,6 +122,8 @@ export function buildGanttModel(input: BuildGanttInput): GanttModel {
         widthPct,
         rowStart: run[0],
         rowSpan: run.length,
+        lane: 0,
+        laneCount: 1,
         eventTypeKey: evt.eventTypeKey,
         eventTypeLabelHe: evt.eventTypeLabelHe,
         eventTypeColor: evt.eventTypeColor,
@@ -130,7 +136,41 @@ export function buildGanttModel(input: BuildGanttInput): GanttModel {
   }
 
   const months = buildMonths(startMs, endMs, yearMs);
-  return { yearDays, bars, months };
+  return { yearDays, bars: assignLanes(bars, input.grades.length), months };
+}
+
+function assignLanes(bars: GanttBar[], gradeCount: number): GanttBar[] {
+  const laneEndsByRow = Array.from({ length: gradeCount }, () => [] as number[]);
+  const laneCountsByRow = Array.from({ length: gradeCount }, () => 1);
+  const sorted = [...bars].sort((a, b) => a.leftPct - b.leftPct || a.rowStart - b.rowStart);
+  const assigned: GanttBar[] = [];
+
+  for (const bar of sorted) {
+    const rowEnd = Math.min(bar.rowStart + bar.rowSpan, gradeCount);
+    const rows = range(bar.rowStart, rowEnd);
+    const endPct = bar.leftPct + bar.widthPct;
+    let lane = 0;
+
+    while (rows.some((row) => (laneEndsByRow[row][lane] ?? -Infinity) > bar.leftPct + 0.05)) {
+      lane++;
+    }
+
+    for (const row of rows) {
+      laneEndsByRow[row][lane] = endPct;
+      laneCountsByRow[row] = Math.max(laneCountsByRow[row], lane + 1);
+    }
+    assigned.push({ ...bar, lane, laneCount: 1 });
+  }
+
+  return assigned.map((bar) => {
+    const rowEnd = Math.min(bar.rowStart + bar.rowSpan, gradeCount);
+    const laneCount = Math.max(...range(bar.rowStart, rowEnd).map((row) => laneCountsByRow[row]));
+    return { ...bar, laneCount };
+  });
+}
+
+function range(start: number, end: number): number[] {
+  return Array.from({ length: Math.max(end - start, 0) }, (_, index) => start + index);
 }
 
 function contiguousRuns(sorted: number[]): number[][] {

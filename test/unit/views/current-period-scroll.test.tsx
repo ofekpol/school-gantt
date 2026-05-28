@@ -115,6 +115,30 @@ describe("current period scrolling", () => {
 
     expect(Number(dialog.style.zIndex)).toBeGreaterThan(eventZIndex);
   });
+
+  it("renders same-grade overlapping Gantt events in separate vertical lanes", () => {
+    render(
+      <GanttCanvas
+        events={[
+          eventItem("event-1", "טיול", "2026-10-15T09:00:00.000Z"),
+          eventItem("event-2", "מבחן", "2026-10-15T09:00:00.000Z"),
+        ]}
+        bars={[
+          bar({ id: "event-1", eventId: "event-1", title: "טיול", lane: 0, laneCount: 2 }),
+          bar({ id: "event-2", eventId: "event-2", title: "מבחן", lane: 1, laneCount: 2 }),
+        ]}
+        months={[month(9), month(10), month(11)]}
+        grades={[7]}
+        zoom="month"
+        emptyLabel="empty"
+      />,
+    );
+
+    const firstTop = screen.getByRole("button", { name: "טיול" }).style.top;
+    const secondTop = screen.getByRole("button", { name: "מבחן" }).style.top;
+
+    expect(firstTop).not.toBe(secondTop);
+  });
 });
 
 function month(monthIndex: number): GanttMonth {
@@ -142,9 +166,13 @@ function agendaWeek(weekStart: string): AgendaWeek {
 }
 
 function event(startAt = "2026-10-15T09:00:00.000Z") {
+  return eventItem("event-1", "טיול", startAt);
+}
+
+function eventItem(id: string, title: string, startAt: string) {
   return {
-    id: "event-1",
-    title: "טיול",
+    id,
+    title,
     startAt: new Date(startAt),
     endAt: new Date(new Date(startAt).getTime() + 60 * 60 * 1000),
     allDay: false,
@@ -158,7 +186,7 @@ function event(startAt = "2026-10-15T09:00:00.000Z") {
   };
 }
 
-function bar(): GanttBar {
+function bar(overrides: Partial<GanttBar> = {}): GanttBar {
   return {
     id: "event-1",
     eventId: "event-1",
@@ -167,9 +195,12 @@ function bar(): GanttBar {
     widthPct: 10,
     rowStart: 0,
     rowSpan: 1,
+    lane: 0,
+    laneCount: 1,
     eventTypeKey: "trip",
     eventTypeLabelHe: "טיול",
     eventTypeColor: "#0ea5e9",
     eventTypeGlyph: "compass",
+    ...overrides,
   };
 }
