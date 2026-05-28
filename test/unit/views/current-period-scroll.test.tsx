@@ -93,6 +93,28 @@ describe("current period scrolling", () => {
 
     expect(scrollIntoView).toHaveBeenCalledWith({ inline: "center", block: "nearest", behavior: "auto" });
   });
+
+  it("opens event details above computed Gantt event layers", () => {
+    render(
+      <GanttCanvas
+        events={[event()]}
+        bars={[bar()]}
+        months={[month(9), month(10), month(11)]}
+        grades={[7]}
+        zoom="month"
+        emptyLabel="empty"
+      />,
+    );
+
+    const eventButton = screen.getByRole("button", { name: "טיול" });
+    const eventZIndex = Number(eventButton.style.zIndex);
+
+    fireEvent.click(eventButton);
+
+    const dialog = screen.getByRole("dialog", { name: "טיול" });
+
+    expect(Number(dialog.style.zIndex)).toBeGreaterThan(eventZIndex);
+  });
 });
 
 function month(monthIndex: number): GanttMonth {

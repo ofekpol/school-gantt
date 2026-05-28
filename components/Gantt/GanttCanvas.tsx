@@ -12,6 +12,8 @@ import { findCurrentMonthStart } from "@/lib/views/current-period";
 const ROW_HEIGHT_PX = 72;
 const HEADER_HEIGHT_PX = 48;
 const GRADE_COLUMN_PX = 80;
+const EVENT_BAR_Z_INDEX_BASE = 10;
+const EVENT_BAR_Z_INDEX_MAX = 30;
 
 const HE_MONTHS: Record<number, { label: string; mono: string }> = {
   1:  { label: "ינואר",  mono: "JAN" },
@@ -142,7 +144,10 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
           {/* Event bars — smaller area gets higher z so they're always clickable */}
           {bars.map((bar) => {
             const area = bar.widthPct * bar.rowSpan;
-            const zIndex = 10 + Math.round(10000 / Math.max(area, 0.01));
+            const zIndex = Math.min(
+              EVENT_BAR_Z_INDEX_MAX,
+              EVENT_BAR_Z_INDEX_BASE + Math.round(10000 / Math.max(area, 0.01)),
+            );
             return <EventBarButton key={bar.id} bar={bar} zIndex={zIndex} onSelect={setSelectedId} />;
           })}
         </div>
