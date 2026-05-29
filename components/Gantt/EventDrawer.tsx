@@ -291,9 +291,18 @@ export function EventDrawer({
               <DetailRow
                 label="שעות"
                 value={
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                  <div
+                    dir="ltr"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr auto",
+                      gap: 8,
+                      alignItems: "center",
+                    }}
+                  >
                     <input
                       type="time"
+                      aria-label={t5("startLabel")}
                       value={draft.startTime}
                       disabled={draft.allDay}
                       onChange={(e) => patchDraft({ startTime: e.target.value })}
@@ -301,12 +310,16 @@ export function EventDrawer({
                     />
                     <input
                       type="time"
+                      aria-label={t5("endLabel")}
                       value={draft.endTime}
                       disabled={draft.allDay}
                       onChange={(e) => patchDraft({ endTime: e.target.value })}
                       style={inputStyle}
                     />
-                    <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, whiteSpace: "nowrap" }}>
+                    <label
+                      dir="rtl"
+                      style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, whiteSpace: "nowrap" }}
+                    >
                       <input
                         type="checkbox"
                         checked={draft.allDay}
