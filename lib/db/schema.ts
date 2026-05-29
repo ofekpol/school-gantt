@@ -238,6 +238,29 @@ export const eventRevisions = pgTable(
   ],
 );
 
+export const staffEventDismissals = pgTable(
+  "staff_event_dismissals",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    staffUserId: uuid("staff_user_id")
+      .notNull()
+      .references(() => staffUsers.id, { onDelete: "cascade" }),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    schoolIsolation,
+    uniqueIndex("staff_event_dismissals_staff_event_idx").on(t.staffUserId, t.eventId),
+    index("staff_event_dismissals_school_staff_idx").on(t.schoolId, t.staffUserId),
+    index("staff_event_dismissals_event_idx").on(t.eventId),
+  ],
+);
+
 export const icalSubscriptions = pgTable(
   "ical_subscriptions",
   {

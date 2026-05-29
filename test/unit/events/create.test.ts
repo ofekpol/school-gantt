@@ -12,6 +12,7 @@ vi.mock("@/lib/db/client", () => ({
 import {
   createDraft,
   deleteOrCancelEvent,
+  dismissCanceledEventForStaff,
   replaceEventGrades,
   softDelete,
   updateDraft,
@@ -321,6 +322,60 @@ describe("deleteOrCancelEvent: draft delete vs published cancel", () => {
         decision: "canceled",
         submittedBy: USER,
         decidedBy: USER,
+      }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dismissCanceledEventForStaff
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("dismissCanceledEventForStaff: personal canceled-event hiding", () => {
+  it("returns not_found when the event is not canceled", async () => {
+    useTx(
+      makeTx({
+        selectRows: [{ id: EVENT, status: "approved" }],
+      }),
+    );
+
+    expect(await dismissCanceledEventForStaff(SCHOOL, EVENT, USER)).toEqual({
+      status: "not_found",
+    });
+  });
+
+  it("records a dismissal for a canceled event without changing the event row", async () => {
+    const updateSpy = vi.fn();
+    const valuesSpy = vi.fn().mockReturnValue({
+      onConflictDoNothing: () => Promise.resolve([]),
+    });
+
+    withSchoolMock.mockImplementation(
+      async (_: unknown, fn: TxCallback) =>
+        fn({
+          select: () => ({
+            from: () => ({
+              where: () => ({
+                limit: () => Promise.resolve([{ id: EVENT, status: "canceled" }]),
+              }),
+            }),
+          }),
+          update: updateSpy,
+          insert: () => ({
+            values: valuesSpy,
+          }),
+        } as unknown as MockTx),
+    );
+
+    expect(await dismissCanceledEventForStaff(SCHOOL, EVENT, USER)).toEqual({
+      status: "dismissed",
+    });
+    expect(updateSpy).not.toHaveBeenCalled();
+    expect(valuesSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: EVENT,
+        schoolId: SCHOOL,
+        staffUserId: USER,
       }),
     );
   });

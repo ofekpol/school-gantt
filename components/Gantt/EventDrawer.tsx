@@ -13,6 +13,7 @@ interface Props {
   allowedGrades?: number[];
   onSave?: (patch: EventEditPatch) => Promise<boolean>;
   onDelete?: () => Promise<boolean>;
+  onDismiss?: () => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -58,6 +59,7 @@ export function EventDrawer({
   allowedGrades = [],
   onSave,
   onDelete,
+  onDismiss,
   onClose,
 }: Props) {
   const t = useTranslations("gantt.drawer");
@@ -75,6 +77,7 @@ export function EventDrawer({
   const [draft, setDraft] = useState<EventEditData | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -85,6 +88,7 @@ export function EventDrawer({
     setError("");
     setSaving(false);
     setDeleting(false);
+    setDismissing(false);
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -161,6 +165,18 @@ export function EventDrawer({
     setDeleting(false);
     if (!ok) {
       setError(td("deleteError"));
+    }
+  }
+
+  async function dismissEvent() {
+    if (!onDismiss) return;
+    const confirmed = window.confirm(td("dismissCanceledConfirm"));
+    if (!confirmed) return;
+    setDismissing(true);
+    const ok = await onDismiss();
+    setDismissing(false);
+    if (!ok) {
+      setError(td("dismissCanceledError"));
     }
   }
 
@@ -442,6 +458,11 @@ export function EventDrawer({
             </>
           )}
         </div>
+        {!editing && error && (
+          <p role="alert" style={{ margin: "0 14px 12px", borderRadius: 8, background: "#fef2f2", padding: "8px 10px", color: "#b91c1c", fontSize: 13 }}>
+            {error}
+          </p>
+        )}
 
         {/* Footer */}
         <div style={{
@@ -478,6 +499,20 @@ export function EventDrawer({
             </>
           ) : (
             <>
+              {event.isCanceled && onDismiss && (
+                <button
+                  type="button"
+                  onClick={dismissEvent}
+                  disabled={dismissing}
+                  style={{
+                    ...dangerButtonStyle,
+                    opacity: dismissing ? 0.55 : 1,
+                    cursor: dismissing ? "default" : "pointer",
+                  }}
+                >
+                  {dismissing ? td("dismissingCanceled") : td("dismissCanceled")}
+                </button>
+              )}
               {canEdit && (
                 <button
                   type="button"

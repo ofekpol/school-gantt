@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { withSchool } from "@/lib/db/client";
-import { eventGrades, eventRevisions, events } from "@/lib/db/schema";
+import { eventGrades, eventRevisions, events, staffEventDismissals } from "@/lib/db/schema";
 import type { EventDraftInput, EventQuickPublishInput } from "@/lib/validations/events";
 
 /**
@@ -254,6 +254,33 @@ export async function deleteOrCancelEvent(
 
     await tx.update(events).set({ deletedAt: new Date() }).where(eq(events.id, eventId));
     return "deleted" as const;
+  });
+
+  return { status: result };
+}
+
+export async function dismissCanceledEventForStaff(
+  schoolId: string,
+  eventId: string,
+  staffUserId: string,
+): Promise<{ status: "dismissed" | "not_found" }> {
+  const result = await withSchool(schoolId, async (tx) => {
+    const [row] = await tx
+      .select({ id: events.id, status: events.status })
+      .from(events)
+      .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
+      .limit(1);
+
+    if (!row || row.status !== "canceled") return "not_found" as const;
+
+    await tx
+      .insert(staffEventDismissals)
+      .values({ schoolId, staffUserId, eventId })
+      .onConflictDoNothing({
+        target: [staffEventDismissals.staffUserId, staffEventDismissals.eventId],
+      });
+
+    return "dismissed" as const;
   });
 
   return { status: result };

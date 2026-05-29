@@ -6,6 +6,7 @@ import {
   events,
   eventTypes,
   eventRevisions,
+  staffEventDismissals,
 } from "@/lib/db/schema";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 export type { AgendaItem, AgendaWeek } from "@/lib/views/agenda-model";
@@ -20,6 +21,8 @@ export interface AgendaFilters {
   /** Inclusive academic-year bounds (YYYY-MM-DD). When provided, only events
    *  whose startAt falls within [startDate, endDate] are returned. */
   yearBounds?: { startDate: string; endDate: string };
+  /** Hide canceled events this staff user personally dismissed. */
+  dismissedByStaffId?: string;
 }
 
 /**
@@ -68,6 +71,13 @@ export async function getAgendaForSchool(
     }
     if (filters.q && filters.q.trim().length > 0) {
       conditions.push(ilike(events.title, `%${filters.q.trim()}%`));
+    }
+    if (filters.dismissedByStaffId) {
+      conditions.push(sql`NOT EXISTS (
+        SELECT 1 FROM ${staffEventDismissals}
+        WHERE ${staffEventDismissals.eventId} = ${events.id}
+          AND ${staffEventDismissals.staffUserId} = ${filters.dismissedByStaffId}
+      )`);
     }
 
     const rows = await tx

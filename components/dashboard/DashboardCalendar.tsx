@@ -232,6 +232,17 @@ export function DashboardCalendar({
     return true;
   }
 
+  async function dismissSelectedCanceledEvent(): Promise<boolean> {
+    if (!selectedEvent?.isCanceled) return false;
+    const res = await fetch(`/api/v1/events/${selectedEvent.id}`, { method: "DELETE" });
+    if (!res.ok) return false;
+    const body = (await res.json().catch(() => null)) as { status?: string } | null;
+    if (body?.status !== "dismissed") return false;
+    setSelectedEventId(null);
+    setVisibleEvents((current) => current.filter((event) => event.id !== selectedEvent.id));
+    return true;
+  }
+
   function addPublishedEvent(event: SerializedEvent) {
     if (!eventMatchesGrades(event, selectedGradeState)) {
       refreshInBackground();
@@ -335,6 +346,7 @@ export function DashboardCalendar({
         allowedGrades={allowedGradeOptions}
         onSave={saveSelectedEvent}
         onDelete={deleteSelectedEvent}
+        onDismiss={dismissSelectedCanceledEvent}
         onClose={() => setSelectedEventId(null)}
       />
     </div>

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStaffUser } from "@/lib/auth/session";
 import { EventDraftSchema } from "@/lib/validations/events";
-import { updateDraft, deleteOrCancelEvent } from "@/lib/events/crud";
+import {
+  deleteOrCancelEvent,
+  dismissCanceledEventForStaff,
+  updateDraft,
+} from "@/lib/events/crud";
 import {
   getEditorAllowedGrades,
   getEventForEditor,
@@ -96,15 +100,28 @@ export async function DELETE(
 ): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.role === "viewer" || user.status !== "active" || user.mustChangePassword) {
+  if (user.status !== "active" || user.mustChangePassword) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
+  if (user.role === "viewer") {
+    const dismissResult = await dismissCanceledEventForStaff(user.schoolId!, id, user.id);
+    if (dismissResult.status === "not_found") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json(dismissResult, { status: 200 });
+  }
+
   const result = await deleteOrCancelEvent(user.schoolId!, id, user.id, user.role === "admin");
-  if (result.status === "not_found") {
+  if (result.status !== "not_found") {
+    invalidatePublicViewerCache(user.schoolSlug);
+    return NextResponse.json(result, { status: 200 });
+  }
+
+  const dismissResult = await dismissCanceledEventForStaff(user.schoolId!, id, user.id);
+  if (dismissResult.status === "not_found") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  invalidatePublicViewerCache(user.schoolSlug);
-  return NextResponse.json(result, { status: 200 });
+  return NextResponse.json(dismissResult, { status: 200 });
 }
