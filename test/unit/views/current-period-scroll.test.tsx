@@ -4,7 +4,7 @@ import { AgendaList } from "@/components/AgendaList";
 import { GanttCanvas } from "@/components/Gantt/GanttCanvas";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
 import type { AgendaWeek } from "@/lib/views/agenda-model";
-import type { CalendarMonth } from "@/lib/views/calendar";
+import type { CalendarChip, CalendarMonth } from "@/lib/views/calendar";
 import type { GanttBar, GanttMonth } from "@/lib/views/gantt";
 
 vi.mock("next-intl", () => ({
@@ -43,6 +43,41 @@ describe("current period scrolling", () => {
     fireEvent.click(screen.getByRole("button", { name: "previousMonth" }));
 
     expect(screen.getByRole("heading", { name: "9 2026" })).toBeInTheDocument();
+  });
+
+  it("opens a new event from the monthly day cell when editing is allowed", () => {
+    const onDayClick = vi.fn();
+    render(
+      <YearCalendarGrid
+        months={[calendarMonthWithDay()]}
+        yearLabel="2026"
+        schoolName="Demo"
+        onDayClick={onDayClick}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "newEventOnDate" }));
+
+    expect(onDayClick).toHaveBeenCalledWith("2026-10-15");
+  });
+
+  it("opens an existing monthly event for editing without opening a new event", () => {
+    const onDayClick = vi.fn();
+    const onEventClick = vi.fn();
+    render(
+      <YearCalendarGrid
+        months={[calendarMonthWithDay([calendarChip()])]}
+        yearLabel="2026"
+        schoolName="Demo"
+        onDayClick={onDayClick}
+        onEventClick={onEventClick}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "טיול" }));
+
+    expect(onEventClick).toHaveBeenCalledWith("event-1");
+    expect(onDayClick).not.toHaveBeenCalled();
   });
 
   it("shows the current agenda week and switches weeks with arrows", async () => {
@@ -155,6 +190,48 @@ function calendarMonth(monthIndex: number): CalendarMonth {
     year: 2026,
     monthIndex,
     weeks: [{ days: Array.from({ length: 7 }, () => null) }],
+  };
+}
+
+function calendarMonthWithDay(events: CalendarChip[] = []) {
+  return {
+    year: 2026,
+    monthIndex: 10,
+    weeks: [
+      {
+        days: [
+          null,
+          {
+            date: "2026-10-15",
+            dayOfMonth: 15,
+            weekday: 4,
+            inMonth: true,
+            events,
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
+      },
+    ],
+  } satisfies CalendarMonth;
+}
+
+function calendarChip() {
+  return {
+    id: "event-1",
+    eventId: "event-1",
+    title: "טיול",
+    eventTypeKey: "trip",
+    eventTypeLabelHe: "טיול",
+    eventTypeColor: "#0ea5e9",
+    eventTypeGlyph: "compass",
+    grades: [7],
+    status: "approved" as const,
+    isCanceled: false,
+    isUpdated: false,
   };
 }
 

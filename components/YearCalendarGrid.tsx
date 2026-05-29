@@ -93,25 +93,22 @@ export function YearCalendarGrid({
             w.days.map((day, di) => (
               <div
                 key={`${wi}-${di}`}
-                className="calendar-day min-h-[64px] bg-white p-0.5 align-top sm:min-h-[88px] sm:p-1"
+                className="calendar-day relative min-h-[64px] bg-white p-0.5 align-top sm:min-h-[88px] sm:p-1"
               >
                 {day && (
                   <>
-                    {onDayClick ? (
+                    {onDayClick && (
                       <button
                         type="button"
-                        onClick={() => onDayClick(day.date)}
                         aria-label={tv("newEventOnDate", { date: day.date })}
-                        className="mb-0.5 w-full cursor-pointer text-start text-[11px] font-medium text-neutral-700 hover:text-blue-600"
-                      >
-                        {day.dayOfMonth}
-                      </button>
-                    ) : (
-                      <div className="mb-0.5 text-[11px] font-medium text-neutral-700">
-                        {day.dayOfMonth}
-                      </div>
+                        onClick={() => onDayClick(day.date)}
+                        className="absolute inset-0 z-0 bg-transparent hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300"
+                      />
                     )}
-                    <ul className="space-y-0.5">
+                    <div className="pointer-events-none relative z-10 mb-0.5 text-[11px] font-medium text-neutral-700">
+                      {day.dayOfMonth}
+                    </div>
+                    <ul className="relative z-10 space-y-0.5">
                       {day.events.slice(0, 4).map((chip) => (
                         <li
                           key={chip.id}
@@ -119,7 +116,10 @@ export function YearCalendarGrid({
                         >
                           <button
                             type="button"
-                            onClick={() => onEventClick?.(chip.eventId)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onEventClick?.(chip.eventId);
+                            }}
                             disabled={!onEventClick}
                             className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
                             style={{
