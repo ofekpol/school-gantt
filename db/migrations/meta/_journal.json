@@ -64,6 +64,27 @@
       "when": 1779028800000,
       "tag": "0008_staff_event_dismissals",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780207200000,
+      "tag": "0009_disable_rls_on_unscoped_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780207260000,
+      "tag": "0010_revoke_postgrest_on_unscoped_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1780207320000,
+      "tag": "0011_revoke_rls_auto_enable_execute",
+      "breakpoints": true
     }
   ]
 }
