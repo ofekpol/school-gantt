@@ -2,6 +2,7 @@
 // via tsx outside the Next.js server runtime. It is also safe to call from server-only
 // Next.js code (Server Components / route handlers); never import from a Client Component.
 import { sql } from "drizzle-orm";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { z } from "zod";
 import { db, supabaseAdmin, withSchool } from "./client";
 import * as schema from "./schema";
@@ -58,10 +59,50 @@ export interface ProvisionSchoolResult {
   magicLinkExpiresAt: string;
 }
 
-/**
- * Resolve a Supabase Auth user by email; create if absent.
- * No password set — admin authenticates via magic link only.
- */
+type Tx = NodePgDatabase<typeof schema>;
+
+/** Insert the tenant root row. Throws when slug already taken — never clobbers. */
+async function insertSchool(input: ProvisionSchoolInput): Promise<string> {
+  const inserted = await db
+    .insert(schema.schools)
+    .values({
+      slug: input.slug,
+      name: input.name,
+      locale: input.locale,
+      timezone: input.timezone,
+    })
+    .onConflictDoNothing({ target: schema.schools.slug })
+    .returning({ id: schema.schools.id });
+  if (inserted.length === 0) {
+    throw new Error(`school with slug "${input.slug}" already exists — refusing to clobber`);
+  }
+  return inserted[0].id;
+}
+
+async function insertAcademicYear(
+  tx: Tx,
+  schoolId: string,
+  input: ProvisionSchoolInput,
+): Promise<string> {
+  const [year] = await tx
+    .insert(schema.academicYears)
+    .values({
+      schoolId,
+      label: input.yearLabel,
+      startDate: input.yearStart,
+      endDate: input.yearEnd,
+    })
+    .returning({ id: schema.academicYears.id });
+  return year.id;
+}
+
+async function insertDefaultEventTypes(tx: Tx, schoolId: string): Promise<void> {
+  for (const et of DEFAULT_EVENT_TYPES) {
+    await tx.insert(schema.eventTypes).values({ schoolId, ...et });
+  }
+}
+
+/** Resolve a Supabase Auth user by email; create if absent. No password — magic-link only. */
 async function ensureAuthUserPasswordless(email: string): Promise<string> {
   // listUsers is paginated; 200/page is enough for small prod projects.
   const { data: existing, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
@@ -82,6 +123,44 @@ async function ensureAuthUserPasswordless(email: string): Promise<string> {
   return data.user.id;
 }
 
+async function insertAdminStaffUser(
+  tx: Tx,
+  schoolId: string,
+  input: ProvisionSchoolInput,
+): Promise<string> {
+  const authUserId = await ensureAuthUserPasswordless(input.adminEmail);
+  await tx.insert(schema.staffUsers).values({
+    id: authUserId,
+    schoolId,
+    email: input.adminEmail,
+    fullName: input.adminName,
+    role: "admin",
+    status: "active",
+    mustChangePassword: false,
+  });
+  return authUserId;
+}
+
+async function generateAdminMagicLink(
+  adminEmail: string,
+): Promise<{ magicLinkUrl: string; magicLinkExpiresAt: string }> {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) throw new Error("NEXT_PUBLIC_APP_URL is required to build the magic-link redirect");
+  const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+    type: "magiclink",
+    email: adminEmail,
+    options: { redirectTo: `${appUrl.replace(/\/$/, "")}/dashboard` },
+  });
+  if (linkErr || !linkData?.properties?.action_link) {
+    throw new Error(`generateLink: ${linkErr?.message ?? "no action_link returned"}`);
+  }
+  // Supabase magic-link default OTP TTL is 3600s; reflect that for the email body.
+  return {
+    magicLinkUrl: linkData.properties.action_link,
+    magicLinkExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  };
+}
+
 /**
  * Provision a brand-new tenant: school row + academic year + 11 event types + admin staff user.
  * Idempotency: conflicts on slug throw — we never clobber an existing school.
@@ -92,82 +171,21 @@ export async function provisionSchool(
 ): Promise<ProvisionSchoolResult> {
   const input = ProvisionSchoolInput.parse(rawInput);
 
-  // 1. School row (no RLS on schools table — insert directly via db).
-  // ON CONFLICT DO NOTHING + RETURNING returns no rows when conflict, so we detect duplicates.
-  const inserted = await db
-    .insert(schema.schools)
-    .values({
-      slug: input.slug,
-      name: input.name,
-      locale: input.locale,
-      timezone: input.timezone,
-    })
-    .onConflictDoNothing({ target: schema.schools.slug })
-    .returning({ id: schema.schools.id });
+  const schoolId = await insertSchool(input);
 
-  if (inserted.length === 0) {
-    throw new Error(`school with slug "${input.slug}" already exists — refusing to clobber`);
-  }
-  const schoolId = inserted[0].id;
-
-  // 2-4. School-scoped data inside withSchool (RLS-enforced).
   const { academicYearId, adminAuthUserId } = await withSchool(schoolId, async (tx) => {
-    // 2. Academic year
-    const [year] = await tx
-      .insert(schema.academicYears)
-      .values({
-        schoolId,
-        label: input.yearLabel,
-        startDate: input.yearStart,
-        endDate: input.yearEnd,
-      })
-      .returning({ id: schema.academicYears.id });
-
-    // 3. Default event types (11 rows)
-    for (const et of DEFAULT_EVENT_TYPES) {
-      await tx.insert(schema.eventTypes).values({ schoolId, ...et });
-    }
-
-    // 4. Admin staff user — Supabase Auth + staff_users row keyed by authUserId
-    const authUserId = await ensureAuthUserPasswordless(input.adminEmail);
-    await tx.insert(schema.staffUsers).values({
-      id: authUserId,
-      schoolId,
-      email: input.adminEmail,
-      fullName: input.adminName,
-      role: "admin",
-      status: "active",
-      mustChangePassword: false,
-    });
-
-    return { academicYearId: year.id, adminAuthUserId: authUserId };
+    const yearId = await insertAcademicYear(tx, schoolId, input);
+    await insertDefaultEventTypes(tx, schoolId);
+    const authId = await insertAdminStaffUser(tx, schoolId, input);
+    return { academicYearId: yearId, adminAuthUserId: authId };
   });
 
-  // 5. Set active academic year (schools has no RLS so update outside withSchool).
+  // schools has no RLS, so this update runs outside withSchool.
   await db.execute(
     sql`UPDATE schools SET active_academic_year_id = ${academicYearId} WHERE id = ${schoolId}`,
   );
 
-  // 6. Generate magic link (1h default expiry) for admin first sign-in.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) throw new Error("NEXT_PUBLIC_APP_URL is required to build the magic-link redirect");
-  const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
-    type: "magiclink",
-    email: input.adminEmail,
-    options: { redirectTo: `${appUrl.replace(/\/$/, "")}/dashboard` },
-  });
-  if (linkErr || !linkData?.properties?.action_link) {
-    throw new Error(`generateLink: ${linkErr?.message ?? "no action_link returned"}`);
-  }
-  const magicLinkUrl = linkData.properties.action_link;
-  // Supabase magic-link default OTP TTL is 3600s; reflect that in the result for the email body.
-  const magicLinkExpiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const { magicLinkUrl, magicLinkExpiresAt } = await generateAdminMagicLink(input.adminEmail);
 
-  return {
-    schoolId,
-    academicYearId,
-    adminAuthUserId,
-    magicLinkUrl,
-    magicLinkExpiresAt,
-  };
+  return { schoolId, academicYearId, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
 }

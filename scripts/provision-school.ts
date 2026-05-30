@@ -1,6 +1,10 @@
 import "dotenv/config";
 import { parseArgs } from "node:util";
-import { provisionSchool } from "@/lib/db/provision";
+import {
+  provisionSchool,
+  type ProvisionSchoolInput,
+  type ProvisionSchoolResult,
+} from "@/lib/db/provision";
 import { sendWelcomeEmail } from "@/lib/email/welcome";
 
 /**
@@ -21,7 +25,23 @@ import { sendWelcomeEmail } from "@/lib/email/welcome";
  *   --timezone=...        (default Asia/Jerusalem)
  *   --skip-email          (do not call Resend; print magic link to stdout only)
  */
-async function main(): Promise<void> {
+
+const REQUIRED_FLAGS = [
+  "slug",
+  "name",
+  "year-label",
+  "year-start",
+  "year-end",
+  "admin-email",
+  "admin-name",
+] as const;
+
+interface ParsedFlags {
+  input: ProvisionSchoolInput;
+  skipEmail: boolean;
+}
+
+function parseFlags(): ParsedFlags {
   const { values } = parseArgs({
     options: {
       slug: { type: "string" },
@@ -38,62 +58,68 @@ async function main(): Promise<void> {
     strict: true,
   });
 
-  const required = [
-    "slug",
-    "name",
-    "year-label",
-    "year-start",
-    "year-end",
-    "admin-email",
-    "admin-name",
-  ] as const;
-  const missing = required.filter((k) => !values[k]);
+  const missing = REQUIRED_FLAGS.filter((k) => !values[k]);
   if (missing.length > 0) {
     console.error(`Missing required flags: ${missing.map((k) => `--${k}`).join(", ")}`);
     process.exit(1);
   }
 
   const locale = values.locale === "en" ? "en" : "he";
-
-  const result = await provisionSchool({
-    slug: values.slug!,
-    name: values.name!,
-    locale,
-    timezone: values.timezone ?? "Asia/Jerusalem",
-    yearLabel: values["year-label"]!,
-    yearStart: values["year-start"]!,
-    yearEnd: values["year-end"]!,
-    adminEmail: values["admin-email"]!,
-    adminName: values["admin-name"]!,
-  });
-
-  if (!values["skip-email"]) {
-    await sendWelcomeEmail({
-      to: values["admin-email"]!,
-      adminName: values["admin-name"]!,
-      schoolName: values.name!,
-      magicLinkUrl: result.magicLinkUrl,
-      expiresAt: new Date(result.magicLinkExpiresAt),
+  return {
+    input: {
+      slug: values.slug!,
+      name: values.name!,
       locale,
-    });
-  }
+      timezone: values.timezone ?? "Asia/Jerusalem",
+      yearLabel: values["year-label"]!,
+      yearStart: values["year-start"]!,
+      yearEnd: values["year-end"]!,
+      adminEmail: values["admin-email"]!,
+      adminName: values["admin-name"]!,
+    },
+    skipEmail: values["skip-email"] === true,
+  };
+}
 
+async function maybeSendWelcome(
+  flags: ParsedFlags,
+  result: ProvisionSchoolResult,
+): Promise<void> {
+  if (flags.skipEmail) return;
+  await sendWelcomeEmail({
+    to: flags.input.adminEmail,
+    adminName: flags.input.adminName,
+    schoolName: flags.input.name,
+    magicLinkUrl: result.magicLinkUrl,
+    expiresAt: new Date(result.magicLinkExpiresAt),
+    locale: flags.input.locale,
+  });
+}
+
+function reportResult(flags: ParsedFlags, result: ProvisionSchoolResult): void {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "(NEXT_PUBLIC_APP_URL unset)";
   console.log("");
   console.log("School provisioned successfully:");
   console.log(`  schoolId         = ${result.schoolId}`);
   console.log(`  academicYearId   = ${result.academicYearId}`);
-  console.log(`  public URL       = ${appUrl}/${values.slug}`);
-  console.log(`  admin email      = ${values["admin-email"]}`);
+  console.log(`  public URL       = ${appUrl}/${flags.input.slug}`);
+  console.log(`  admin email      = ${flags.input.adminEmail}`);
   console.log(`  admin authId     = ${result.adminAuthUserId}`);
   console.log(`  magic link       = ${result.magicLinkUrl}`);
   console.log(`  magic link until = ${result.magicLinkExpiresAt}`);
   console.log("");
-  if (values["skip-email"]) {
-    console.log("--skip-email set: deliver the magic link manually.");
-  } else {
-    console.log("Welcome email sent via Resend (no-op if RESEND_API_KEY unset).");
-  }
+  console.log(
+    flags.skipEmail
+      ? "--skip-email set: deliver the magic link manually."
+      : "Welcome email sent via Resend (no-op if RESEND_API_KEY unset).",
+  );
+}
+
+async function main(): Promise<void> {
+  const flags = parseFlags();
+  const result = await provisionSchool(flags.input);
+  await maybeSendWelcome(flags, result);
+  reportResult(flags, result);
 }
 
 main().catch((err: unknown) => {
