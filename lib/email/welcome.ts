@@ -1,4 +1,6 @@
-import "server-only";
+// NOTE: no `import "server-only"` — this helper is invoked by scripts/provision-school.ts
+// via tsx outside the Next.js server runtime. Safe to import from server-only Next.js
+// code; never import from a Client Component (Resend SDK requires the server).
 import { Resend } from "resend";
 
 export interface WelcomeEmailParams {

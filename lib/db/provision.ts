@@ -1,4 +1,6 @@
-import "server-only";
+// NOTE: no `import "server-only"` — this module is invoked by scripts/provision-school.ts
+// via tsx outside the Next.js server runtime. It is also safe to call from server-only
+// Next.js code (Server Components / route handlers); never import from a Client Component.
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, supabaseAdmin, withSchool } from "./client";
