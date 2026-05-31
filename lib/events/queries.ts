@@ -33,6 +33,37 @@ export async function getActiveAcademicYear(schoolId: string) {
 }
 
 /**
+ * Returns the raw grade and event-type scope filters for a staff user,
+ * to be forwarded as iCal subscription filters.
+ *
+ * Empty arrays mean "no restriction" (show all). Admins and viewers always
+ * get empty arrays. Editors get their configured scopes from editor_scopes.
+ */
+export async function getEditorScopeFilters(
+  schoolId: string,
+  staffUserId: string,
+  role: "editor" | "admin" | "viewer",
+): Promise<{ grades: number[]; eventTypeIds: string[] }> {
+  if (role !== "editor") return { grades: [], eventTypeIds: [] };
+
+  const rows = await withSchool(schoolId, (tx) =>
+    tx
+      .select({ scopeKind: editorScopes.scopeKind, scopeValue: editorScopes.scopeValue })
+      .from(editorScopes)
+      .where(eq(editorScopes.staffUserId, staffUserId)),
+  );
+
+  const grades = rows
+    .filter((r) => r.scopeKind === "grade")
+    .map((r) => Number(r.scopeValue));
+  const eventTypeIds = rows
+    .filter((r) => r.scopeKind === "event_type")
+    .map((r) => r.scopeValue);
+
+  return { grades, eventTypeIds };
+}
+
+/**
  * Returns grade numbers the editor is allowed to assign.
  * If the editor has zero grade-kind scopes (e.g. department editor),
  * returns all grades 7–12 per RESEARCH Open Question 4.

@@ -271,6 +271,9 @@
   },
   "profile": {
     "title": "My profile",
+    "googleCalendarTitle": "Add to Google Calendar",
+    "googleCalendarIntro": "Click to add your school events as a separate calendar in Google Calendar. Only events you have permission to see will be included.",
+    "addToGoogleCalendar": "Add to Google Calendar",
     "icalTitle": "iCal subscriptions",
     "icalIntro": "Create a URL to sync events to Google Calendar, Apple Calendar, etc. Optional grade / event-type filters.",
     "create": "New subscription",
