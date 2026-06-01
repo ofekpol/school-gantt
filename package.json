@@ -9,6 +9,7 @@
   "scripts": {
     "predev": "tsx scripts/check-db.ts",
     "dev": "next dev",
+    "prebuild": "tsx scripts/migrate.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -22,7 +23,8 @@
     "seed:perf": "tsx db/seed-perf.ts",
     "provision:school": "tsx scripts/provision-school.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate:drizzle": "drizzle-kit migrate",
     "playwright": "playwright test",
     "test:e2e:full": "cross-env ADMIN_E2E=1 TEST_LOGIN_ENABLED=1 playwright test --workers=1",
     "format": "prettier --write ."
