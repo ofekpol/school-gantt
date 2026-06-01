@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getStaffUserByAuthId,
   getStaffUserByEmail,
+  getStaffUserRecordByEmail,
   incrementLoginAttempts,
   resetLoginAttempts,
 } from "@/lib/db/staff";
@@ -67,8 +68,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     await resetLoginAttempts(staffUser.id);
   }
 
+  // Fall back to email-based lookup so users who authenticated via a different
+  // Supabase identity (e.g. email/password vs Google OAuth) still reach the dashboard.
+  const resolvedUser =
+    authedStaffUser ??
+    (data.user.email ? await getStaffUserRecordByEmail(data.user.email) : null);
+
   return NextResponse.json(
-    { status: "ok", redirectTo: getPostLoginRedirect(authedStaffUser) },
+    { status: "ok", redirectTo: getPostLoginRedirect(resolvedUser) },
     { status: 200 },
   );
 }

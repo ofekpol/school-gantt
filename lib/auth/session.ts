@@ -1,7 +1,7 @@
 import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getStaffUserByAuthId, type StaffUserRecord } from "@/lib/db/staff";
+import { getStaffUserByAuthId, getStaffUserRecordByEmail, type StaffUserRecord } from "@/lib/db/staff";
 
 /**
  * Returns the authenticated Supabase auth user or null.
@@ -25,5 +25,10 @@ export type { StaffUserRecord };
 export async function getStaffUser(): Promise<StaffUserRecord | null> {
   const authUser = await getSession();
   if (!authUser) return null;
-  return getStaffUserByAuthId(authUser.id);
+  const byId = await getStaffUserByAuthId(authUser.id);
+  if (byId) return byId;
+  // Fallback: look up by email. Handles the case where a user authenticates with a
+  // different Supabase identity (e.g. email/password) than the one used when their
+  // staff_users row was created (e.g. via Google OAuth with a different UUID).
+  return authUser.email ? getStaffUserRecordByEmail(authUser.email) : null;
 }

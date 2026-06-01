@@ -203,6 +203,26 @@ export async function getStaffUserByEmail(
   return row ?? null;
 }
 
+export async function getStaffUserRecordByEmail(email: string): Promise<StaffUserRecord | null> {
+  const [row] = await db
+    .select({
+      id: staffUsers.id,
+      schoolId: staffUsers.schoolId,
+      schoolSlug: schools.slug,
+      role: staffUsers.role,
+      status: staffUsers.status,
+      email: staffUsers.email,
+      fullName: staffUsers.fullName,
+      mustChangePassword: staffUsers.mustChangePassword,
+    })
+    .from(staffUsers)
+    .leftJoin(schools, eq(staffUsers.schoolId, schools.id))
+    .where(eq(staffUsers.email, email))
+    .limit(1);
+  if (!row) return null;
+  return row as StaffUserRecord;
+}
+
 export async function incrementLoginAttempts(
   staffUserId: string,
   currentAttempts: number,
