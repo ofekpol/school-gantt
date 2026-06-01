@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStaffUserFromEmailSignup, createStaffUserFromInvite, getStaffUserByAuthId } from "@/lib/db/staff";
-import { getInviteByToken, markInviteUsed } from "@/lib/db/invites";
+import { getInviteByToken, markInviteUsed, updateInviteUsedBy } from "@/lib/db/invites";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
@@ -40,6 +40,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       (invite.multiUse || !invite.usedAt);
 
     if (isValid) {
+      // For single-use invites, atomically claim the slot before creating the staff user
+      // to prevent duplicate redemptions from concurrent requests.
+      if (!invite.multiUse) {
+        const { affected } = await markInviteUsed(inviteToken, null, false);
+        if (affected === 0) {
+          return NextResponse.redirect(new URL(`/invite/${inviteToken}?error=expired`, origin));
+        }
+      }
+
       const staffUser = await createStaffUserFromInvite({
         authUserId: authUser.id,
         schoolId: invite.schoolId,
@@ -49,7 +58,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         gradeScopes: invite.gradeScopes,
         eventTypeScopes: invite.eventTypeScopes,
       });
-      await markInviteUsed(inviteToken, staffUser.id, invite.multiUse);
+
+      if (!invite.multiUse) {
+        await updateInviteUsedBy(inviteToken, staffUser.id);
+      }
+
       return NextResponse.redirect(new URL("/dashboard", origin));
     }
   }
