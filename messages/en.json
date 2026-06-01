@@ -135,7 +135,13 @@
       "inviteCopied": "Invite copied",
       "emailSent": "Email sent",
       "duplicateEmail": "Email address already exists",
-      "createError": "Creation error"
+      "createError": "Creation error",
+      "multiUse": "Reusable link",
+      "multiUseBadge": "Reusable",
+      "revokeInvite": "Revoke",
+      "revokeConfirm": "Revoke this invite?",
+      "inviteRevoked": "Invite revoked",
+      "revokeError": "Failed to revoke invite"
     },
     "eventTypes": {
       "title": "Event Types",
@@ -183,6 +189,14 @@
       "errorGeneric": "Something went wrong",
       "isRevision": "Revision of an approved event"
     }
+  },
+  "invite": {
+    "title": "You've been invited",
+    "roleLabel": "Role: {role}",
+    "register": "Create a new account",
+    "login": "Sign in with an existing account",
+    "unavailableTitle": "Invite unavailable",
+    "unavailableBody": "This invite link is expired, already used, or no longer exists."
   },
   "dashboard": {
     "title": "Dashboard",

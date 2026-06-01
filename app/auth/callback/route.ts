@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStaffUserFromInvite, getStaffUserByAuthId } from "@/lib/db/staff";
-import { getInviteByToken, markInviteUsed } from "@/lib/db/invites";
+import { getInviteByToken, markInviteUsed, updateInviteUsedBy } from "@/lib/db/invites";
 import { createPendingRegistration, getPendingRegistrationByAuthId } from "@/lib/db/pending";
 
 export async function GET(request: NextRequest) {
@@ -46,8 +46,22 @@ export async function GET(request: NextRequest) {
 
   if (inviteToken) {
     const invite = await getInviteByToken(inviteToken);
-    if (!invite || invite.usedAt || invite.expiresAt <= new Date()) {
+    const isValid =
+      invite &&
+      invite.expiresAt > new Date() &&
+      (invite.multiUse || !invite.usedAt);
+
+    if (!isValid) {
       return NextResponse.redirect(new URL(`/invite/${inviteToken}?error=expired`, origin));
+    }
+
+    // For single-use invites, atomically claim the slot before creating the staff user
+    // to prevent duplicate redemptions from concurrent requests.
+    if (!invite.multiUse) {
+      const { affected } = await markInviteUsed(inviteToken, null, false);
+      if (affected === 0) {
+        return NextResponse.redirect(new URL(`/invite/${inviteToken}?error=expired`, origin));
+      }
     }
 
     const created = await createStaffUserFromInvite({
@@ -59,7 +73,11 @@ export async function GET(request: NextRequest) {
       gradeScopes: invite.gradeScopes,
       eventTypeScopes: invite.eventTypeScopes,
     });
-    await markInviteUsed(inviteToken, created.id);
+
+    if (!invite.multiUse) {
+      await updateInviteUsedBy(inviteToken, created.id);
+    }
+
     return NextResponse.redirect(new URL(next, origin));
   }
 

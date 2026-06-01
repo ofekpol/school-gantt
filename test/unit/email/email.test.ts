@@ -80,7 +80,7 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       expiresAt: EXPIRES_AT,
     });
     const [payload] = sendMock.mock.calls[0];
-    expect(payload.subject).toBe("You've been invited to School Gantt");
+    expect(payload.subject).toBe("הוזמנת להצטרף למערכת גאנט בית הספר");
   });
 
   it("email text contains the invite URL", async () => {
@@ -112,7 +112,10 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       expiresAt: EXPIRES_AT,
     });
     const [payload] = sendMock.mock.calls[0];
-    expect(payload.text).toContain(EXPIRES_AT.toISOString());
+    // EXPIRES_AT is 2026-12-31 UTC which is 2027-01-01 in Asia/Jerusalem.
+    // The email formats via Intl.DateTimeFormat(Asia/Jerusalem), so expect the localised year.
+    const localYear = new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem", year: "numeric" }).format(EXPIRES_AT);
+    expect(payload.text).toContain(localYear);
   });
 
   it("falls back to the default from address when RESEND_FROM_EMAIL is not set", async () => {

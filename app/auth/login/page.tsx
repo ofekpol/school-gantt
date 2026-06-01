@@ -50,7 +50,10 @@ export default async function LoginPage({
 
         <p className="text-center text-sm text-muted-foreground">
           עדיין אין לכם חשבון?{" "}
-          <Link href="/auth/register" className="underline hover:text-foreground">
+          <Link
+            href={token ? `/auth/register?token=${token}` : "/auth/register"}
+            className="underline hover:text-foreground"
+          >
             הרשמה
           </Link>
         </p>

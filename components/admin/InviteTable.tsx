@@ -1,7 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { formatGradeLabel } from "@/lib/grades";
 
 interface InviteRow {
   id: string;
@@ -9,6 +12,7 @@ interface InviteRow {
   role: "editor" | "admin" | "viewer";
   gradeScopes: number[];
   eventTypeScopes: string[];
+  multiUse: boolean;
   expiresAt: Date | string;
   usedAt: Date | string | null;
 }
@@ -21,9 +25,23 @@ const EXPIRES_AT_FMT = new Intl.DateTimeFormat("he-IL", {
 
 export function InviteTable({ invites }: { invites: InviteRow[] }) {
   const t = useTranslations("admin.staff");
+  const router = useRouter();
+  const [revoking, setRevoking] = useState<string | null>(null);
 
   if (invites.length === 0) {
     return <p className="text-sm text-neutral-500">{t("noInvites")}</p>;
+  }
+
+  async function handleRevoke(id: string) {
+    if (!confirm(t("revokeConfirm"))) return;
+    setRevoking(id);
+    try {
+      const res = await fetch(`/api/v1/admin/staff/invites/${id}`, { method: "DELETE" });
+      if (res.ok) router.refresh();
+      else alert(t("revokeError"));
+    } finally {
+      setRevoking(null);
+    }
   }
 
   return (
@@ -41,26 +59,55 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
         <tbody>
           {invites.map((invite) => {
             const expired = new Date(invite.expiresAt) <= new Date();
-            const status = invite.usedAt ? t("used") : expired ? t("expired") : t("active");
+            const isActive = !invite.usedAt && !expired;
+            const status = invite.usedAt
+              ? t("used")
+              : expired
+                ? t("expired")
+                : t("active");
+            const scopeLabels = [
+              ...invite.gradeScopes.map((g) => formatGradeLabel(g)),
+              ...invite.eventTypeScopes,
+            ].join(", ");
             return (
               <tr key={invite.id} className="border-t border-neutral-100 hover:bg-neutral-50">
-                <td className="py-3 ps-4 pe-4">{t(`role${capitalize(invite.role)}`)}</td>
+                <td className="py-3 ps-4 pe-4">
+                  <span>{t(`role${capitalize(invite.role)}`)}</span>
+                  {invite.multiUse && (
+                    <span className="ms-2 rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700">
+                      {t("multiUseBadge")}
+                    </span>
+                  )}
+                </td>
                 <td className="max-w-[340px] py-3 pe-4 text-neutral-700">
-                  {[...invite.gradeScopes.map(String), ...invite.eventTypeScopes].join(", ") || "—"}
+                  {scopeLabels || "—"}
                 </td>
                 <td className="py-3 pe-4">{EXPIRES_AT_FMT.format(new Date(invite.expiresAt))}</td>
                 <td className="py-3 pe-4">{status}</td>
                 <td className="py-3 pe-4">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      const url = `${window.location.origin}/invite/${invite.token}`;
-                      void navigator.clipboard.writeText(url);
-                    }}
-                  >
-                    {t("copyInvite")}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        const url = `${window.location.origin}/invite/${invite.token}`;
+                        void navigator.clipboard.writeText(url);
+                      }}
+                    >
+                      {t("copyInvite")}
+                    </Button>
+                    {isActive && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        disabled={revoking === invite.id}
+                        onClick={() => handleRevoke(invite.id)}
+                      >
+                        {t("revokeInvite")}
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             );
