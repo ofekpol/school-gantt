@@ -47,8 +47,14 @@ export function EmailPasswordSignInForm() {
         return;
       }
 
+      const target = data.redirectTo ?? "/dashboard";
+      if (target === "/auth/login") {
+        setError("אירעה שגיאה בכניסה. נסו שוב או פנו למנהל המערכת");
+        setLoading(false);
+        return;
+      }
       // Keep loading=true — page unmounts on navigation, no need to reset.
-      router.replace(data.redirectTo ?? "/dashboard");
+      router.replace(target);
       router.refresh();
     } catch {
       setLoading(false);

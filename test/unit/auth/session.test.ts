@@ -10,8 +10,10 @@ vi.mock("@/lib/supabase/server", () => ({
 
 // Mock the new lib/db/staff module — keeps the unit test free of DB
 const getStaffUserByAuthIdMock = vi.fn();
+const getStaffUserRecordByEmailMock = vi.fn();
 vi.mock("@/lib/db/staff", () => ({
   getStaffUserByAuthId: (...args: unknown[]) => getStaffUserByAuthIdMock(...args),
+  getStaffUserRecordByEmail: (...args: unknown[]) => getStaffUserRecordByEmailMock(...args),
 }));
 
 import { getSession, getStaffUser } from "@/lib/auth/session";
@@ -61,6 +63,7 @@ describe("AUTH-04: getStaffUser()", () => {
   beforeEach(() => {
     getUserMock.mockReset();
     getStaffUserByAuthIdMock.mockReset();
+    getStaffUserRecordByEmailMock.mockReset();
   });
 
   it("returns null when no auth user", async () => {
@@ -72,6 +75,7 @@ describe("AUTH-04: getStaffUser()", () => {
   it("returns null when auth user has no matching staff_users row", async () => {
     getUserMock.mockResolvedValue({ data: { user: { id: "u1", email: "x@y" } }, error: null });
     getStaffUserByAuthIdMock.mockResolvedValue(null);
+    getStaffUserRecordByEmailMock.mockResolvedValue(null);
     await expect(getStaffUser()).resolves.toBeNull();
   });
 
