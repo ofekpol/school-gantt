@@ -135,7 +135,13 @@
       "inviteCopied": "ההזמנה הועתקה",
       "emailSent": "האימייל נשלח",
       "duplicateEmail": "כתובת אימייל קיימת",
-      "createError": "שגיאת יצירה"
+      "createError": "שגיאת יצירה",
+      "multiUse": "קישור רב-פעמי",
+      "multiUseBadge": "רב-פעמי",
+      "revokeInvite": "בטל",
+      "revokeConfirm": "לבטל את ההזמנה?",
+      "inviteRevoked": "ההזמנה בוטלה",
+      "revokeError": "שגיאה בביטול ההזמנה"
     },
     "eventTypes": {
       "title": "סוגי אירועים",
@@ -183,6 +189,14 @@
       "errorGeneric": "אירעה שגיאה",
       "isRevision": "עדכון של אירוע מאושר"
     }
+  },
+  "invite": {
+    "title": "הזמנה למערכת",
+    "roleLabel": "תפקיד: {role}",
+    "register": "הרשמה עם חשבון חדש",
+    "login": "כניסה עם חשבון קיים",
+    "unavailableTitle": "הקישור אינו תקף",
+    "unavailableBody": "הקישור פג תוקפו, כבר נוצל, או שאינו קיים."
   },
   "dashboard": {
     "title": "לוח שנה",

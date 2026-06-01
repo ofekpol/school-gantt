@@ -41,6 +41,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     gradeScopes: parsed.data.gradeScopes ?? [],
     eventTypeScopes: parsed.data.eventTypeScopes ?? [],
     expiresInHours: parsed.data.expiresInHours,
+    multiUse: parsed.data.multiUse,
     createdBy: user.id,
   });
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
