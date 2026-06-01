@@ -100,6 +100,11 @@ jobs:
         run: pnpm test
 
       - name: Build
+        # SKIP_MIGRATIONS=1: CI already applied migrations in the dedicated
+        # "Apply database migrations" step via psql; the prebuild hook would
+        # try to replay them and fail on existing objects.
+        env:
+          SKIP_MIGRATIONS: "1"
         run: pnpm build
 
       - name: Install Playwright browsers
