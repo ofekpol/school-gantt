@@ -33,37 +33,42 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const inviteToken = authUser.user_metadata?.invite_token as string | undefined;
 
   if (inviteToken) {
-    const invite = await getInviteByToken(inviteToken);
-    const isValid =
-      invite &&
-      invite.expiresAt > new Date() &&
-      (invite.multiUse || !invite.usedAt);
+    try {
+      const invite = await getInviteByToken(inviteToken);
+      const isValid =
+        invite &&
+        invite.expiresAt > new Date() &&
+        (invite.multiUse || !invite.usedAt);
 
-    if (isValid) {
-      // For single-use invites, atomically claim the slot before creating the staff user
-      // to prevent duplicate redemptions from concurrent requests.
-      if (!invite.multiUse) {
-        const { affected } = await markInviteUsed(inviteToken, null, false);
-        if (affected === 0) {
-          return NextResponse.redirect(new URL(`/invite/${inviteToken}?error=expired`, origin));
+      if (isValid) {
+        // For single-use invites, atomically claim the slot before creating the staff user
+        // to prevent duplicate redemptions from concurrent requests.
+        if (!invite.multiUse) {
+          const { affected } = await markInviteUsed(inviteToken, null, false);
+          if (affected === 0) {
+            return NextResponse.redirect(new URL(`/invite/${inviteToken}?error=expired`, origin));
+          }
         }
+
+        const staffUser = await createStaffUserFromInvite({
+          authUserId: authUser.id,
+          schoolId: invite.schoolId,
+          email,
+          fullName,
+          role: invite.role,
+          gradeScopes: invite.gradeScopes,
+          eventTypeScopes: invite.eventTypeScopes,
+        });
+
+        if (!invite.multiUse) {
+          await updateInviteUsedBy(inviteToken, staffUser.id);
+        }
+
+        return NextResponse.redirect(new URL("/dashboard", origin));
       }
-
-      const staffUser = await createStaffUserFromInvite({
-        authUserId: authUser.id,
-        schoolId: invite.schoolId,
-        email,
-        fullName,
-        role: invite.role,
-        gradeScopes: invite.gradeScopes,
-        eventTypeScopes: invite.eventTypeScopes,
-      });
-
-      if (!invite.multiUse) {
-        await updateInviteUsedBy(inviteToken, staffUser.id);
-      }
-
-      return NextResponse.redirect(new URL("/dashboard", origin));
+    } catch {
+      // Invite processing failed (e.g. schema mismatch during migration) —
+      // fall through to create a pending registration so the user isn't stranded.
     }
   }
 
