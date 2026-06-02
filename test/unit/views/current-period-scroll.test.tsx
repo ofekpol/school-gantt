@@ -43,6 +43,10 @@ describe("current period scrolling", () => {
     fireEvent.click(screen.getByRole("button", { name: "previousMonth" }));
 
     expect(screen.getByRole("heading", { name: "9 2026" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "backToToday" }));
+
+    expect(screen.getByRole("heading", { name: "10 2026" })).toBeInTheDocument();
   });
 
   it("opens a new event from the monthly day cell when editing is allowed", () => {

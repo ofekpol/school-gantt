@@ -272,6 +272,7 @@
     "subtitle": "Printable yearly calendar",
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
+    "backToToday": "Back to today",
     "newEventOnDate": "New event on {date}",
     "canceled": "Canceled",
     "updated": "Updated"

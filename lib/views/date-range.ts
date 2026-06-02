@@ -20,20 +20,25 @@ export function buildCalendarRangeFromEvents(
     const start = toDate(event.startAt);
     const end = toDate(event.endAt);
     if (!start || !end) continue;
-    const eventMin = Math.min(start.getUTCFullYear(), end.getUTCFullYear());
-    const eventMax = Math.max(start.getUTCFullYear(), end.getUTCFullYear());
+    const eventMin = schoolCycleStartYear(start);
+    const eventMax = Math.max(eventMin + 1, end.getUTCFullYear());
     minYear = minYear === null ? eventMin : Math.min(minYear, eventMin);
     maxYear = maxYear === null ? eventMax : Math.max(maxYear, eventMax);
   }
 
   minYear ??= now.getUTCFullYear();
-  maxYear ??= minYear;
+  maxYear ??= minYear + 1;
+  maxYear = Math.max(maxYear, minYear + 1);
 
   return {
     label: minYear === maxYear ? String(minYear) : `${minYear}-${maxYear}`,
     startDate: `${minYear}-01-01`,
     endDate: `${maxYear}-12-31`,
   };
+}
+
+function schoolCycleStartYear(date: Date): number {
+  return date.getUTCMonth() >= 7 ? date.getUTCFullYear() : date.getUTCFullYear() - 1;
 }
 
 function toDate(value: Date | string): Date | null {

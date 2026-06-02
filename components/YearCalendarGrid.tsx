@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarMonth } from "@/lib/views/calendar";
 import { readableTextColor } from "@/lib/colors";
 import { findCurrentMonthStart } from "@/lib/views/current-period";
@@ -42,6 +42,11 @@ export function YearCalendarGrid({
   const [selectedIndex, setSelectedIndex] = useState(() =>
     initialMonthIndex(months, currentMonthStart),
   );
+  const currentMonthIndex = currentMonthStart
+    ? months.findIndex(
+        (item) => `${item.year}-${String(item.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
+      )
+    : -1;
 
   useEffect(() => {
     setSelectedIndex((current) => Math.min(current, Math.max(months.length - 1, 0)));
@@ -80,6 +85,13 @@ export function YearCalendarGrid({
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
           </PeriodButton>
+          <TodayButton
+            label={tv("backToToday")}
+            disabled={currentMonthIndex < 0}
+            onClick={() => {
+              if (currentMonthIndex >= 0) setSelectedIndex(currentMonthIndex);
+            }}
+          />
         </header>
         <div className="mb-1 grid grid-cols-7 gap-px text-center text-xs font-medium text-neutral-500">
           {[0, 1, 2, 3, 4, 5, 6].map((i) => (
@@ -154,6 +166,29 @@ export function YearCalendarGrid({
         </div>
       </section>
     </div>
+  );
+}
+
+function TodayButton({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 print:hidden"
+    >
+      <CalendarClock className="size-4" aria-hidden="true" />
+      <span>{label}</span>
+    </button>
   );
 }
 

@@ -272,6 +272,7 @@
     "subtitle": "לוח שנה מודפס",
     "previousMonth": "חודש קודם",
     "nextMonth": "חודש הבא",
+    "backToToday": "חזור להיום",
     "newEventOnDate": "אירוע חדש ב-{date}",
     "canceled": "מבוטל",
     "updated": "עודכן"
