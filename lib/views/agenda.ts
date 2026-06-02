@@ -18,9 +18,9 @@ export interface AgendaFilters {
   types?: string[];
   /** Free-text search across title (case-insensitive ILIKE). */
   q?: string;
-  /** Inclusive academic-year bounds (YYYY-MM-DD). When provided, only events
+  /** Inclusive date bounds (YYYY-MM-DD). When provided, only events
    *  whose startAt falls within [startDate, endDate] are returned. */
-  yearBounds?: { startDate: string; endDate: string };
+  dateBounds?: { startDate: string; endDate: string };
   /** Hide canceled events this staff user personally dismissed. */
   dismissedByStaffId?: string;
 }
@@ -44,8 +44,8 @@ export async function getAgendaForSchool(
       isNull(events.deletedAt),
     ];
 
-    if (filters.yearBounds) {
-      const { startDate, endDate } = filters.yearBounds;
+    if (filters.dateBounds) {
+      const { startDate, endDate } = filters.dateBounds;
       conditions.push(
         between(events.startAt, new Date(startDate), new Date(`${endDate}T23:59:59Z`)),
       );
@@ -133,7 +133,7 @@ export async function getAgendaForSchool(
 
 export async function getAgendaSignatureForSchool(
   schoolId: string,
-  filters: Pick<AgendaFilters, "yearBounds">,
+  filters: Pick<AgendaFilters, "dateBounds">,
 ): Promise<string> {
   return withSchool(schoolId, async (tx) => {
     const conditions = [
@@ -141,8 +141,8 @@ export async function getAgendaSignatureForSchool(
       isNull(events.deletedAt),
     ];
 
-    if (filters.yearBounds) {
-      const { startDate, endDate } = filters.yearBounds;
+    if (filters.dateBounds) {
+      const { startDate, endDate } = filters.dateBounds;
       conditions.push(
         between(events.startAt, new Date(startDate), new Date(`${endDate}T23:59:59Z`)),
       );

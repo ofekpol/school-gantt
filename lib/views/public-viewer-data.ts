@@ -1,9 +1,10 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { getSchoolBySlug, type PublicSchoolRecord } from "@/lib/db/schools";
-import { getActiveAcademicYear, listEventTypes } from "@/lib/events/queries";
+import { listEventTypes } from "@/lib/events/queries";
 import { getAgendaForSchool, getAgendaSignatureForSchool } from "@/lib/views/agenda";
 import { toPublicEventPayload, type PublicViewerEvent } from "@/lib/views/public-viewer";
+import { buildCalendarRangeFromEvents } from "@/lib/views/date-range";
 
 export interface PublicViewerEventType {
   id: string;
@@ -23,7 +24,7 @@ export interface PublicViewerYear {
 
 export interface PublicViewerData {
   school: PublicSchoolRecord;
-  year: PublicViewerYear | null;
+  year: PublicViewerYear;
   eventTypes: PublicViewerEventType[];
   events: PublicViewerEvent[];
   eventSignature: string;
@@ -50,26 +51,16 @@ async function loadPublicViewerDataUncached(slug: string): Promise<PublicViewerD
   const school = await getSchoolBySlug(slug);
   if (!school) return null;
 
-  const [year, eventTypes] = await Promise.all([
-    getActiveAcademicYear(school.id),
+  const [eventTypes, events, eventSignature] = await Promise.all([
     listEventTypes(school.id),
+    getAgendaForSchool(school.id, {}),
+    getAgendaSignatureForSchool(school.id, {}),
   ]);
-  const events = year
-    ? await getAgendaForSchool(school.id, {
-        yearBounds: { startDate: year.startDate, endDate: year.endDate },
-      })
-    : [];
-  const eventSignature = year
-    ? await getAgendaSignatureForSchool(school.id, {
-        yearBounds: { startDate: year.startDate, endDate: year.endDate },
-      })
-    : "no-active-year";
+  const year = buildCalendarRangeFromEvents(events);
 
   return {
     school,
-    year: year
-      ? { label: year.label, startDate: year.startDate, endDate: year.endDate }
-      : null,
+    year,
     eventTypes,
     events: events.map(toPublicEventPayload),
     eventSignature,
@@ -85,10 +76,5 @@ export async function loadPublicViewerEventSignature(slug: string): Promise<stri
   const school = await getSchoolBySlug(slug);
   if (!school) return null;
 
-  const year = await getActiveAcademicYear(school.id);
-  if (!year) return "no-active-year";
-
-  return getAgendaSignatureForSchool(school.id, {
-    yearBounds: { startDate: year.startDate, endDate: year.endDate },
-  });
+  return getAgendaSignatureForSchool(school.id, {});
 }

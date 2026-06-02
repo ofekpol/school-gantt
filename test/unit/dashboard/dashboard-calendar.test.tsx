@@ -87,9 +87,8 @@ describe("DashboardCalendar grade filter", () => {
         weeklyModel={weeklyModel}
         months={[]}
         events={[]}
-        yearLabel="2026"
+        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
         schoolName="Demo School"
-        yearBounds={null}
         eventTypes={[]}
         allowedGrades={allGrades}
         selectedGrades={allGrades}
@@ -118,9 +117,8 @@ describe("DashboardCalendar read-only mode", () => {
         weeklyModel={weeklyModel}
         months={[]}
         events={[]}
-        yearLabel="2026"
+        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
         schoolName="Demo School"
-        yearBounds={null}
         eventTypes={[]}
         allowedGrades={allGrades}
         selectedGrades={allGrades}
@@ -171,9 +169,8 @@ describe("DashboardCalendar canceled event dismissal", () => {
             canEdit: false,
           },
         ]}
-        yearLabel="2026"
+        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
         schoolName="Demo School"
-        yearBounds={null}
         eventTypes={[]}
         allowedGrades={allGrades}
         selectedGrades={allGrades}

@@ -14,9 +14,6 @@ import { sendWelcomeEmail } from "@/lib/email/welcome";
  *   pnpm provision:school \
  *     --slug=kfar-galim \
  *     --name="כפר גלים" \
- *     --year-label=2026-2027 \
- *     --year-start=2026-09-01 \
- *     --year-end=2027-07-31 \
  *     --admin-email=admin@example.com \
  *     --admin-name="ישראל ישראלי"
  *
@@ -29,9 +26,6 @@ import { sendWelcomeEmail } from "@/lib/email/welcome";
 const REQUIRED_FLAGS = [
   "slug",
   "name",
-  "year-label",
-  "year-start",
-  "year-end",
   "admin-email",
   "admin-name",
 ] as const;
@@ -48,9 +42,6 @@ function parseFlags(): ParsedFlags {
       name: { type: "string" },
       locale: { type: "string" },
       timezone: { type: "string" },
-      "year-label": { type: "string" },
-      "year-start": { type: "string" },
-      "year-end": { type: "string" },
       "admin-email": { type: "string" },
       "admin-name": { type: "string" },
       "skip-email": { type: "boolean", default: false },
@@ -71,9 +62,6 @@ function parseFlags(): ParsedFlags {
       name: values.name!,
       locale,
       timezone: values.timezone ?? "Asia/Jerusalem",
-      yearLabel: values["year-label"]!,
-      yearStart: values["year-start"]!,
-      yearEnd: values["year-end"]!,
       adminEmail: values["admin-email"]!,
       adminName: values["admin-name"]!,
     },
@@ -101,7 +89,6 @@ function reportResult(flags: ParsedFlags, result: ProvisionSchoolResult): void {
   console.log("");
   console.log("School provisioned successfully:");
   console.log(`  schoolId         = ${result.schoolId}`);
-  console.log(`  academicYearId   = ${result.academicYearId}`);
   console.log(`  public URL       = ${appUrl}/${flags.input.slug}`);
   console.log(`  admin email      = ${flags.input.adminEmail}`);
   console.log(`  admin authId     = ${result.adminAuthUserId}`);

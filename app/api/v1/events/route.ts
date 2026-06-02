@@ -4,11 +4,7 @@ import { getStaffUser } from "@/lib/auth/session";
 import { createDraft, updateDraft } from "@/lib/events/crud";
 import { publishEvent } from "@/lib/events/approval";
 import { EventDraftSchema } from "@/lib/validations/events";
-import { getEditorAllowedGrades } from "@/lib/events/queries";
-import {
-  getActiveAcademicYear,
-  getEditorDashboardEvents,
-} from "@/lib/events/queries";
+import { getEditorAllowedGrades, getEditorDashboardEvents } from "@/lib/events/queries";
 
 const CreateBodySchema = EventDraftSchema.extend({
   eventTypeId: z.string().uuid(),
@@ -41,12 +37,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { error: "Invalid input", details: parsed.error.flatten() },
       { status: 400 },
     );
-  }
-
-  // Guard: cannot create event without an active academic year (RESEARCH Pitfall 2)
-  const year = await getActiveAcademicYear(user.schoolId!);
-  if (!year) {
-    return NextResponse.json({ error: "no_active_year" }, { status: 409 });
   }
 
   const { eventTypeId, publish, ...draftFields } = parsed.data;

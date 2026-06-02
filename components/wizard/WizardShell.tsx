@@ -14,7 +14,6 @@ export interface EventType {
 }
 
 export interface WizardShellProps {
-  yearBounds: { startDate: string; endDate: string } | null;
   eventTypes: EventType[];
   allowedGrades: number[];
   resumeDraft: Record<string, unknown> | null;
@@ -62,7 +61,6 @@ function toApiBody(d: WizardData): Record<string, unknown> {
 }
 
 export function WizardShell({
-  yearBounds,
   eventTypes,
   allowedGrades,
   resumeDraft,
@@ -188,9 +186,6 @@ export function WizardShell({
       if (!draft.title?.trim()) return t4("errorRequired");
       if (draft.title.length > 120) return t4("errorTooLong");
       if (!draft.date) return t1("errorRequired");
-      if (yearBounds && (draft.date < yearBounds.startDate || draft.date > yearBounds.endDate)) {
-        return t1("errorOutOfYear");
-      }
       if (!draft.eventTypeId) return t3("errorRequired");
       if (!draft.grades || draft.grades.length === 0) return t2("errorRequired");
       if (!draft.allDay && draft.startAt && draft.endAt) {
@@ -200,7 +195,7 @@ export function WizardShell({
       }
       return "";
     },
-    [t1, t2, t3, t4, t5, yearBounds],
+    [t1, t2, t3, t4, t5],
   );
 
   const handleSaveDraft = useCallback(async () => {
@@ -308,8 +303,6 @@ export function WizardShell({
               <input
                 type="date"
                 value={data.date ?? ""}
-                min={yearBounds?.startDate}
-                max={yearBounds?.endDate}
                 onChange={(e) => patchData({ date: e.target.value })}
                 aria-label={t1("title")}
                 className="block min-h-12 w-full rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 text-base transition outline-none focus:border-sky-400 focus:bg-white"

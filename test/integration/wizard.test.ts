@@ -5,7 +5,6 @@ import * as schema from "@/lib/db/schema";
 import { createDraft, softDelete, updateDraft } from "@/lib/events/crud";
 import { publishEvent } from "@/lib/events/approval";
 import {
-  getActiveAcademicYear,
   getDraftForResume,
   getEditorAllowedGrades,
   getEditorDashboardEvents,
@@ -155,49 +154,6 @@ describe.skipIf(skipIfNoTestDb)("WIZARD-03: editor can resume draft from dashboa
     const { id } = await createDraft(testSchoolA, editorId, eventTypeId);
     const draft = await getDraftForResume(testSchoolA, id, editorId);
     expect(draft).not.toBeNull();
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// WIZARD-04: date picker bounded by active academic year
-// Server does not enforce 422; getActiveAcademicYear supplies the picker bounds.
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe.skipIf(skipIfNoTestDb)("WIZARD-04: date picker bounded by active academic year", () => {
-  beforeAll(async () => {
-    if (shouldSkip()) return;
-    const label = `wiz-yr-${randomUUID().slice(0, 8)}`;
-    const [year] = await testDb!
-      .insert(schema.academicYears)
-      .values({
-        schoolId: testSchoolA,
-        label,
-        startDate: "2030-09-01",
-        endDate: "2031-07-31",
-      })
-      .returning({ id: schema.academicYears.id });
-    await testDb!
-      .update(schema.schools)
-      .set({ activeAcademicYearId: year.id })
-      .where(eq(schema.schools.id, testSchoolA));
-  });
-
-  it("active academic year exposes start and end bounds for the picker", async () => {
-    const year = await getActiveAcademicYear(testSchoolA);
-    expect(year?.startDate).toBe("2030-09-01");
-    expect(year?.endDate).toBe("2031-07-31");
-  });
-
-  it("a date before the year start is outside the picker bounds", async () => {
-    const year = await getActiveAcademicYear(testSchoolA);
-    const within = "2030-08-31" >= year!.startDate && "2030-08-31" <= year!.endDate;
-    expect(within).toBe(false);
-  });
-
-  it("a date within the year boundaries is inside the picker bounds", async () => {
-    const year = await getActiveAcademicYear(testSchoolA);
-    const within = "2031-01-15" >= year!.startDate && "2031-01-15" <= year!.endDate;
-    expect(within).toBe(true);
   });
 });
 

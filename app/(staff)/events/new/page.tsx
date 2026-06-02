@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getStaffUser } from "@/lib/auth/session";
 import {
-  getActiveAcademicYear,
   getEditorAllowedGrades,
   getEventForEditor,
   listEventTypes,
@@ -25,17 +24,12 @@ export default async function NewEventPage({ searchParams }: PageProps) {
   const { resumeId, date } = await searchParams;
   const initialDate = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
 
-  const [activeYear, eventTypeList, allowedGradesRaw] = await Promise.all([
-    getActiveAcademicYear(user.schoolId),
+  const [eventTypeList, allowedGradesRaw] = await Promise.all([
     listEventTypes(user.schoolId),
     user.role === "editor"
       ? getEditorAllowedGrades(user.schoolId, user.id)
       : Promise.resolve([7, 8, 9, 10, 11, 12] as number[]),
   ]);
-
-  const yearBounds = activeYear
-    ? { startDate: activeYear.startDate, endDate: activeYear.endDate }
-    : null;
 
   const allowedGrades = allowedGradesRaw;
 
@@ -62,7 +56,6 @@ export default async function NewEventPage({ searchParams }: PageProps) {
 
   return (
     <WizardShell
-      yearBounds={yearBounds}
       eventTypes={eventTypeList}
       allowedGrades={allowedGrades}
       resumeDraft={resumeDraft}

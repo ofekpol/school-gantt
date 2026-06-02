@@ -4,14 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { StepProps } from "./WizardShell";
 
-interface Step1Props extends StepProps {
-  yearBounds: { startDate: string; endDate: string } | null;
-}
-
-/**
- * Step 1 — Date picker bounded by active academic year (WIZARD-04).
- */
-export function Step1Date({ data, saving, yearBounds, onNext }: Step1Props) {
+export function Step1Date({ data, saving, onNext }: StepProps) {
   const t = useTranslations("wizard.step1");
   const tc = useTranslations("common");
   const [date, setDate] = useState(data.date ?? "");
@@ -21,12 +14,6 @@ export function Step1Date({ data, saving, yearBounds, onNext }: Step1Props) {
     if (!date) {
       setError(t("errorRequired"));
       return;
-    }
-    if (yearBounds) {
-      if (date < yearBounds.startDate || date > yearBounds.endDate) {
-        setError(t("errorOutOfYear"));
-        return;
-      }
     }
     setError("");
     void onNext({ date });
@@ -40,8 +27,6 @@ export function Step1Date({ data, saving, yearBounds, onNext }: Step1Props) {
         <input
           type="date"
           value={date}
-          min={yearBounds?.startDate}
-          max={yearBounds?.endDate}
           onChange={(e) => setDate(e.target.value)}
           className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
         />

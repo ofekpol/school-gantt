@@ -14,7 +14,6 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
   const { school: slug } = await params;
   const [data, sp] = await Promise.all([loadPublicViewerData(slug), searchParams]);
   if (!data) notFound();
-  if (!data.year) return null;
 
   return (
     <PublicViewerShell

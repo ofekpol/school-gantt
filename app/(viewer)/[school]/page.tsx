@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
 import { PublicViewerShell } from "@/components/PublicViewerShell";
 import { loadPublicViewerData } from "@/lib/views/public-viewer-data";
 import { parsePublicViewerParams } from "@/lib/views/public-viewer";
@@ -17,7 +16,6 @@ export default async function GanttPage({ params, searchParams }: PageProps) {
   const sp = await searchParams;
   const data = await loadPublicViewerData(slug);
   if (!data) notFound();
-  if (!data.year) return <NoYearState />;
 
   return (
     <PublicViewerShell
@@ -38,15 +36,6 @@ function withGanttDefaultZoom(
   sp: Record<string, string | string[] | undefined>,
 ) {
   return sp.zoom === undefined ? { ...params, zoom: "week" as const } : params;
-}
-
-async function NoYearState() {
-  const t = await getTranslations("calendar");
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-50 p-6 text-neutral-500">
-      {t("noActiveYear")}
-    </main>
-  );
 }
 
 function toUrlSearchParams(sp: Record<string, string | string[] | undefined>): URLSearchParams {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStaffUser } from "@/lib/auth/session";
 import { createPublishedEvent } from "@/lib/events/crud";
-import { getActiveAcademicYear, getEditorAllowedGrades } from "@/lib/events/queries";
+import { getEditorAllowedGrades } from "@/lib/events/queries";
 import { EventQuickPublishSchema } from "@/lib/validations/events";
 import { invalidatePublicViewerCache } from "@/lib/views/public-viewer-data";
 
@@ -22,11 +22,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { error: "Invalid input", details: parsed.error.flatten() },
       { status: 400 },
     );
-  }
-
-  const year = await getActiveAcademicYear(user.schoolId!);
-  if (!year) {
-    return NextResponse.json({ error: "no_active_year" }, { status: 409 });
   }
 
   if (user.role !== "admin") {

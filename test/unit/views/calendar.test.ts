@@ -116,7 +116,7 @@ describe("buildCalendarModel: event distribution", () => {
     expect(octDays).toEqual([1, 2]);
   });
 
-  it("skips events fully outside the academic year", () => {
+  it("skips events fully outside the display range", () => {
     const evt = mkEvent(
       "summer",
       "2027-08-01T08:00:00+03:00",

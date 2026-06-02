@@ -8,7 +8,6 @@ import type { EventType } from "@/components/wizard/WizardShell";
 interface Props {
   open: boolean;
   dateIso: string | null;
-  yearBounds: { startDate: string; endDate: string } | null;
   eventTypes: EventType[];
   allowedGrades: number[];
   onClose: () => void;
@@ -64,7 +63,6 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 export function QuickEventDialog({
   open,
   dateIso,
-  yearBounds,
   eventTypes,
   allowedGrades,
   onClose,
@@ -114,9 +112,6 @@ export function QuickEventDialog({
   function validate(): string {
     if (!data.title.trim()) return t4("errorRequired");
     if (!data.date) return t1("errorRequired");
-    if (yearBounds && (data.date < yearBounds.startDate || data.date > yearBounds.endDate)) {
-      return t1("errorOutOfYear");
-    }
     if (!data.eventTypeId) return t3("errorRequired");
     if (data.grades.length === 0) return t2("errorRequired");
     if (!data.allDay && (!TIME_RE.test(data.startTime) || !TIME_RE.test(data.endTime))) {
@@ -244,8 +239,6 @@ export function QuickEventDialog({
               <input
                 type="date"
                 value={data.date}
-                min={yearBounds?.startDate}
-                max={yearBounds?.endDate}
                 onChange={(e) => patch({ date: e.target.value })}
                 aria-label={t1("title")}
                 className="h-10 w-full rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-3 text-sm outline-none focus:border-sky-400 focus:bg-white"

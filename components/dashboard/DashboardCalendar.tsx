@@ -10,6 +10,7 @@ import { QuickEventDialog } from "./QuickEventDialog";
 import { buildWeeklyModel, type WeeklyModel } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
 import type { CalendarMonth } from "@/lib/views/calendar";
+import type { CalendarRange } from "@/lib/views/date-range";
 import type { EventType } from "@/components/wizard/WizardShell";
 import { formatGradeLabel } from "@/lib/grades";
 import { shouldShowDashboardGradeFilter } from "@/lib/dashboard/grade-filter";
@@ -39,9 +40,8 @@ interface Props {
   weeklyModel?: WeeklyModel;
   months?: CalendarMonth[];
   events: SerializedEvent[];
-  yearLabel: string;
+  calendarRange: CalendarRange;
   schoolName: string;
-  yearBounds: { startDate: string; endDate: string } | null;
   eventTypes: EventType[];
   allowedGrades: number[];
   selectedGrades: number[];
@@ -58,9 +58,8 @@ export function DashboardCalendar({
   weeklyModel,
   months,
   events,
-  yearLabel,
+  calendarRange,
   schoolName,
-  yearBounds,
   eventTypes,
   allowedGrades,
   selectedGrades,
@@ -110,9 +109,8 @@ export function DashboardCalendar({
   }, [currentView, deferredSelectedGrades, hydratedEvents, weeklyModel]);
   const displayMonths = useMemo(() => {
     if (currentView !== "monthly") return months;
-    if (!yearBounds) return months;
     return buildCalendarModel({
-      year: yearBounds,
+      year: calendarRange,
       events: hydratedEvents.map((event) => ({
         id: event.id,
         title: event.title,
@@ -129,7 +127,7 @@ export function DashboardCalendar({
         isUpdated: event.isUpdated,
       })),
     }).months;
-  }, [currentView, hydratedEvents, months, yearBounds]);
+  }, [calendarRange, currentView, hydratedEvents, months]);
 
   useEffect(() => setCurrentView(view), [view]);
   useEffect(() => setVisibleEvents(events), [events]);
@@ -317,7 +315,7 @@ export function DashboardCalendar({
       {currentView === "monthly" && displayMonths && (
         <YearCalendarGrid
           months={displayMonths}
-          yearLabel={yearLabel}
+          yearLabel={calendarRange.label}
           schoolName={schoolName}
           onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
@@ -328,7 +326,6 @@ export function DashboardCalendar({
         <QuickEventDialog
           open={pendingDate !== null}
           dateIso={pendingDate}
-          yearBounds={yearBounds}
           eventTypes={eventTypes}
           allowedGrades={allowedGradeOptions}
           onClose={() => setPendingDate(null)}

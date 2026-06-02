@@ -6,10 +6,8 @@ vi.mock("@/lib/auth/session", () => ({
   getStaffUser: (...args: unknown[]) => getStaffUserMock(...args),
 }));
 
-const getActiveAcademicYearMock = vi.fn();
 const getEditorAllowedGradesMock = vi.fn();
 vi.mock("@/lib/events/queries", () => ({
-  getActiveAcademicYear: (...args: unknown[]) => getActiveAcademicYearMock(...args),
   getEditorAllowedGrades: (...args: unknown[]) => getEditorAllowedGradesMock(...args),
 }));
 
@@ -46,14 +44,9 @@ const ACTIVE_EDITOR = {
 describe("POST /api/v1/events/publish", () => {
   beforeEach(() => {
     getStaffUserMock.mockReset();
-    getActiveAcademicYearMock.mockReset();
     getEditorAllowedGradesMock.mockReset();
     createPublishedEventMock.mockReset();
     invalidatePublicViewerCacheMock.mockReset();
-    getActiveAcademicYearMock.mockResolvedValue({
-      startDate: "2030-09-01",
-      endDate: "2031-07-31",
-    });
     getEditorAllowedGradesMock.mockResolvedValue([9, 10]);
     createPublishedEventMock.mockResolvedValue({
       id: "00000000-0000-0000-0000-000000000123",
@@ -101,13 +94,6 @@ describe("POST /api/v1/events/publish", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 409 when no active academic year exists", async () => {
-    getStaffUserMock.mockResolvedValue(ACTIVE_EDITOR);
-    getActiveAcademicYearMock.mockResolvedValue(null);
-    const res = await POST(makeRequest(VALID_BODY));
-    expect(res.status).toBe(409);
-  });
-
   it("returns 403 when an editor selects an out-of-scope grade", async () => {
     getStaffUserMock.mockResolvedValue(ACTIVE_EDITOR);
     getEditorAllowedGradesMock.mockResolvedValue([10]);
@@ -130,5 +116,18 @@ describe("POST /api/v1/events/publish", () => {
       VALID_BODY,
     );
     expect(invalidatePublicViewerCacheMock).toHaveBeenCalledWith(ACTIVE_EDITOR.schoolSlug);
+  });
+
+  it("creates events without requiring an active academic year", async () => {
+    getStaffUserMock.mockResolvedValue(ACTIVE_EDITOR);
+
+    const res = await POST(makeRequest({
+      ...VALID_BODY,
+      startAt: "2035-08-15T08:00:00+02:00",
+      endAt: "2035-08-15T09:00:00+02:00",
+    }));
+
+    expect(res.status).toBe(201);
+    expect(createPublishedEventMock).toHaveBeenCalled();
   });
 });

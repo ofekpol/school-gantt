@@ -3,18 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const withSchoolMock = vi.fn();
-const dbSelectMock = vi.fn();
 
 vi.mock("@/lib/db/client", () => ({
   withSchool: (...args: unknown[]) => withSchoolMock(...args),
-  // db is only used in getActiveAcademicYear for the schools table (no RLS)
-  db: { select: (...args: unknown[]) => dbSelectMock(...args) },
 }));
 
 // ─── SUT ─────────────────────────────────────────────────────────────────────
 
 import {
-  getActiveAcademicYear,
   getDefaultEventType,
   getDraftForResume,
   getEditorAllowedGrades,
@@ -79,7 +75,6 @@ const EVENT_ID = "00000000-0000-0000-0000-000000000004";
 
 beforeEach(() => {
   withSchoolMock.mockReset();
-  dbSelectMock.mockReset();
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,37 +150,6 @@ describe("getEventForEditor: ownership, admin bypass, grades", () => {
     useTx(makeTx([[MOCK_EVENT_ROW], []])); // second select returns no grade rows
     const result = await getEventForEditor(SCHOOL, EVENT_ID, USER, false);
     expect(result?.grades).toEqual([]);
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// getActiveAcademicYear
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe("getActiveAcademicYear: null propagation and happy path", () => {
-  it("returns null when the school row is not found", async () => {
-    dbSelectMock.mockReturnValue(makeSelectChain([])); // no school row
-    expect(await getActiveAcademicYear(SCHOOL)).toBeNull();
-    expect(withSchoolMock).not.toHaveBeenCalled();
-  });
-
-  it("returns null when school has no activeAcademicYearId set", async () => {
-    dbSelectMock.mockReturnValue(makeSelectChain([{ activeYearId: null }]));
-    expect(await getActiveAcademicYear(SCHOOL)).toBeNull();
-    expect(withSchoolMock).not.toHaveBeenCalled();
-  });
-
-  it("returns the year object when the school has an active year", async () => {
-    const year = { id: "year-1", label: "2026-27", startDate: "2026-09-01", endDate: "2027-07-31" };
-    dbSelectMock.mockReturnValue(makeSelectChain([{ activeYearId: "year-1" }]));
-    useTx(makeTx([[year]]));
-    expect(await getActiveAcademicYear(SCHOOL)).toEqual(year);
-  });
-
-  it("returns null when the year id resolves to no row", async () => {
-    dbSelectMock.mockReturnValue(makeSelectChain([{ activeYearId: "year-1" }]));
-    useTx(makeTx([[]])); // withSchool tx finds no year row
-    expect(await getActiveAcademicYear(SCHOOL)).toBeNull();
   });
 });
 

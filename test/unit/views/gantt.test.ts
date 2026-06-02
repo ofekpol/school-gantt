@@ -130,7 +130,7 @@ describe("buildGanttModel: positions events by date offset within the year", () 
     expect(model.bars[0].leftPct + model.bars[0].widthPct).toBeCloseTo(100, 0);
   });
 
-  it("skips events fully outside the academic year", () => {
+  it("skips events fully outside the display range", () => {
     const evt: GanttInputEvent = {
       id: "outside",
       title: "summer break",

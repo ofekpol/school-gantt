@@ -1,36 +1,12 @@
 import "server-only";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
-import { db, withSchool } from "@/lib/db/client";
+import { withSchool } from "@/lib/db/client";
 import {
-  academicYears,
   editorScopes,
   eventGrades,
   events,
   eventTypes,
-  schools,
 } from "@/lib/db/schema";
-
-/**
- * Returns the active academic year for the school, or null if none is configured.
- * Uses db directly for schools query — schools table has no RLS.
- */
-export async function getActiveAcademicYear(schoolId: string) {
-  const [school] = await db
-    .select({ activeYearId: schools.activeAcademicYearId })
-    .from(schools)
-    .where(eq(schools.id, schoolId))
-    .limit(1);
-  if (!school?.activeYearId) return null;
-  const activeYearId = school.activeYearId;
-  const [year] = await withSchool(schoolId, (tx) =>
-    tx
-      .select()
-      .from(academicYears)
-      .where(eq(academicYears.id, activeYearId))
-      .limit(1),
-  );
-  return year ?? null;
-}
 
 /**
  * Returns grade numbers the editor is allowed to assign.

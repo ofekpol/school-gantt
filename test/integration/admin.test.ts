@@ -9,11 +9,6 @@ import {
   listEventTypes,
 } from "@/lib/admin/event-types";
 import {
-  createAcademicYear,
-  updateAcademicYear,
-  listAcademicYears,
-} from "@/lib/admin/years";
-import {
   createStaffUserFromInvite,
   updateStaffUser,
   listStaffUsers,
@@ -215,120 +210,6 @@ describe.skipIf(skipIfNoTestDb)(
       });
       expect(await deleteEventType(testSchoolA, id)).toEqual({ deleted: true });
       expect(await deleteEventType(testSchoolA, id)).toEqual({ deleted: false });
-    });
-  },
-);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN-03: Academic year CRUD
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe.skipIf(skipIfNoTestDb)(
-  "ADMIN-03: admin configures academic years",
-  () => {
-    let yearId: string;
-    const labelSuffix = randomUUID().slice(0, 8);
-
-    beforeAll(async () => {
-      if (shouldSkip()) return;
-      const result = await createAcademicYear(testSchoolA, {
-        label: `2030-${labelSuffix}`,
-        startDate: "2030-09-01",
-        endDate: "2031-07-31",
-      });
-      yearId = result.id;
-    });
-
-    it("createAcademicYear returns a valid id", async () => {
-      expect(typeof yearId).toBe("string");
-      expect(yearId.length).toBeGreaterThan(0);
-    });
-
-    it("createAcademicYear persists the row with correct fields", async () => {
-      const [row] = await testDb!
-        .select()
-        .from(schema.academicYears)
-        .where(eq(schema.academicYears.id, yearId));
-      expect(row.label).toBe(`2030-${labelSuffix}`);
-      expect(row.startDate).toBe("2030-09-01");
-      expect(row.endDate).toBe("2031-07-31");
-      expect(row.schoolId).toBe(testSchoolA);
-    });
-
-    it("createAcademicYear with setActive=true sets the school's active year", async () => {
-      const activeSuffix = randomUUID().slice(0, 8);
-      const { id } = await createAcademicYear(testSchoolA, {
-        label: `2031-${activeSuffix}`,
-        startDate: "2031-09-01",
-        endDate: "2032-07-31",
-        setActive: true,
-      });
-      const [school] = await testDb!
-        .select({ activeAcademicYearId: schema.schools.activeAcademicYearId })
-        .from(schema.schools)
-        .where(eq(schema.schools.id, testSchoolA));
-      expect(school.activeAcademicYearId).toBe(id);
-    });
-
-    it("updateAcademicYear updates label and endDate, returns {updated: true}", async () => {
-      const newLabel = `2030-updated-${labelSuffix}`;
-      const result = await updateAcademicYear(testSchoolA, yearId, {
-        label: newLabel,
-        endDate: "2031-08-31",
-      });
-      expect(result).toEqual({ updated: true });
-      const [row] = await testDb!
-        .select({ label: schema.academicYears.label, endDate: schema.academicYears.endDate })
-        .from(schema.academicYears)
-        .where(eq(schema.academicYears.id, yearId));
-      expect(row.label).toBe(newLabel);
-      expect(row.endDate).toBe("2031-08-31");
-    });
-
-    it("updateAcademicYear with only setActive=true sets the active year without modifying other fields", async () => {
-      const result = await updateAcademicYear(testSchoolA, yearId, { setActive: true });
-      expect(result).toEqual({ updated: true });
-      const [school] = await testDb!
-        .select({ activeAcademicYearId: schema.schools.activeAcademicYearId })
-        .from(schema.schools)
-        .where(eq(schema.schools.id, testSchoolA));
-      expect(school.activeAcademicYearId).toBe(yearId);
-    });
-
-    it("updateAcademicYear on a non-existent id returns {updated: false}", async () => {
-      const result = await updateAcademicYear(testSchoolA, randomUUID(), { label: "Ghost" });
-      expect(result).toEqual({ updated: false });
-    });
-
-    it("updateAcademicYear setActive-only on a non-existent id returns {updated: false}", async () => {
-      const result = await updateAcademicYear(testSchoolA, randomUUID(), { setActive: true });
-      expect(result).toEqual({ updated: false });
-    });
-
-    it("listAcademicYears returns years sorted by startDate descending", async () => {
-      // Create a second year to verify sort order
-      const sortSuffix = randomUUID().slice(0, 8);
-      await createAcademicYear(testSchoolA, {
-        label: `2028-${sortSuffix}`,
-        startDate: "2028-09-01",
-        endDate: "2029-07-31",
-      });
-      const years = await listAcademicYears(testSchoolA);
-      expect(years.length).toBeGreaterThan(1);
-      for (let i = 1; i < years.length; i++) {
-        expect(years[i].startDate <= years[i - 1].startDate).toBe(true);
-      }
-    });
-
-    it("cross-school: updateAcademicYear from school A on school B's year returns {updated: false}", async () => {
-      const schoolBSuffix = randomUUID().slice(0, 8);
-      const { id: schoolBYearId } = await createAcademicYear(testSchoolB, {
-        label: `2032-${schoolBSuffix}`,
-        startDate: "2032-09-01",
-        endDate: "2033-07-31",
-      });
-      const result = await updateAcademicYear(testSchoolA, schoolBYearId, { label: "Hack" });
-      expect(result).toEqual({ updated: false });
     });
   },
 );

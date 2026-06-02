@@ -1,7 +1,6 @@
 /**
- * Perf seed — fans out 1 000 approved events across the active academic
- * year for the demo school. Used by the Gantt 2 s / iCal 500 ms perf
- * checks.
+ * Perf seed — fans out 1 000 approved events across a calendar year for the
+ * demo school. Used by the Gantt 2 s / iCal 500 ms perf checks.
  *
  * Run: `pnpm seed:perf` (requires DATABASE_URL + the base seed to have
  * created the school + admin + event types).
@@ -23,20 +22,6 @@ async function main() {
     throw new Error("Run `pnpm seed` first — demo-school not found");
   }
 
-  // Need an active academic year to bound the date range.
-  const yearId = school.activeAcademicYearId;
-  if (!yearId) {
-    throw new Error("Active academic year not set for demo-school");
-  }
-  const [year] = await withSchool(school.id, (tx) =>
-    tx
-      .select()
-      .from(schema.academicYears)
-      .where(eq(schema.academicYears.id, yearId))
-      .limit(1),
-  );
-  if (!year) throw new Error("Active academic year row missing");
-
   // Pick any admin (auto-approval path requires one).
   const [admin] = await withSchool(school.id, (tx) =>
     tx
@@ -52,9 +37,10 @@ async function main() {
   );
   if (eventTypes.length === 0) throw new Error("No event types — run base seed");
 
-  const yearStartMs = new Date(year.startDate).getTime();
-  const yearEndMs = new Date(year.endDate).getTime();
-  const span = yearEndMs - yearStartMs;
+  const seedYear = Number(process.env.PERF_SEED_YEAR ?? new Date().getUTCFullYear());
+  const rangeStartMs = Date.UTC(seedYear, 0, 1);
+  const rangeEndMs = Date.UTC(seedYear, 11, 31, 23, 59, 59);
+  const span = rangeEndMs - rangeStartMs;
   const grades = [7, 8, 9, 10, 11, 12];
 
   console.log(`Seeding ${EVENT_COUNT} approved events for ${school.slug}…`);
@@ -64,7 +50,7 @@ async function main() {
     const rows: (typeof schema.events.$inferInsert)[] = [];
     for (let i = 0; i < EVENT_COUNT; i++) {
       const type = eventTypes[i % eventTypes.length];
-      const startMs = yearStartMs + Math.floor((span / EVENT_COUNT) * i);
+      const startMs = rangeStartMs + Math.floor((span / EVENT_COUNT) * i);
       const endMs = startMs + 90 * 60 * 1000; // 90 min duration
       rows.push({
         schoolId: school.id,

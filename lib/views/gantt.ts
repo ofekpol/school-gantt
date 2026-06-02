@@ -2,7 +2,7 @@
  * Gantt projection — pure logic; no DB access here.
  *
  * Layout model:
- *   - x-axis = academic year span (Sept..Jul). 0% = year start, 100% = year end.
+ *   - x-axis = caller-provided display range. 0% = range start, 100% = range end.
  *   - y-axis = one row per grade, in caller-provided order (default 7..12).
  *   - Multi-grade events emit one bar per contiguous run of grades, so e.g.
  *     a single event for grades 9-11 produces one bar with rowSpan=3 (PRD §6.4
@@ -225,7 +225,7 @@ export const ZOOM_LEVELS: ZoomLevel[] = ["week", "month", "term", "year"];
 
 /**
  * Maps a zoom preset to a horizontal scale multiplier applied to the
- * timeline track. `year` fits the full Sept..Jul span in the viewport;
+ * timeline track. `year` fits the full display range in the viewport;
  * deeper zoom widens the track so each month gets more pixels.
  * `week` is handled by GanttWeekly — this value is not used for it.
  */

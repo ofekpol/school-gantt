@@ -27,7 +27,6 @@
     "dashboard": "Dashboard",
     "staff": "Staff",
     "eventTypes": "Event Types",
-    "year": "Academic Year",
     "profile": "Profile",
     "logout": "Sign out",
     "gantt": "Gantt",
@@ -161,15 +160,6 @@
       "customColor": "Custom color",
       "empty": "No event types yet. Add your first one."
     },
-    "year": {
-      "title": "Academic Year",
-      "label": "Label",
-      "startDate": "Start Date",
-      "endDate": "End Date",
-      "create": "Create Year",
-      "setActive": "Set as Active Year",
-      "active": "Active"
-    },
     "queue": {
       "title": "Approval Queue",
       "empty": "No events are waiting for approval.",
@@ -253,7 +243,6 @@
     }
   },
   "gantt": {
-    "noActiveYear": "No active academic year has been configured.",
     "empty": "No approved events in the current year.",
     "zoomLabel": "Zoom level",
     "gradesColumnLabel": "Grades",
@@ -281,7 +270,6 @@
   },
   "calendar": {
     "subtitle": "Printable yearly calendar",
-    "noActiveYear": "No active academic year has been configured.",
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
     "newEventOnDate": "New event on {date}",
@@ -310,8 +298,7 @@
   "wizard": {
     "step1": {
       "title": "Date",
-      "errorRequired": "Please select a date",
-      "errorOutOfYear": "Date must fall within the active academic year"
+      "errorRequired": "Please select a date"
     },
     "step2": {
       "title": "Grades",

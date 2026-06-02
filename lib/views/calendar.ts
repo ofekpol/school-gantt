@@ -1,7 +1,7 @@
 /**
  * Printable yearly calendar projection — pure logic, no DB.
  *
- * Renders an 11-month grid (Sept..Jul of the academic year) where each month
+ * Renders the caller-provided display range month by month, where each month
  * is a 6×7 grid of day cells (Sunday-start, Israeli convention). Multi-day
  * events are repeated across each day they touch, clipped to the year window.
  *

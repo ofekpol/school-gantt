@@ -2,8 +2,7 @@ import { chromium, type FullConfig } from "@playwright/test";
 import path from "path";
 
 /**
- * Playwright global setup — creates persisted auth state files and ensures
- * the demo school has an active academic year for DB-dependent tests.
+ * Playwright global setup — creates persisted auth state files for DB-dependent tests.
  *
  * Auth state files are saved to test/e2e/.auth/ and consumed via
  * `storageState` in individual spec files. This avoids repeating the
@@ -22,7 +21,7 @@ async function globalSetup(config: FullConfig) {
   const browser = await chromium.launch();
 
   try {
-    const adminState = await saveAuthState({
+    await saveAuthState({
       browser,
       baseURL,
       email: "admin@demo-school.test",
@@ -45,10 +44,6 @@ async function globalSetup(config: FullConfig) {
       password: "ChangeMe123!",
       outputPath: path.join(authDir, "viewer.json"),
     });
-
-    // Ensure the demo school has an active academic year so that wizard,
-    // Gantt page, and approval tests can create events.
-    await ensureActiveYear({ browser, baseURL, adminStorageState: adminState });
   } finally {
     await browser.close();
   }
@@ -96,80 +91,6 @@ async function saveAuthState({
       await new Promise((r) => setTimeout(r, 1_000));
     }
     throw new Error(`Login failed for ${email} (${lastStatus}): ${lastBody}`);
-  } finally {
-    await context.close();
-  }
-}
-
-interface EnsureYearOptions {
-  browser: import("@playwright/test").Browser;
-  baseURL: string;
-  adminStorageState: string;
-}
-
-/**
- * Uses the admin API to verify an active academic year exists.
- * If none is present, creates one that spans the current school year
- * (Sept 1 of the current/previous calendar year → Jul 31 of the following).
- * Idempotent: if an active year already exists the setup is a no-op.
- */
-async function ensureActiveYear({
-  browser,
-  baseURL,
-  adminStorageState,
-}: EnsureYearOptions): Promise<void> {
-  const context = await browser.newContext({
-    baseURL,
-    storageState: adminStorageState,
-  });
-  try {
-    // Check existing years — list endpoint returns all years for the school.
-    const listRes = await context.request.get("/api/v1/admin/years");
-    if (!listRes.ok()) {
-      throw new Error(`Failed to list academic years: ${listRes.status()}`);
-    }
-    const { years } = (await listRes.json()) as {
-      years: { id: string; startDate: string }[];
-    };
-
-    // Check if the school already has an active year by requesting the
-    // Gantt page — if it shows "noActiveYear" the school.active_academic_year_id is null.
-    // Use the years list: if any year exists, activate the most recent one.
-    if (years.length > 0) {
-      // A year exists; activate the most recent (first in desc-startDate order).
-      const mostRecent = years[0];
-      const patchRes = await context.request.patch(
-        `/api/v1/admin/years/${mostRecent.id}`,
-        {
-          data: { setActive: true },
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-      if (!patchRes.ok()) {
-        throw new Error(`Failed to activate year ${mostRecent.id}: ${patchRes.status()}`);
-      }
-      return;
-    }
-
-    // No year exists — create one for the current school year.
-    const now = new Date();
-    const startYear =
-      now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-    const createRes = await context.request.post("/api/v1/admin/years", {
-      data: {
-        label: `${startYear}-${startYear + 1}`,
-        startDate: `${startYear}-09-01`,
-        endDate: `${startYear + 1}-07-31`,
-        setActive: true,
-      },
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!createRes.ok()) {
-      const body = await createRes.text();
-      throw new Error(
-        `Failed to create academic year: ${createRes.status()} ${body}`,
-      );
-    }
   } finally {
     await context.close();
   }

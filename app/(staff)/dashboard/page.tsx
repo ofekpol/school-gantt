@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getStaffUser } from "@/lib/auth/session";
 import {
-  getActiveAcademicYear,
   getEditorAllowedGrades,
   getEditorDashboardEvents,
   listEventTypes,
@@ -13,6 +12,7 @@ import { getAgendaForSchool } from "@/lib/views/agenda";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import { buildWeeklyModel, parseWeekParam } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
+import { buildCalendarRangeFromEvents } from "@/lib/views/date-range";
 import { getDashboardGradeSelection } from "@/lib/dashboard/grade-filter";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 
@@ -40,9 +40,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const view = sp.view === "monthly" ? "monthly" : "weekly";
 
-  const [school, activeYear, myEvents, eventTypeList, allowedGrades] = await Promise.all([
+  const [school, myEvents, eventTypeList, allowedGrades] = await Promise.all([
     getSchoolById(user.schoolId),
-    getActiveAcademicYear(user.schoolId),
     getEditorDashboardEvents(user.schoolId, user.id),
     listEventTypes(user.schoolId),
     user.role === "editor"
@@ -86,16 +85,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     new Date(),
   );
 
-  const months =
-    activeYear
-      ? buildCalendarModel({
-          year: {
-            startDate: activeYear.startDate,
-            endDate: activeYear.endDate,
-          },
-          events: agendaItems.map(toCalendarInput),
-        }).months
-      : undefined;
+  const calendarRange = buildCalendarRangeFromEvents(agendaItems);
+  const months = buildCalendarModel({
+    year: calendarRange,
+    events: agendaItems.map(toCalendarInput),
+  }).months;
 
   return (
     <main className="pb-12">
@@ -109,11 +103,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           weeklyModel={weeklyModel}
           months={months}
           events={serializedEvents}
-          yearLabel={activeYear?.label ?? ""}
+          calendarRange={calendarRange}
           schoolName={school.name}
-          yearBounds={
-            activeYear ? { startDate: activeYear.startDate, endDate: activeYear.endDate } : null
-          }
           eventTypes={eventTypeList}
           allowedGrades={allowedGrades}
           selectedGrades={gradeSelection.selectedGrades}

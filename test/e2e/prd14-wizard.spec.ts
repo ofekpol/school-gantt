@@ -35,7 +35,7 @@ test("WIZARD-PRD14: editor completes the 7-step wizard in under 60 s with keyboa
     page.getByRole("main").getByRole("button", { name: "הבא" }).first();
 
   // Step 1 — Date. Use locator.fill() which correctly drives native date inputs.
-  // Use a date within the 2025-2026 academic year (Sept 2025 – Jul 2026).
+  // Use an arbitrary event date; event creation is no longer bounded by school year.
   await page.locator('input[type="date"]').fill("2026-06-15");
   await nextBtn().click();
 

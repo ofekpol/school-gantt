@@ -1,7 +1,6 @@
 // NOTE: no `import "server-only"` — this module is invoked by scripts/provision-school.ts
 // via tsx outside the Next.js server runtime. It is also safe to call from server-only
 // Next.js code (Server Components / route handlers); never import from a Client Component.
-import { sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { z } from "zod";
 import { db, supabaseAdmin, withSchool } from "./client";
@@ -25,10 +24,7 @@ export const DEFAULT_EVENT_TYPES = [
   { key: "general", labelHe: "כללי", labelEn: "General", colorHex: "#aec7e8", glyph: "G", sortOrder: 11 },
 ] as const;
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD");
-
-export const ProvisionSchoolInput = z
-  .object({
+export const ProvisionSchoolInput = z.object({
     slug: z
       .string()
       .min(2)
@@ -37,22 +33,14 @@ export const ProvisionSchoolInput = z
     name: z.string().min(1).max(200),
     locale: z.enum(["he", "en"]).default("he"),
     timezone: z.string().default("Asia/Jerusalem"),
-    yearLabel: z.string().min(1).max(64),
-    yearStart: isoDate,
-    yearEnd: isoDate,
     adminEmail: z.string().email().max(255),
     adminName: z.string().min(1).max(200),
-  })
-  .refine((v) => v.yearStart < v.yearEnd, {
-    message: "yearStart must be before yearEnd",
-    path: ["yearEnd"],
   });
 
 export type ProvisionSchoolInput = z.infer<typeof ProvisionSchoolInput>;
 
 export interface ProvisionSchoolResult {
   schoolId: string;
-  academicYearId: string;
   adminAuthUserId: string;
   magicLinkUrl: string;
   /** ISO 8601. Supabase magic links default to 1 hour. */
@@ -77,23 +65,6 @@ async function insertSchool(input: ProvisionSchoolInput): Promise<string> {
     throw new Error(`school with slug "${input.slug}" already exists — refusing to clobber`);
   }
   return inserted[0].id;
-}
-
-async function insertAcademicYear(
-  tx: Tx,
-  schoolId: string,
-  input: ProvisionSchoolInput,
-): Promise<string> {
-  const [year] = await tx
-    .insert(schema.academicYears)
-    .values({
-      schoolId,
-      label: input.yearLabel,
-      startDate: input.yearStart,
-      endDate: input.yearEnd,
-    })
-    .returning({ id: schema.academicYears.id });
-  return year.id;
 }
 
 async function insertDefaultEventTypes(tx: Tx, schoolId: string): Promise<void> {
@@ -162,7 +133,7 @@ async function generateAdminMagicLink(
 }
 
 /**
- * Provision a brand-new tenant: school row + academic year + 11 event types + admin staff user.
+ * Provision a brand-new tenant: school row + 11 event types + admin staff user.
  * Idempotency: conflicts on slug throw — we never clobber an existing school.
  * Caller is responsible for emailing the returned magicLinkUrl to the admin.
  */
@@ -173,19 +144,13 @@ export async function provisionSchool(
 
   const schoolId = await insertSchool(input);
 
-  const { academicYearId, adminAuthUserId } = await withSchool(schoolId, async (tx) => {
-    const yearId = await insertAcademicYear(tx, schoolId, input);
+  const { adminAuthUserId } = await withSchool(schoolId, async (tx) => {
     await insertDefaultEventTypes(tx, schoolId);
     const authId = await insertAdminStaffUser(tx, schoolId, input);
-    return { academicYearId: yearId, adminAuthUserId: authId };
+    return { adminAuthUserId: authId };
   });
-
-  // schools has no RLS, so this update runs outside withSchool.
-  await db.execute(
-    sql`UPDATE schools SET active_academic_year_id = ${academicYearId} WHERE id = ${schoolId}`,
-  );
 
   const { magicLinkUrl, magicLinkExpiresAt } = await generateAdminMagicLink(input.adminEmail);
 
-  return { schoolId, academicYearId, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
+  return { schoolId, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
 }
