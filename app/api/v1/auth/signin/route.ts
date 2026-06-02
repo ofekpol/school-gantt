@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
+  createStaffUserFromInvite,
   getStaffUserByAuthId,
   getStaffUserByEmail,
   getStaffUserRecordByEmail,
   incrementLoginAttempts,
   resetLoginAttempts,
 } from "@/lib/db/staff";
+import { getInviteByToken } from "@/lib/db/invites";
 import { getPostLoginRedirect } from "@/lib/auth/redirects";
 
 const MAX_ATTEMPTS = 10;
@@ -70,9 +72,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Fall back to email-based lookup so users who authenticated via a different
   // Supabase identity (e.g. email/password vs Google OAuth) still reach the dashboard.
-  const resolvedUser =
+  let resolvedUser =
     authedStaffUser ??
     (data.user.email ? await getStaffUserRecordByEmail(data.user.email) : null);
+
+  // If still no staff record, check for a pending invite in user_metadata.
+  // This handles the case where /auth/confirm was hit by an email scanner
+  // (consuming the OTP) before the user clicked the link, leaving them with a
+  // confirmed auth account but no staff_users row.
+  if (!resolvedUser) {
+    const inviteToken = data.user.user_metadata?.invite_token as string | undefined;
+    if (inviteToken) {
+      try {
+        const invite = await getInviteByToken(inviteToken);
+        const isValid =
+          invite &&
+          invite.expiresAt > new Date() &&
+          (invite.multiUse || !invite.usedAt);
+        if (isValid) {
+          await createStaffUserFromInvite({
+            authUserId: data.user.id,
+            schoolId: invite.schoolId,
+            email: data.user.email ?? email,
+            fullName: String(data.user.user_metadata?.full_name ?? email),
+            role: invite.role,
+            gradeScopes: invite.gradeScopes,
+            eventTypeScopes: invite.eventTypeScopes,
+          });
+          resolvedUser = await getStaffUserByAuthId(data.user.id);
+        }
+      } catch {
+        // Non-fatal: user lands on /auth/pending and an admin can assign them manually.
+      }
+    }
+  }
 
   return NextResponse.json(
     { status: "ok", redirectTo: getPostLoginRedirect(resolvedUser) },
