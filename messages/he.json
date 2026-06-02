@@ -194,6 +194,7 @@
     "title": "הזמנה למערכת",
     "roleLabel": "תפקיד: {role}",
     "register": "הרשמה עם חשבון חדש",
+    "loginGoogle": "כניסה עם Google",
     "login": "כניסה עם חשבון קיים",
     "unavailableTitle": "הקישור אינו תקף",
     "unavailableBody": "הקישור פג תוקפו, כבר נוצל, או שאינו קיים."

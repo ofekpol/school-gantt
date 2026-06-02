@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getInviteByToken } from "@/lib/db/invites";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 interface PageProps {
   params: Promise<{ token: string }>;
@@ -52,6 +53,7 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
           >
             {t("register")}
           </Link>
+          <GoogleSignInButton token={token} label={t("loginGoogle")} />
           <Link
             href={`/auth/login?token=${token}`}
             className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent"

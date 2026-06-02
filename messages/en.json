@@ -194,6 +194,7 @@
     "title": "You've been invited",
     "roleLabel": "Role: {role}",
     "register": "Create a new account",
+    "loginGoogle": "Sign in with Google",
     "login": "Sign in with an existing account",
     "unavailableTitle": "Invite unavailable",
     "unavailableBody": "This invite link is expired, already used, or no longer exists."
