@@ -80,6 +80,7 @@ export function DashboardCalendar({
     () => Array.from(new Set(allowedGrades)).sort((a, b) => a - b),
     [allowedGrades],
   );
+  const showGradeFilter = shouldShowDashboardGradeFilter(allowedGradeOptions);
   const displayEvents = useMemo(
     () => visibleEvents.filter((event) => eventMatchesGrades(event, deferredSelectedGrades)),
     [deferredSelectedGrades, visibleEvents],
@@ -254,7 +255,7 @@ export function DashboardCalendar({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-4">
+      <div className="flex flex-wrap items-center gap-3 px-6 pt-4">
         <div className="flex items-center gap-2">
           <ToggleBtn active={currentView === "weekly"} onClick={() => setView("weekly")}>
             {t("viewWeekly")}
@@ -263,18 +264,9 @@ export function DashboardCalendar({
             {t("viewMonthly")}
           </ToggleBtn>
         </div>
-        {canCreateEvents && (
-          <button
-            type="button"
-            onClick={() => openNewEvent(new Date().toISOString().slice(0, 10))}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-          >
-            {t("newEvent")}
-          </button>
-        )}
       </div>
 
-      {shouldShowDashboardGradeFilter(allowedGradeOptions) && (
+      {showGradeFilter && (
         <div className="flex flex-wrap items-center gap-2 px-6 pt-4">
           <span className="text-sm font-medium text-neutral-600">{t("gradeFilterLabel")}</span>
           <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
@@ -298,6 +290,18 @@ export function DashboardCalendar({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {canCreateEvents && (
+        <div className={`flex justify-start px-6 ${showGradeFilter ? "pt-3" : "pt-4"}`}>
+          <button
+            type="button"
+            onClick={() => openNewEvent(new Date().toISOString().slice(0, 10))}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+          >
+            {t("newEvent")}
+          </button>
         </div>
       )}
 
