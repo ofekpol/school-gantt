@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import { formatGradeList } from "@/lib/grades";
+import { buildGoogleCalendarUrl } from "@/lib/google-calendar-url";
 import { findCurrentAgendaWeekStart } from "@/lib/views/current-period";
 
 interface SerializedAgendaItem extends Omit<AgendaItem, "startAt" | "endAt"> {
@@ -117,6 +118,7 @@ function AgendaRow({
   onToggle: () => void;
 }) {
   const t = useTranslations("agenda");
+  const tExport = useTranslations("export");
   const startDate = new Date(item.startAt);
   const endDate = new Date(item.endAt);
 
@@ -190,6 +192,21 @@ function AgendaRow({
           {!item.location && !item.description && (
             <p className="text-neutral-400">{t("noDetails")}</p>
           )}
+          <a
+            href={buildGoogleCalendarUrl({
+              title: item.title,
+              start: startDate,
+              end: endDate,
+              description: item.description ?? undefined,
+              location: item.location ?? undefined,
+              allDay: item.allDay,
+            })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
+          >
+            {tExport("addToGoogle")}
+          </a>
         </div>
       )}
     </li>

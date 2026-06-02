@@ -67,6 +67,7 @@ export async function middleware(request: NextRequest) {
     "/api/v1/auth/register",
     "/api/v1/auth/login",
     "/api/v1/public/",
+    "/api/v1/export/",
   ];
 
   // Viewer school paths are public: /:school, /:school/calendar, /:school/agenda

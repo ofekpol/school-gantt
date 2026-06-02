@@ -3,6 +3,7 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { AgendaList } from "@/components/AgendaList";
+import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { FilterBar } from "@/components/FilterBar";
 import { GanttCanvas } from "@/components/Gantt/GanttCanvas";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
@@ -128,11 +129,24 @@ export function PublicViewerShell({
 
   return (
     <main className="min-h-screen bg-neutral-50 pb-12">
-      <ViewTabs view={view} labels={{
-        gantt: nav("gantt"),
-        calendar: nav("calendar"),
-        agenda: nav("agenda"),
-      }} onChange={setView} />
+      <ViewTabs
+        view={view}
+        labels={{
+          gantt: nav("gantt"),
+          calendar: nav("calendar"),
+          agenda: nav("agenda"),
+        }}
+        onChange={setView}
+        action={
+          <ExportToGoogleCalendarButton
+            schoolSlug={schoolSlug}
+            allGrades={ALL_GRADES}
+            eventTypes={eventTypesForFilter}
+            defaultGrades={params.grades}
+            defaultTypes={params.types}
+          />
+        }
+      />
       <FilterBar
         allGrades={ALL_GRADES}
         eventTypes={eventTypesForFilter}
@@ -175,13 +189,15 @@ function ViewTabs({
   view,
   labels,
   onChange,
+  action,
 }: {
   view: PublicViewerView;
   labels: Record<PublicViewerView, string>;
   onChange: (view: PublicViewerView) => void;
+  action?: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-neutral-200 bg-white px-3 py-2 sm:px-6">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 bg-white px-3 py-2 sm:px-6">
       <div className="inline-flex rounded-lg border border-neutral-200 bg-neutral-50 p-0.5">
         {(["gantt", "calendar", "agenda"] as const).map((item) => (
           <button
@@ -197,6 +213,7 @@ function ViewTabs({
           </button>
         ))}
       </div>
+      {action}
     </div>
   );
 }

@@ -242,6 +242,17 @@
       "clear": "Clear"
     }
   },
+  "export": {
+    "button": "Export to Google Calendar",
+    "modalTitle": "Export events to Google Calendar",
+    "gradesLabel": "Grades",
+    "typesLabel": "Event types",
+    "exportAction": "Download .ics file",
+    "close": "Close",
+    "importNote": "After downloading: Google Calendar → Settings → Import & Export → Import",
+    "desktopOnlyNote": "Import into Google Calendar is available on desktop only.",
+    "addToGoogle": "Add to Google Calendar"
+  },
   "gantt": {
     "empty": "No approved events in the current year.",
     "zoomLabel": "Zoom level",

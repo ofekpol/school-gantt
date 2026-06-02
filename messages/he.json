@@ -242,6 +242,17 @@
       "clear": "נקה"
     }
   },
+  "export": {
+    "button": "ייצוא ל-Google Calendar",
+    "modalTitle": "ייצוא אירועים ל-Google Calendar",
+    "gradesLabel": "שכבות",
+    "typesLabel": "סוגי אירועים",
+    "exportAction": "הורד קובץ ‎.ics",
+    "close": "סגור",
+    "importNote": "לאחר ההורדה: Google Calendar ← הגדרות ← ייבוא וייצוא ← ייבוא",
+    "desktopOnlyNote": "הייבוא ל-Google Calendar זמין במחשב בלבד.",
+    "addToGoogle": "הוסף ל-Google Calendar"
+  },
   "gantt": {
     "empty": "אין אירועים מאושרים בשנה הנוכחית.",
     "zoomLabel": "רמת הגדלה",

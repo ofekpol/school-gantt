@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import { formatGradeLabel } from "@/lib/grades";
+import { buildGoogleCalendarUrl } from "@/lib/google-calendar-url";
 import type { EventType } from "@/components/wizard/WizardShell";
 
 interface Props {
@@ -63,6 +64,7 @@ export function EventDrawer({
   onClose,
 }: Props) {
   const t = useTranslations("gantt.drawer");
+  const tExport = useTranslations("export");
   const td = useTranslations("dashboard");
   const ta = useTranslations("a11y");
   const tg = useTranslations("grades");
@@ -499,6 +501,21 @@ export function EventDrawer({
             </>
           ) : (
             <>
+              <a
+                href={buildGoogleCalendarUrl({
+                  title: event.title,
+                  start: startDate,
+                  end: endDate,
+                  description: event.description ?? undefined,
+                  location: event.location ?? undefined,
+                  allDay: event.allDay,
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ ...secondaryButtonStyle, marginInlineEnd: "auto", textDecoration: "none" }}
+              >
+                {tExport("addToGoogle")}
+              </a>
               {event.isCanceled && onDismiss && (
                 <button
                   type="button"
