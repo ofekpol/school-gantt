@@ -5,10 +5,8 @@ import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { formatGradeLabel } from "@/lib/grades";
 import { useRouteProgress } from "@/components/RouteProgress";
-
-const ALL_GRADES = [7, 8, 9, 10, 11, 12];
+import { ALL_GRADES, ScopeFields } from "@/components/admin/ScopeFields";
 
 interface EventTypeRow {
   key: string;
@@ -115,28 +113,22 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
       </div>
 
       {role === "editor" && (
-        <>
-          <fieldset>
-            <legend className="text-sm font-medium">{t("gradeScopes")}</legend>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {ALL_GRADES.map((g) => (
-                <label key={g} className="flex items-center gap-1">
-                  <input type="checkbox" name={`invite-grade-${g}`} /> {formatGradeLabel(g)}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend className="text-sm font-medium">{t("eventTypeScopes")}</legend>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {eventTypes.map((et) => (
-                <label key={et.key} className="flex items-center gap-1">
-                  <input type="checkbox" name={`invite-type-${et.key}`} /> {et.labelHe}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        </>
+        <ScopeFields
+          eventTypes={eventTypes}
+          gradeName={(grade) => `invite-grade-${grade}`}
+          typeName={(key) => `invite-type-${key}`}
+          labels={{
+            gradeScopes: t("gradeScopes"),
+            eventTypeScopes: t("eventTypeScopes"),
+            selectAllGrades: t("selectAllGrades"),
+            clearAllGrades: t("clearAllGrades"),
+            selectAllEventTypes: t("selectAllEventTypes"),
+            clearAllEventTypes: t("clearAllEventTypes"),
+          }}
+          wrapperClassName="lg:grid-cols-1 xl:grid-cols-2"
+          legendClassName="text-neutral-950"
+          optionClassName="rounded-none border-0 px-0 py-0"
+        />
       )}
 
       {url && (

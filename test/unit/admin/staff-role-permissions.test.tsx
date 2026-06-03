@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PendingRequestsTable } from "@/components/admin/PendingRequestsTable";
+import { InviteForm } from "@/components/admin/InviteForm";
 import { StaffTable } from "@/components/admin/StaffTable";
 
 vi.mock("next/navigation", () => ({
@@ -86,5 +87,76 @@ describe("admin staff role permissions", () => {
 
     expect(screen.getByText("gradeScopes")).toBeInTheDocument();
     expect(screen.getByText("eventTypeScopes")).toBeInTheDocument();
+  });
+
+  it("toggles all edit-user grade and event type scopes on and off", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <StaffTable
+        initialStaff={[
+          {
+            id: "staff-1",
+            email: "editor@test",
+            fullName: "Editor User",
+            role: "editor",
+            deactivatedAt: null,
+            gradeScopes: [],
+            eventTypeScopes: [],
+          },
+        ]}
+        eventTypes={eventTypes}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "edit" }));
+
+    const grade7 = screen.getByRole("checkbox", { name: "ז" });
+    const grade12 = screen.getByRole("checkbox", { name: "יב" });
+    const trip = screen.getByRole("checkbox", { name: "טיול" });
+    const test = screen.getByRole("checkbox", { name: "מבחן" });
+
+    await user.click(screen.getByRole("button", { name: "selectAllGrades" }));
+    expect(grade7).toBeChecked();
+    expect(grade12).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "clearAllGrades" }));
+    expect(grade7).not.toBeChecked();
+    expect(grade12).not.toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "selectAllEventTypes" }));
+    expect(trip).toBeChecked();
+    expect(test).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "clearAllEventTypes" }));
+    expect(trip).not.toBeChecked();
+    expect(test).not.toBeChecked();
+  });
+
+  it("toggles all invite grade and event type scopes on and off", async () => {
+    const user = userEvent.setup();
+
+    render(<InviteForm eventTypes={eventTypes} />);
+
+    const grade7 = screen.getByRole("checkbox", { name: "ז" });
+    const grade12 = screen.getByRole("checkbox", { name: "יב" });
+    const trip = screen.getByRole("checkbox", { name: "טיול" });
+    const test = screen.getByRole("checkbox", { name: "מבחן" });
+
+    await user.click(screen.getByRole("button", { name: "selectAllGrades" }));
+    expect(grade7).toBeChecked();
+    expect(grade12).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "clearAllGrades" }));
+    expect(grade7).not.toBeChecked();
+    expect(grade12).not.toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "selectAllEventTypes" }));
+    expect(trip).toBeChecked();
+    expect(test).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "clearAllEventTypes" }));
+    expect(trip).not.toBeChecked();
+    expect(test).not.toBeChecked();
   });
 });

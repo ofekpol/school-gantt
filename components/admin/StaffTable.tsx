@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { formatGradeLabel } from "@/lib/grades";
 import { useRouteProgress } from "@/components/RouteProgress";
 import { cn } from "@/lib/utils";
-
-const ALL_GRADES = [7, 8, 9, 10, 11, 12];
+import { ALL_GRADES, ScopeFields } from "@/components/admin/ScopeFields";
 
 interface StaffRow {
   id: string;
@@ -27,7 +26,6 @@ interface EventTypeRow {
   labelHe: string;
   labelEn: string;
 }
-
 interface Props {
   initialStaff: StaffRow[];
   eventTypes: EventTypeRow[];
@@ -249,7 +247,6 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
       {filteredStaff.length === 0 && (
         <div className="px-4 py-10 text-center text-sm text-neutral-500">{t("noStaffMatches")}</div>
       )}
-
       {editingRow && (
         <div
           role="dialog"
@@ -279,6 +276,7 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
                 <X className="size-4" />
               </Button>
             </div>
+
             <EditStaffForm
               row={editingRow}
               eventTypes={eventTypes}
@@ -304,15 +302,8 @@ function RoleBadge({ role, label }: { role: StaffRow["role"]; label: string }) {
   );
 }
 
-function StatusBadge({
-  active,
-  activeLabel,
-  deactivatedLabel,
-}: {
-  active: boolean;
-  activeLabel: string;
-  deactivatedLabel: string;
-}) {
+function StatusBadge(props: { active: boolean; activeLabel: string; deactivatedLabel: string }) {
+  const { active, activeLabel, deactivatedLabel } = props;
   return (
     <span
       className={cn(
@@ -374,7 +365,23 @@ function EditStaffForm({
           </select>
         </label>
       </div>
-      {role === "editor" && <ScopeFields row={row} eventTypes={eventTypes} />}
+      {role === "editor" && (
+        <ScopeFields
+          eventTypes={eventTypes}
+          gradeName={(grade) => `staff-grade-${row.id}-${grade}`}
+          typeName={(key) => `staff-type-${row.id}-${key}`}
+          defaultGradeScopes={row.gradeScopes}
+          defaultEventTypeScopes={row.eventTypeScopes}
+          labels={{
+            gradeScopes: t("gradeScopes"),
+            eventTypeScopes: t("eventTypeScopes"),
+            selectAllGrades: t("selectAllGrades"),
+            clearAllGrades: t("clearAllGrades"),
+            selectAllEventTypes: t("selectAllEventTypes"),
+            clearAllEventTypes: t("clearAllEventTypes"),
+          }}
+        />
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={busy}>
           {busy ? tc("saving") : t("save")}
@@ -385,50 +392,5 @@ function EditStaffForm({
         {error && <span className="text-sm text-red-600">{error}</span>}
       </div>
     </form>
-  );
-}
-
-function ScopeFields({ row, eventTypes }: { row: StaffRow; eventTypes: EventTypeRow[] }) {
-  const t = useTranslations("admin.staff");
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <fieldset>
-        <legend className="text-sm font-medium text-neutral-800">{t("gradeScopes")}</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {ALL_GRADES.map((g) => (
-            <label
-              key={g}
-              className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-sm"
-            >
-              <input
-                type="checkbox"
-                name={`staff-grade-${row.id}-${g}`}
-                defaultChecked={row.gradeScopes.includes(g)}
-              />
-              {formatGradeLabel(g)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend className="text-sm font-medium text-neutral-800">{t("eventTypeScopes")}</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {eventTypes.map((et) => (
-            <label
-              key={et.key}
-              className="flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1.5 text-sm"
-            >
-              <input
-                type="checkbox"
-                name={`staff-type-${row.id}-${et.key}`}
-                defaultChecked={row.eventTypeScopes.includes(et.key)}
-              />
-              {et.labelHe}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-    </div>
   );
 }
