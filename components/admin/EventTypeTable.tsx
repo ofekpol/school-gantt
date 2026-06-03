@@ -59,6 +59,10 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  function updateCreateForm<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
+    setCreateForm((form) => ({ ...form, [key]: value }));
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setCreating(true);
@@ -114,51 +118,62 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
         {t("create")}
       </Button>
       {showCreate && (
-        <form onSubmit={handleCreate} className="border rounded p-3 mb-4 space-y-2">
+        <form onSubmit={handleCreate} className="border rounded p-3 mb-4 space-y-3">
           <div className="grid grid-cols-2 gap-2">
-            <input
-              placeholder={t("key")}
-              required
-              value={createForm.key}
-              onChange={(e) => setCreateForm((f) => ({ ...f, key: e.target.value }))}
-              className="border rounded px-2 py-1"
-            />
-            <input
-              placeholder={t("glyph")}
-              value={createForm.glyph}
-              onChange={(e) => setCreateForm((f) => ({ ...f, glyph: e.target.value }))}
-              className="border rounded px-2 py-1"
-            />
-            <input
-              placeholder={t("labelHe")}
-              required
-              value={createForm.labelHe}
-              onChange={(e) => setCreateForm((f) => ({ ...f, labelHe: e.target.value }))}
-              className="border rounded px-2 py-1"
-            />
-            <input
-              placeholder={t("labelEn")}
-              required
-              value={createForm.labelEn}
-              onChange={(e) => setCreateForm((f) => ({ ...f, labelEn: e.target.value }))}
-              className="border rounded px-2 py-1"
-            />
+            <label className="space-y-1">
+              <span className="block text-sm">{t("key")}</span>
+              <input
+                required
+                value={createForm.key}
+                onChange={(e) => updateCreateForm("key", e.target.value)}
+                className="w-full border rounded px-2 py-1"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="block text-sm">{t("glyph")}</span>
+              <input
+                required
+                value={createForm.glyph}
+                onChange={(e) => updateCreateForm("glyph", e.target.value)}
+                className="w-full border rounded px-2 py-1"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="block text-sm">{t("labelHe")}</span>
+              <input
+                required
+                value={createForm.labelHe}
+                onChange={(e) => updateCreateForm("labelHe", e.target.value)}
+                className="w-full border rounded px-2 py-1"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="block text-sm">{t("labelEn")}</span>
+              <input
+                required
+                value={createForm.labelEn}
+                onChange={(e) => updateCreateForm("labelEn", e.target.value)}
+                className="w-full border rounded px-2 py-1"
+              />
+            </label>
             <div className="col-span-2">
               <span className="block text-sm mb-1">{t("colorHex")}</span>
               <ColorPicker
                 value={createForm.colorHex}
-                onChange={(hex) => setCreateForm((f) => ({ ...f, colorHex: hex }))}
+                onChange={(hex) => updateCreateForm("colorHex", hex)}
               />
             </div>
-            <input
-              type="number"
-              placeholder={t("sortOrder")}
-              value={createForm.sortOrder}
-              onChange={(e) =>
-                setCreateForm((f) => ({ ...f, sortOrder: parseInt(e.target.value, 10) || 0 }))
-              }
-              className="border rounded px-2 py-1"
-            />
+            <label className="col-span-2 space-y-1">
+              <span className="block text-sm">{t("sortOrder")}</span>
+              <input
+                type="number"
+                min={0}
+                value={createForm.sortOrder}
+                onChange={(e) => updateCreateForm("sortOrder", parseInt(e.target.value, 10) || 0)}
+                className="w-full border rounded px-2 py-1"
+              />
+              <span className="block text-xs text-muted-foreground">{t("sortOrderHint")}</span>
+            </label>
           </div>
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={creating}>
