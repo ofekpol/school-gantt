@@ -67,6 +67,7 @@ describe("current period scrolling", () => {
     fireEvent.click(screen.getByRole("button", { name: "10 2026" }));
 
     expect(screen.getByRole("listbox", { name: "chooseMonth" })).toBeInTheDocument();
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
 
     fireEvent.click(screen.getByRole("option", { name: "1 2027" }));
 

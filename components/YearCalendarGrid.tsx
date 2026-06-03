@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CalendarClock, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarMonth } from "@/lib/views/calendar";
@@ -44,6 +44,7 @@ export function YearCalendarGrid({
     initialMonthIndex(months, currentMonthStart),
   );
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const selectedMonthOptionRef = useRef<HTMLButtonElement | null>(null);
   const currentMonthIndex = currentMonthStart
     ? months.findIndex(
         (item) => `${item.year}-${String(item.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
@@ -53,6 +54,11 @@ export function YearCalendarGrid({
   useEffect(() => {
     setSelectedIndex((current) => Math.min(current, Math.max(months.length - 1, 0)));
   }, [months.length]);
+
+  useEffect(() => {
+    if (!monthPickerOpen) return;
+    selectedMonthOptionRef.current?.scrollIntoView({ block: "start" });
+  }, [monthPickerOpen, selectedIndex]);
 
   const month = months[selectedIndex];
   const monthLabel = `${tm(String(month?.monthIndex ?? 1) as `${number}`)} ${month?.year ?? ""}`.trim();
@@ -95,6 +101,7 @@ export function YearCalendarGrid({
                     return (
                       <button
                         key={`${item.year}-${item.monthIndex}`}
+                        ref={selected ? selectedMonthOptionRef : null}
                         type="button"
                         role="option"
                         aria-selected={selected}
