@@ -65,6 +65,18 @@ describe("current period scrolling", () => {
     expect(onDayClick).toHaveBeenCalledWith("2026-10-15");
   });
 
+  it("marks today's date in the monthly calendar", () => {
+    render(
+      <YearCalendarGrid
+        months={[calendarMonthWithDay()]}
+        yearLabel="2026"
+        schoolName="Demo"
+      />,
+    );
+
+    expect(screen.getByText("15").closest("[aria-current='date']")).not.toBeNull();
+  });
+
   it("opens an existing monthly event for editing without opening a new event", () => {
     const onDayClick = vi.fn();
     const onEventClick = vi.fn();

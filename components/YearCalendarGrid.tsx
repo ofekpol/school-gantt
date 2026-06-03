@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarMonth } from "@/lib/views/calendar";
 import { readableTextColor } from "@/lib/colors";
-import { findCurrentMonthStart } from "@/lib/views/current-period";
+import { findCurrentMonthStart, jerusalemDateKey } from "@/lib/views/current-period";
 
 interface Props {
   months: CalendarMonth[];
@@ -31,6 +31,7 @@ export function YearCalendarGrid({
   const tw = useTranslations("weekdays");
   const tc = useTranslations("common");
   const tv = useTranslations("calendar");
+  const todayKey = jerusalemDateKey(new Date());
   const currentMonthStart = findCurrentMonthStart(
     months.map((month, index) => ({
       startDate: `${month.year}-${String(month.monthIndex).padStart(2, "0")}-01`,
@@ -105,7 +106,10 @@ export function YearCalendarGrid({
             w.days.map((day, di) => (
               <div
                 key={`${wi}-${di}`}
-                className="calendar-day relative min-h-[64px] bg-white p-0.5 align-top sm:min-h-[88px] sm:p-1"
+                aria-current={day?.date === todayKey ? "date" : undefined}
+                className={`calendar-day relative min-h-[64px] bg-white p-0.5 align-top sm:min-h-[88px] sm:p-1 ${
+                  day?.date === todayKey ? "ring-2 ring-inset ring-blue-500" : ""
+                }`}
               >
                 {day && (
                   <>
@@ -117,7 +121,11 @@ export function YearCalendarGrid({
                         className="absolute inset-0 z-0 bg-transparent hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300"
                       />
                     )}
-                    <div className="pointer-events-none relative z-10 mb-0.5 text-[11px] font-medium text-neutral-700">
+                    <div
+                      className={`pointer-events-none relative z-10 mb-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-medium ${
+                        day.date === todayKey ? "bg-blue-600 text-white" : "text-neutral-700"
+                      }`}
+                    >
                       {day.dayOfMonth}
                     </div>
                     <ul className="relative z-10 space-y-0.5">

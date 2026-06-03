@@ -80,8 +80,8 @@ describe("public viewer data cache", () => {
     const data = await loadPublicViewerData("school-a");
 
     expect(data?.year).toEqual({
-      label: "2035-2036",
-      startDate: "2035-01-01",
+      label: "2033-2036",
+      startDate: "2033-01-01",
       endDate: "2036-12-31",
     });
     expect(data?.events).toHaveLength(1);

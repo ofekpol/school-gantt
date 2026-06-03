@@ -30,9 +30,11 @@ export function buildCalendarRangeFromEvents(
   maxYear ??= minYear + 1;
   maxYear = Math.max(maxYear, minYear + 1);
 
+  const displayStartYear = minYear - 2;
+
   return {
-    label: minYear === maxYear ? String(minYear) : `${minYear}-${maxYear}`,
-    startDate: `${minYear}-01-01`,
+    label: displayStartYear === maxYear ? String(displayStartYear) : `${displayStartYear}-${maxYear}`,
+    startDate: `${displayStartYear}-01-01`,
     endDate: `${maxYear}-12-31`,
   };
 }
