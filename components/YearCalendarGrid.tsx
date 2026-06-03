@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarMonth } from "@/lib/views/calendar";
 import { readableTextColor } from "@/lib/colors";
 import { findCurrentMonthStart, jerusalemDateKey } from "@/lib/views/current-period";
@@ -43,6 +43,7 @@ export function YearCalendarGrid({
   const [selectedIndex, setSelectedIndex] = useState(() =>
     initialMonthIndex(months, currentMonthStart),
   );
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const currentMonthIndex = currentMonthStart
     ? months.findIndex(
         (item) => `${item.year}-${String(item.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
@@ -54,6 +55,7 @@ export function YearCalendarGrid({
   }, [months.length]);
 
   const month = months[selectedIndex];
+  const monthLabel = `${tm(String(month?.monthIndex ?? 1) as `${number}`)} ${month?.year ?? ""}`.trim();
 
   if (!month) return null;
 
@@ -71,10 +73,48 @@ export function YearCalendarGrid({
           >
             <ChevronRight className="size-4" aria-hidden="true" />
           </PeriodButton>
-          <div className="min-w-36 text-center">
+          <div className="relative min-w-36 text-center">
             <h2 className="text-lg font-bold">
-              {tm(String(month.monthIndex) as `${number}`)} {month.year}
+              <button
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={monthPickerOpen}
+                onClick={() => setMonthPickerOpen((open) => !open)}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-300 print:pointer-events-none"
+              >
+                <span>{monthLabel}</span>
+                <ChevronDown className="size-4 text-neutral-500 print:hidden" aria-hidden="true" />
+              </button>
             </h2>
+            {monthPickerOpen && (
+              <div className="absolute left-1/2 z-30 mt-2 max-h-72 w-52 -translate-x-1/2 overflow-y-auto rounded-md border border-neutral-200 bg-white p-1 text-start shadow-xl print:hidden">
+                <div role="listbox" aria-label={tv("chooseMonth")} className="space-y-0.5">
+                  {months.map((item, index) => {
+                    const label = `${tm(String(item.monthIndex) as `${number}`)} ${item.year}`;
+                    const selected = index === selectedIndex;
+                    return (
+                      <button
+                        key={`${item.year}-${item.monthIndex}`}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        onClick={() => {
+                          setSelectedIndex(index);
+                          setMonthPickerOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded px-3 py-2 text-sm transition-colors ${
+                          selected
+                            ? "bg-blue-600 font-semibold text-white"
+                            : "text-neutral-700 hover:bg-neutral-100"
+                        }`}
+                      >
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <p className="hidden print:block text-xs text-neutral-500">
               {schoolName} · {yearLabel}
             </p>

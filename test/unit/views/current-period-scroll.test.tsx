@@ -49,6 +49,30 @@ describe("current period scrolling", () => {
     expect(screen.getByRole("heading", { name: "10 2026" })).toBeInTheDocument();
   });
 
+  it("opens a month-year picker from the month heading", () => {
+    render(
+      <YearCalendarGrid
+        months={[
+          calendarMonth(9),
+          calendarMonth(10),
+          calendarMonth(11),
+          calendarMonth(12),
+          calendarMonth(1, 2027),
+        ]}
+        yearLabel="2026-2027"
+        schoolName="Demo"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "10 2026" }));
+
+    expect(screen.getByRole("listbox", { name: "chooseMonth" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("option", { name: "1 2027" }));
+
+    expect(screen.getByRole("heading", { name: "1 2027" })).toBeInTheDocument();
+  });
+
   it("opens a new event from the monthly day cell when editing is allowed", () => {
     const onDayClick = vi.fn();
     render(
@@ -201,9 +225,9 @@ function month(monthIndex: number): GanttMonth {
   };
 }
 
-function calendarMonth(monthIndex: number): CalendarMonth {
+function calendarMonth(monthIndex: number, year = 2026): CalendarMonth {
   return {
-    year: 2026,
+    year,
     monthIndex,
     weeks: [{ days: Array.from({ length: 7 }, () => null) }],
   };
