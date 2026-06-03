@@ -149,8 +149,6 @@
       "labelEn": "English Label",
       "colorHex": "Color",
       "glyph": "Glyph (English letter)",
-      "sortOrder": "Sort Order",
-      "sortOrderHint": "Lower numbers appear earlier in lists and filters.",
       "create": "Add Type",
       "save": "Save",
       "cancel": "Cancel",

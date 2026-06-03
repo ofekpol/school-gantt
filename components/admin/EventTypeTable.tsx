@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/admin/ColorPicker";
 import { useRouteProgress } from "@/components/RouteProgress";
@@ -14,7 +15,6 @@ interface EventTypeRow {
   labelEn: string;
   colorHex: string;
   glyph: string;
-  sortOrder: number;
 }
 
 interface Props {
@@ -29,12 +29,18 @@ interface CreateForm {
   labelEn: string;
   colorHex: string;
   glyph: string;
-  sortOrder: number;
 }
 
 interface EditState {
   id: string;
   form: CreateForm;
+}
+
+type SortKey = "key" | "labelHe" | "labelEn" | "glyph";
+
+interface SortState {
+  key: SortKey;
+  direction: "asc" | "desc";
 }
 
 const EMPTY_FORM: CreateForm = {
@@ -43,8 +49,14 @@ const EMPTY_FORM: CreateForm = {
   labelEn: "",
   colorHex: "#1f77b4",
   glyph: "",
-  sortOrder: 0,
 };
+
+const SORTABLE_HEADERS: { key: SortKey; label: "key" | "labelHe" | "labelEn" | "glyph" }[] = [
+  { key: "key", label: "key" },
+  { key: "labelHe", label: "labelHe" },
+  { key: "labelEn", label: "labelEn" },
+  { key: "glyph", label: "glyph" },
+];
 
 export function EventTypeTable({ initial, canManage = true }: Props) {
   const t = useTranslations("admin.eventTypes");
@@ -58,9 +70,52 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
   const [creating, setCreating] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState>({ key: "labelHe", direction: "asc" });
+
+  const sortedRows = useMemo(() => {
+    return initial.slice().sort((a, b) => {
+      const result = a[sort.key].localeCompare(b[sort.key], sort.key === "labelHe" ? "he" : "en", {
+        sensitivity: "base",
+      });
+      return sort.direction === "asc" ? result : -result;
+    });
+  }, [initial, sort]);
 
   function updateCreateForm<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
     setCreateForm((form) => ({ ...form, [key]: value }));
+  }
+
+  function handleSort(key: SortKey) {
+    setSort((current) =>
+      current.key === key
+        ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "asc" },
+    );
+  }
+
+  function renderSortableHeader(key: SortKey, labelKey: "key" | "labelHe" | "labelEn" | "glyph") {
+    const active = sort.key === key;
+  return (
+      <th
+        key={key}
+        className="py-2 pe-3 text-start"
+        aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
+      >
+        <button
+          type="button"
+          onClick={() => handleSort(key)}
+          className="inline-flex items-center gap-1 rounded px-1 py-0.5 font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span>{t(labelKey)}</span>
+          {active &&
+            (sort.direction === "asc" ? (
+              <ArrowUp aria-hidden="true" className="size-3.5" />
+            ) : (
+              <ArrowDown aria-hidden="true" className="size-3.5" />
+            ))}
+        </button>
+      </th>
+    );
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -163,17 +218,6 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
                 onChange={(hex) => updateCreateForm("colorHex", hex)}
               />
             </div>
-            <label className="col-span-2 space-y-1">
-              <span className="block text-sm">{t("sortOrder")}</span>
-              <input
-                type="number"
-                min={0}
-                value={createForm.sortOrder}
-                onChange={(e) => updateCreateForm("sortOrder", parseInt(e.target.value, 10) || 0)}
-                className="w-full border rounded px-2 py-1"
-              />
-              <span className="block text-xs text-muted-foreground">{t("sortOrderHint")}</span>
-            </label>
           </div>
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={creating}>
@@ -193,27 +237,26 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b">
-            <th className="text-start py-2 pe-3">{t("key")}</th>
-            <th className="text-start py-2 pe-3">{t("labelHe")}</th>
-            <th className="text-start py-2 pe-3">{t("labelEn")}</th>
+            {SORTABLE_HEADERS.slice(0, 3).map((header) =>
+              renderSortableHeader(header.key, header.label),
+            )}
             <th className="text-start py-2 pe-3">{t("colorHex")}</th>
-            <th className="text-start py-2 pe-3">{t("glyph")}</th>
-            <th className="text-start py-2 pe-3">{t("sortOrder")}</th>
+            {renderSortableHeader("glyph", "glyph")}
             <th className="text-start py-2"></th>
           </tr>
         </thead>
         <tbody>
           {initial.length === 0 && (
             <tr className="border-t">
-              <td colSpan={7} className="py-6 text-center text-muted-foreground">
+              <td colSpan={6} className="py-6 text-center text-muted-foreground">
                 {t("empty")}
               </td>
             </tr>
           )}
-          {initial.map((row) =>
+          {sortedRows.map((row) =>
             editState?.id === row.id ? (
               <tr key={row.id} className="border-t">
-                <td colSpan={7} className="py-2">
+                <td colSpan={6} className="py-2">
                   <form onSubmit={handleEdit} className="flex flex-wrap gap-2 items-center">
                     <input
                       value={editState.form.key}
@@ -282,7 +325,6 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
                   </span>
                 </td>
                 <td className="py-2 pe-3">{row.glyph}</td>
-                <td className="py-2 pe-3">{row.sortOrder}</td>
                 <td className="py-2">
                   {canManage && (
                   <span className="flex gap-2">
@@ -298,7 +340,6 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
                             labelEn: row.labelEn,
                             colorHex: row.colorHex,
                             glyph: row.glyph,
-                            sortOrder: row.sortOrder,
                           },
                         })
                       }

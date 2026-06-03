@@ -118,7 +118,6 @@ describe.skipIf(skipIfNoTestDb)(
         labelEn: "Test",
         colorHex: "#123456",
         glyph: "X",
-        sortOrder: 99,
       });
       etId = result.id;
     });
@@ -140,18 +139,16 @@ describe.skipIf(skipIfNoTestDb)(
       expect(row.glyph).toBe("X");
     });
 
-    it("updateEventType updates labelHe and sortOrder, returns {updated: true}", async () => {
+    it("updateEventType updates labelHe, returns {updated: true}", async () => {
       const result = await updateEventType(testSchoolA, etId, {
         labelHe: "עדכון",
-        sortOrder: 50,
       });
       expect(result).toEqual({ updated: true });
       const [row] = await testDb!
-        .select({ labelHe: schema.eventTypes.labelHe, sortOrder: schema.eventTypes.sortOrder })
+        .select({ labelHe: schema.eventTypes.labelHe })
         .from(schema.eventTypes)
         .where(eq(schema.eventTypes.id, etId));
       expect(row.labelHe).toBe("עדכון");
-      expect(row.sortOrder).toBe(50);
     });
 
     it("updateEventType on a non-existent id returns {updated: false}", async () => {
@@ -159,12 +156,12 @@ describe.skipIf(skipIfNoTestDb)(
       expect(result).toEqual({ updated: false });
     });
 
-    it("listEventTypes returns school A's types ordered by sortOrder", async () => {
+    it("listEventTypes returns school A's types ordered by Hebrew label", async () => {
       const types = await listEventTypes(testSchoolA);
       expect(types.length).toBeGreaterThan(0);
-      // Sorted by sortOrder ascending
+      // Sorted by Hebrew label ascending
       for (let i = 1; i < types.length; i++) {
-        expect(types[i].sortOrder).toBeGreaterThanOrEqual(types[i - 1].sortOrder);
+        expect(types[i].labelHe.localeCompare(types[i - 1].labelHe, "he")).toBeGreaterThanOrEqual(0);
       }
     });
 

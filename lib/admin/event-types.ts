@@ -21,7 +21,6 @@ export async function createEventType(
         labelEn: input.labelEn,
         colorHex: input.colorHex,
         glyph: input.glyph,
-        sortOrder: input.sortOrder ?? 0,
       })
       .returning({ id: eventTypes.id }),
   );
@@ -42,7 +41,6 @@ export async function updateEventType(
         ...(input.labelEn !== undefined && { labelEn: input.labelEn }),
         ...(input.colorHex !== undefined && { colorHex: input.colorHex }),
         ...(input.glyph !== undefined && { glyph: input.glyph }),
-        ...(input.sortOrder !== undefined && { sortOrder: input.sortOrder }),
       })
       .where(eq(eventTypes.id, id))
       .returning({ id: eventTypes.id }),
@@ -70,9 +68,8 @@ export async function listEventTypes(schoolId: string) {
         labelEn: eventTypes.labelEn,
         colorHex: eventTypes.colorHex,
         glyph: eventTypes.glyph,
-        sortOrder: eventTypes.sortOrder,
       })
       .from(eventTypes)
-      .orderBy(asc(eventTypes.sortOrder)),
+      .orderBy(asc(eventTypes.labelHe)),
   );
 }

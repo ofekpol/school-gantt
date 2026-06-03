@@ -62,7 +62,6 @@ export const EventTypeSchema = z.object({
   colorHex: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be #RRGGBB"),
   /** Single glyph or short string for the event type icon */
   glyph: z.string().min(1).max(8),
-  sortOrder: z.number().int().min(0).optional(),
 });
 
 export type EventTypeInput = z.infer<typeof EventTypeSchema>;
