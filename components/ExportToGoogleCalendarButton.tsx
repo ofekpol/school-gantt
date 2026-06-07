@@ -11,11 +11,13 @@ interface ExportEventType {
 }
 
 interface Props {
-  schoolSlug: string;
-  allGrades: number[];
-  eventTypes: ExportEventType[];
-  defaultGrades: number[];
-  defaultTypes: string[];
+  schoolSlug?: string;
+  allGrades?: number[];
+  eventTypes?: ExportEventType[];
+  defaultGrades?: number[];
+  defaultTypes?: string[];
+  buttonClassName?: string;
+  labelKey?: "button" | "shortButton";
 }
 
 /**
@@ -30,6 +32,8 @@ export function ExportToGoogleCalendarButton({
   eventTypes: _eventTypes,
   defaultGrades: _defaultGrades,
   defaultTypes: _defaultTypes,
+  buttonClassName,
+  labelKey = "button",
 }: Props) {
   const t = useTranslations("export");
   const [open, setOpen] = useState(false);
@@ -39,10 +43,13 @@ export function ExportToGoogleCalendarButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className={
+          buttonClassName ??
+          "inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        }
       >
         <CalendarPlus className="size-4" aria-hidden="true" />
-        {t("button")}
+        {t(labelKey)}
       </button>
       {open && <ExportModal onClose={() => setOpen(false)} />}
     </>

@@ -247,6 +247,7 @@
   },
   "export": {
     "button": "ייצוא ל-Google Calendar",
+    "shortButton": "ייצוא",
     "modalTitle": "חיבור ל-Google Calendar",
     "intro": "צור קישור פרטי ליומן עם כל האירועים שמותר לך לראות בבית הספר.",
     "googleInstructions": "העתק את הקישור והוסף אותו ב-Google Calendar דרך הוספת יומן ← מכתובת URL.",

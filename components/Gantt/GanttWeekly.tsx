@@ -10,6 +10,7 @@ import {
 } from "@/lib/views/gantt-weekly";
 import { EventDrawer } from "./EventDrawer";
 import { useRouteProgress } from "@/components/RouteProgress";
+import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 
 /* ---- Layout constants ---- */
 const AXIS_H = 72;
@@ -449,7 +450,7 @@ function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
         <NavBtn onClick={onNext} aria-label="שבוע הבא">‹</NavBtn>
         <NavBtn onClick={onPrev} aria-label="שבוע קודם">›</NavBtn>
         <div style={{ width: 1, height: 22, background: "var(--sg-hairline)", margin: "0 4px" }} />
-        <PrintBtn />
+        <DashboardExportBtn />
       </div>
     </div>
   );
@@ -474,21 +475,12 @@ function NavBtn({ onClick, children, ...rest }: React.ButtonHTMLAttributes<HTMLB
   );
 }
 
-function PrintBtn() {
+function DashboardExportBtn() {
   return (
-    <button
-      type="button"
-      onClick={() => window.print()}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        height: 32, padding: "0 14px",
-        borderRadius: 8, border: "1px solid var(--sg-hairline)",
-        background: "var(--sg-surface)", color: "var(--sg-ink-mute)",
-        fontSize: 13, fontWeight: 500, cursor: "pointer",
-      }}
-    >
-      ייצוא
-    </button>
+    <ExportToGoogleCalendarButton
+      labelKey="shortButton"
+      buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    />
   );
 }
 
