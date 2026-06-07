@@ -41,15 +41,18 @@ export async function GET(
   // event-type *keys* (so labels can change without invalidating filters).
   const allTypes = await listEventTypes(subscription.schoolId);
   const typeIdToKey = new Map(allTypes.map((t) => [t.id, t.key]));
+  const hasTypeFilter = subscription.filterEventTypes.length > 0;
   const filterKeys = subscription.filterEventTypes
     .map((id) => typeIdToKey.get(id))
     .filter((k): k is string => Boolean(k));
 
-  const events = await getAgendaForSchool(subscription.schoolId, {
-    grades:
-      subscription.filterGrades.length > 0 ? subscription.filterGrades : undefined,
-    types: filterKeys.length > 0 ? filterKeys : undefined,
-  });
+  const events = hasTypeFilter && filterKeys.length === 0
+    ? []
+    : await getAgendaForSchool(subscription.schoolId, {
+        grades:
+          subscription.filterGrades.length > 0 ? subscription.filterGrades : undefined,
+        types: filterKeys.length > 0 ? filterKeys : undefined,
+      });
 
   const ical: ICalEvent[] = events.map((e) => ({
     id: e.id,

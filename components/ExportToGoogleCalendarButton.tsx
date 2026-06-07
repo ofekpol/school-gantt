@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CalendarPlus } from "lucide-react";
-import { formatGradeLabel } from "@/lib/grades";
+import { CalendarPlus, Check, Copy, Link as LinkIcon, LogIn } from "lucide-react";
 
 interface ExportEventType {
   key: string;
@@ -26,11 +25,11 @@ interface Props {
  * event detail surfaces instead.
  */
 export function ExportToGoogleCalendarButton({
-  schoolSlug,
-  allGrades,
-  eventTypes,
-  defaultGrades,
-  defaultTypes,
+  schoolSlug: _schoolSlug,
+  allGrades: _allGrades,
+  eventTypes: _eventTypes,
+  defaultGrades: _defaultGrades,
+  defaultTypes: _defaultTypes,
 }: Props) {
   const t = useTranslations("export");
   const [open, setOpen] = useState(false);
@@ -45,31 +44,20 @@ export function ExportToGoogleCalendarButton({
         <CalendarPlus className="size-4" aria-hidden="true" />
         {t("button")}
       </button>
-      {open && (
-        <ExportModal
-          schoolSlug={schoolSlug}
-          allGrades={allGrades}
-          eventTypes={eventTypes}
-          defaultGrades={defaultGrades}
-          defaultTypes={defaultTypes}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      {open && <ExportModal onClose={() => setOpen(false)} />}
     </>
   );
 }
 
 function ExportModal({
-  schoolSlug,
-  allGrades,
-  eventTypes,
-  defaultGrades,
-  defaultTypes,
   onClose,
-}: Props & { onClose: () => void }) {
+}: { onClose: () => void }) {
   const t = useTranslations("export");
-  const [grades, setGrades] = useState<number[]>(defaultGrades);
-  const [types, setTypes] = useState<string[]>(defaultTypes);
+  const [creating, setCreating] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [loginRequired, setLoginRequired] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -79,23 +67,45 @@ function ExportModal({
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  function toggle<T>(list: T[], value: T): T[] {
-    return list.includes(value)
-      ? list.filter((v) => v !== value)
-      : [...list, value];
+  async function createUrl() {
+    setCreating(true);
+    setError(null);
+    setLoginRequired(false);
+    setCopied(false);
+
+    const res = await fetch("/api/v1/ical-subscriptions/personal", {
+      method: "POST",
+    });
+    setCreating(false);
+
+    if (res.status === 401) {
+      setLoginRequired(true);
+      return;
+    }
+
+    if (!res.ok) {
+      setError(t("errorGeneric"));
+      return;
+    }
+
+    const body = (await res.json()) as { url?: string };
+    if (!body.url) {
+      setError(t("errorGeneric"));
+      return;
+    }
+    setUrl(body.url);
   }
 
-  function exportIcs() {
-    const query = new URLSearchParams({ school: schoolSlug });
-    if (grades.length > 0) query.set("grades", grades.join(","));
-    if (types.length > 0) query.set("eventTypes", types.join(","));
-    const link = document.createElement("a");
-    link.href = `/api/v1/export/ics?${query.toString()}`;
-    link.download = "school-events.ics";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    onClose();
+  async function copyUrl() {
+    if (!url) return;
+    await navigator.clipboard?.writeText(url);
+    setCopied(true);
+  }
+
+  function loginHref() {
+    if (typeof window === "undefined") return "/auth/login";
+    const next = `${window.location.pathname}${window.location.search}`;
+    return `/auth/login?next=${encodeURIComponent(next)}`;
   }
 
   return (
@@ -108,73 +118,73 @@ function ExportModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-md flex-col gap-4 rounded-2xl bg-white p-5 shadow-2xl"
+        className="flex w-full max-w-md flex-col gap-4 rounded-lg bg-white p-5 shadow-2xl"
       >
-        <h2 id="export-modal-title" className="text-lg font-semibold text-neutral-900">
-          {t("modalTitle")}
-        </h2>
-
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-medium text-neutral-700">
-            {t("gradesLabel")}
-          </legend>
-          <div className="flex flex-wrap gap-1.5">
-            {allGrades.map((g) => {
-              const on = grades.length === 0 || grades.includes(g);
-              return (
-                <button
-                  key={g}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setGrades((prev) => toggle(prev, g))}
-                  className={`min-w-11 rounded-md border px-3 py-1 text-sm font-semibold transition-colors ${
-                    on
-                      ? "border-blue-600 bg-blue-600 text-white"
-                      : "border-neutral-200 bg-neutral-50 text-neutral-700"
-                  }`}
-                >
-                  {formatGradeLabel(g)}
-                </button>
-              );
-            })}
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+            <LinkIcon className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 id="export-modal-title" className="text-lg font-semibold text-neutral-900">
+              {t("modalTitle")}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-neutral-600">{t("intro")}</p>
           </div>
-        </fieldset>
-
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-medium text-neutral-700">
-            {t("typesLabel")}
-          </legend>
-          <div className="flex flex-wrap gap-1.5">
-            {eventTypes.map((et) => {
-              const on = types.length === 0 || types.includes(et.key);
-              return (
-                <button
-                  key={et.key}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setTypes((prev) => toggle(prev, et.key))}
-                  className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-sm transition-colors ${
-                    on
-                      ? "border-blue-600 bg-blue-50 text-neutral-900"
-                      : "border-neutral-200 bg-neutral-50 text-neutral-500"
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="size-2 rounded-full"
-                    style={{ background: et.colorHex }}
-                  />
-                  {et.labelHe}
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
-
-        <div className="rounded-lg bg-neutral-50 p-3 text-xs text-neutral-600">
-          <p>{t("importNote")}</p>
-          <p className="mt-1 text-neutral-500">{t("desktopOnlyNote")}</p>
         </div>
+
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm leading-6 text-neutral-700">
+          <p>{t("googleInstructions")}</p>
+          <p className="mt-1 text-neutral-500">{t("syncNote")}</p>
+        </div>
+
+        {url && (
+          <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+            <label className="mb-2 block text-sm font-medium text-green-900">
+              {t("urlLabel")}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={url}
+                onClick={(e) => e.currentTarget.select()}
+                className="min-w-0 flex-1 rounded-md border border-green-300 bg-white px-3 py-2 text-xs text-neutral-800"
+              />
+              <button
+                type="button"
+                onClick={copyUrl}
+                className="inline-flex shrink-0 items-center gap-2 rounded-md bg-green-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+              >
+                {copied ? (
+                  <Check className="size-4" aria-hidden="true" />
+                ) : (
+                  <Copy className="size-4" aria-hidden="true" />
+                )}
+                {copied ? t("copied") : t("copy")}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {loginRequired && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+            <p className="font-semibold">{t("loginRequiredTitle")}</p>
+            <p className="mt-1">{t("loginRequiredBody")}</p>
+            <a
+              href={loginHref()}
+              className="mt-3 inline-flex items-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+            >
+              <LogIn className="size-4" aria-hidden="true" />
+              {t("loginAction")}
+            </a>
+          </div>
+        )}
+
+        {error && (
+          <p role="alert" className="text-sm text-red-600">
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           <button
@@ -184,14 +194,17 @@ function ExportModal({
           >
             {t("close")}
           </button>
-          <button
-            type="button"
-            onClick={exportIcs}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-          >
-            <CalendarPlus className="size-4" aria-hidden="true" />
-            {t("exportAction")}
-          </button>
+          {!url && (
+            <button
+              type="button"
+              onClick={createUrl}
+              disabled={creating}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+            >
+              <CalendarPlus className="size-4" aria-hidden="true" />
+              {creating ? t("creatingUrl") : t("createUrl")}
+            </button>
+          )}
         </div>
       </div>
     </div>

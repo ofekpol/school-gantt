@@ -68,6 +68,7 @@ export async function middleware(request: NextRequest) {
     "/api/v1/auth/login",
     "/api/v1/public/",
     "/api/v1/export/",
+    "/api/v1/ical-subscriptions/personal",
   ];
 
   // Viewer school paths are public: /:school, /:school/calendar, /:school/agenda

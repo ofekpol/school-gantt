@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
-import { icalSubscriptions } from "@/lib/db/schema";
+import { editorScopes, eventTypes, icalSubscriptions } from "@/lib/db/schema";
 
 export interface SubscriptionRow {
   id: string;
@@ -21,6 +21,19 @@ export interface SubscriptionWithSchool {
   filterEventTypes: string[];
   revokedAt: Date | null;
 }
+
+export interface PersonalSubscriptionUser {
+  id: string;
+  schoolId: string | null;
+  role: "editor" | "admin" | "viewer";
+}
+
+export interface PersonalSubscriptionFilters {
+  grades: number[];
+  eventTypes: string[];
+}
+
+export const NO_MATCHING_EVENT_TYPE_FILTER = "00000000-0000-0000-0000-000000000000";
 
 /** 32 bytes base64url → 43 chars; well under the schema 64-char limit. */
 export function generateToken(): string {
@@ -52,6 +65,63 @@ export async function createSubscription(
       .returning({ id: icalSubscriptions.id }),
   );
   return { id: row.id, token };
+}
+
+export async function buildPersonalSubscriptionFilters(
+  user: PersonalSubscriptionUser,
+): Promise<PersonalSubscriptionFilters> {
+  if (!user.schoolId) return { grades: [], eventTypes: [] };
+  if (user.role !== "editor") return { grades: [], eventTypes: [] };
+
+  return withSchool(user.schoolId, async (tx) => {
+    const gradeRows = await tx
+      .select({ scopeValue: editorScopes.scopeValue })
+      .from(editorScopes)
+      .where(
+        and(
+          eq(editorScopes.staffUserId, user.id),
+          eq(editorScopes.scopeKind, "grade"),
+        ),
+      );
+    const grades =
+      gradeRows.length > 0
+        ? gradeRows.map((row) => Number(row.scopeValue)).sort((a, b) => a - b)
+        : [7, 8, 9, 10, 11, 12];
+
+    const typeScopeRows = await tx
+      .select({ scopeValue: editorScopes.scopeValue })
+      .from(editorScopes)
+      .where(
+        and(
+          eq(editorScopes.staffUserId, user.id),
+          eq(editorScopes.scopeKind, "event_type"),
+        ),
+      );
+    if (typeScopeRows.length === 0) return { grades, eventTypes: [] };
+
+    const scopedKeys = new Set(typeScopeRows.map((row) => row.scopeValue));
+    const typeRows = await tx
+      .select({ id: eventTypes.id, key: eventTypes.key })
+      .from(eventTypes);
+    const filteredTypeIds = typeRows
+      .filter((row) => scopedKeys.has(row.key))
+      .map((row) => row.id)
+      .sort();
+
+    return {
+      grades,
+      eventTypes:
+        filteredTypeIds.length > 0 ? filteredTypeIds : [NO_MATCHING_EVENT_TYPE_FILTER],
+    };
+  });
+}
+
+export async function createPersonalCalendarSubscription(
+  user: PersonalSubscriptionUser,
+): Promise<{ id: string; token: string }> {
+  if (!user.schoolId) throw new Error("missing_school");
+  const filters = await buildPersonalSubscriptionFilters(user);
+  return createSubscription(user.schoolId, user.id, filters);
 }
 
 /**

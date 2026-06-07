@@ -46,6 +46,14 @@ describe("AUTH-07: public routes pass through without session", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 
+  it("does not redirect personal iCal subscription API so it can return 401", async () => {
+    const middleware = await importMiddleware();
+    const res = await middleware(
+      new NextRequest("http://localhost:3000/api/v1/ical-subscriptions/personal"),
+    );
+    expect(res.headers.get("location")).toBeNull();
+  });
+
   it("redirects unauthenticated request to a protected route", async () => {
     const middleware = await importMiddleware();
     const res = await middleware(new NextRequest("http://localhost:3000/dashboard"));
@@ -65,7 +73,13 @@ describe("AUTH-07: PUBLIC_PATHS allowlist (static guard)", () => {
       path.join(__dirname, "../../middleware.ts"),
       "utf8",
     );
-    for (const route of ['"/auth/login"', '"/auth/callback"', '"/invite/"', '"/ical/"']) {
+    for (const route of [
+      '"/auth/login"',
+      '"/auth/callback"',
+      '"/invite/"',
+      '"/ical/"',
+      '"/api/v1/ical-subscriptions/personal"',
+    ]) {
       expect(src).toContain(route);
     }
   });
