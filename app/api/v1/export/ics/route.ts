@@ -73,19 +73,20 @@ export async function GET(request: NextRequest): Promise<Response> {
     types: eventTypes.length > 0 ? eventTypes : undefined,
   });
 
-  const ical: ICalEvent[] = events.map((e) => ({
-    id: e.id,
-    title: e.title,
-    description: e.description,
-    location: e.location,
-    startAt: new Date(e.startAt),
-    endAt: new Date(e.endAt),
-    allDay: e.allDay,
-    eventTypeLabelHe: e.eventTypeLabelHe,
-    canceled: e.isCanceled === true,
-    // Stable DTSTAMP (see iCal feed) — startAt is a deterministic surrogate.
-    updatedAt: new Date(e.startAt),
-  }));
+  const ical: ICalEvent[] = events
+    .filter((e) => e.isCanceled !== true)
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      description: e.description,
+      location: e.location,
+      startAt: new Date(e.startAt),
+      endAt: new Date(e.endAt),
+      allDay: e.allDay,
+      eventTypeLabelHe: e.eventTypeLabelHe,
+      // Stable DTSTAMP (see iCal feed) — startAt is a deterministic surrogate.
+      updatedAt: new Date(e.startAt),
+    }));
 
   const body = serializeCalendar({
     schoolName: school.name,
