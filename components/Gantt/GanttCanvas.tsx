@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Ban, Pencil } from "lucide-react";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import type { GanttBar, GanttMonth, ZoomLevel } from "@/lib/views/gantt";
 import { zoomScale } from "@/lib/views/gantt";
@@ -261,8 +262,8 @@ function EventBarButton({ bar, zIndex, onSelect }: EventBarButtonProps) {
           <span style={{ fontSize: 11, flexShrink: 0 }}>{bar.eventTypeGlyph}</span>
           <span
             style={{
-              flex: 1,
-              minWidth: 24,
+              flex: "1 1 auto",
+              minWidth: 0,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -274,19 +275,18 @@ function EventBarButton({ bar, zIndex, onSelect }: EventBarButtonProps) {
           {(isCanceled || bar.isUpdated) && (
             <span
               style={{
-                flexShrink: 1,
-                minWidth: 0,
-                overflow: "hidden",
-                whiteSpace: "nowrap",
+                flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 14,
+                height: 14,
                 borderRadius: 999,
                 background: isCanceled ? "#fecaca" : "#bfdbfe",
                 color: isCanceled ? "#7f1d1d" : "#1e3a8a",
-                padding: "1px 5px",
-                fontSize: 9,
-                fontWeight: 700,
               }}
             >
-              {isCanceled ? "בוטל" : "עודכן"}
+              {isCanceled ? <Ban size={9} /> : <Pencil size={9} />}
             </span>
           )}
         </button>
