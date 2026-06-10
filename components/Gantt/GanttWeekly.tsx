@@ -8,6 +8,7 @@ import {
   type WeeklyModel,
   type WeeklyEventBar,
 } from "@/lib/views/gantt-weekly";
+import { Ban, Pencil } from "lucide-react";
 import { EventDrawer } from "./EventDrawer";
 import { useRouteProgress } from "@/components/RouteProgress";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
@@ -408,23 +409,22 @@ function EventBarChip({ bar, onSelect }: { bar: WeeklyEventBar; onSelect: (id: s
       <span style={{ width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <EventTypeGlyph glyph={bar.eventTypeGlyph} color={isVacation ? "rgba(255,255,255,0.85)" : bar.eventTypeColor} />
       </span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 24, textDecoration: isCanceled ? "line-through" : "none" }}>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1 1 auto", minWidth: 0, textDecoration: isCanceled ? "line-through" : "none" }}>
         {bar.title}
       </span>
       {(isCanceled || bar.isUpdated) && (
         <span style={{
-          flexShrink: 1,
-          minWidth: 0,
-          overflow: "hidden",
-          whiteSpace: "nowrap",
+          flexShrink: 0,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 14,
+          height: 14,
           borderRadius: 999,
           background: isCanceled ? "#fecaca" : "#bfdbfe",
           color: isCanceled ? "#7f1d1d" : "#1e3a8a",
-          padding: "1px 5px",
-          fontSize: 9,
-          fontWeight: 700,
         }}>
-          {isCanceled ? "בוטל" : "עודכן"}
+          {isCanceled ? <Ban size={9} /> : <Pencil size={9} />}
         </span>
       )}
     </button>
