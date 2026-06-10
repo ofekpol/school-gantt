@@ -261,6 +261,8 @@ function EventBarButton({ bar, zIndex, onSelect }: EventBarButtonProps) {
           <span style={{ fontSize: 11, flexShrink: 0 }}>{bar.eventTypeGlyph}</span>
           <span
             style={{
+              flex: 1,
+              minWidth: 24,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -272,7 +274,10 @@ function EventBarButton({ bar, zIndex, onSelect }: EventBarButtonProps) {
           {(isCanceled || bar.isUpdated) && (
             <span
               style={{
-                flexShrink: 0,
+                flexShrink: 1,
+                minWidth: 0,
+                overflow: "hidden",
+                whiteSpace: "nowrap",
                 borderRadius: 999,
                 background: isCanceled ? "#fecaca" : "#bfdbfe",
                 color: isCanceled ? "#7f1d1d" : "#1e3a8a",

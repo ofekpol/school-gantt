@@ -69,7 +69,7 @@ export function serializeCalendar(input: SerializeInput): string {
       lines.push(`DTEND:${formatUtc(evt.endAt)}`);
     }
     if (evt.canceled) lines.push("STATUS:CANCELLED");
-    lines.push(`SUMMARY:${escapeText(evt.canceled ? `מבוטל - ${evt.title}` : evt.title)}`);
+    lines.push(`SUMMARY:${escapeText(evt.canceled ? `בוטל - ${evt.title}` : evt.title)}`);
     if (evt.location)
       lines.push(`LOCATION:${escapeText(evt.location)}`);
     if (evt.description)

@@ -56,7 +56,7 @@ beforeEach(() => {
 });
 
 describe("GET /ical/[token]", () => {
-  it("omits canceled events so Google subscriptions remove deleted school events", async () => {
+  it("includes canceled events marked as STATUS:CANCELLED so Google reflects the cancellation", async () => {
     getAgendaForSchoolMock.mockResolvedValue([
       agendaEvent({ id: "approved-1", title: "Visible lesson", isCanceled: false }),
       agendaEvent({ id: "canceled-1", title: "test", isCanceled: true }),
@@ -75,6 +75,12 @@ describe("GET /ical/[token]", () => {
         expect.objectContaining({
           id: "approved-1",
           title: "Visible lesson",
+          canceled: false,
+        }),
+        expect.objectContaining({
+          id: "canceled-1",
+          title: "test",
+          canceled: true,
         }),
       ],
     });

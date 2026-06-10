@@ -408,12 +408,15 @@ function EventBarChip({ bar, onSelect }: { bar: WeeklyEventBar; onSelect: (id: s
       <span style={{ width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <EventTypeGlyph glyph={bar.eventTypeGlyph} color={isVacation ? "rgba(255,255,255,0.85)" : bar.eventTypeColor} />
       </span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, textDecoration: isCanceled ? "line-through" : "none" }}>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 24, textDecoration: isCanceled ? "line-through" : "none" }}>
         {bar.title}
       </span>
       {(isCanceled || bar.isUpdated) && (
         <span style={{
-          flexShrink: 0,
+          flexShrink: 1,
+          minWidth: 0,
+          overflow: "hidden",
+          whiteSpace: "nowrap",
           borderRadius: 999,
           background: isCanceled ? "#fecaca" : "#bfdbfe",
           color: isCanceled ? "#7f1d1d" : "#1e3a8a",
