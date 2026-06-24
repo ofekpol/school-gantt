@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
@@ -27,6 +27,7 @@ const translations: Record<string, string> = {
   weeklyPeriodNavigation: "weeklyPeriodNavigation",
   previousWeek: "שבוע קודם",
   nextWeek: "שבוע הבא",
+  backToToday: "חזור להיום",
 };
 
 vi.mock("next/navigation", () => ({
@@ -48,6 +49,8 @@ vi.mock("@/components/RouteProgress", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
+  window.history.replaceState(null, "", "/");
 });
 
 describe("GanttWeekly export action", () => {
@@ -130,5 +133,25 @@ describe("GanttWeekly export action", () => {
     expect(within(nav).getByRole("heading", { name: "שבוע 7–13 ביולי" })).toBeInTheDocument();
     expect(within(nav).getByRole("button", { name: "שבוע הבא" })).toHaveTextContent("›");
     expect(nav).toHaveClass("justify-center");
+  });
+
+  it("jumps from another week back to the current week", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-08T09:00:00.000Z"));
+    window.history.replaceState(null, "", "/dashboard?week=2026-08-02&grades=7");
+    const model = buildWeeklyModel(
+      new Date(Date.UTC(2026, 7, 2)),
+      [],
+      [7, 8],
+      new Date(Date.UTC(2026, 6, 8)),
+    );
+
+    render(<GanttWeekly model={model} events={[]} navigationMode="local" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "חזור להיום" }));
+
+    expect(window.location.pathname).toBe("/dashboard");
+    expect(window.location.search).toContain("week=2026-07-05");
+    expect(window.location.search).toContain("grades=7");
   });
 });

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   buildWeeklyModel,
+  getWeekStart,
   type WeeklyModel,
   type WeeklyEventBar,
 } from "@/lib/views/gantt-weekly";
@@ -105,8 +106,7 @@ export function GanttWeekly({
     setSelectedId(eventId);
   }
 
-  function navigate(delta: number) {
-    const next = new Date(displayModel.weekStart.getTime() + delta * 7 * 24 * 60 * 60 * 1000);
+  function setWeekStart(next: Date) {
     const iso = next.toISOString().slice(0, 10);
     const params =
       navigationMode === "local"
@@ -125,12 +125,25 @@ export function GanttWeekly({
     });
   }
 
+  function navigate(delta: number) {
+    setWeekStart(new Date(displayModel.weekStart.getTime() + delta * 7 * 24 * 60 * 60 * 1000));
+  }
+
+  function jumpToToday() {
+    setWeekStart(getWeekStart(new Date()));
+  }
+
   const todayIndex = displayModel.days.findIndex((d) => d.isToday);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", fontFamily: "var(--sg-font-ui)" }}>
       {/* Week navigation */}
-      <WeekNav model={displayModel} onPrev={() => navigate(-1)} onNext={() => navigate(1)} />
+      <WeekNav
+        model={displayModel}
+        onPrev={() => navigate(-1)}
+        onNext={() => navigate(1)}
+        onToday={jumpToToday}
+      />
 
       <GanttWeeklyMobileList
         model={displayModel}
@@ -443,14 +456,16 @@ interface WeekNavProps {
   model: WeeklyModel;
   onPrev: () => void;
   onNext: () => void;
+  onToday: () => void;
 }
 
-function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
+function WeekNav({ model, onPrev, onNext, onToday }: WeekNavProps) {
   const t = useTranslations("gantt");
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3 sm:px-6">
-      <div className="justify-self-start">
+      <div className="flex items-center gap-2 justify-self-start">
         <DashboardExportBtn />
+        <TodayBtn onClick={onToday} label={t("backToToday")} />
       </div>
       <div
         aria-label={t("weeklyPeriodNavigation")}
@@ -470,6 +485,19 @@ function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
       </div>
       <div aria-hidden="true" />
     </div>
+  );
+}
+
+function TodayBtn({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="inline-flex h-8 items-center rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
+      {label}
+    </button>
   );
 }
 

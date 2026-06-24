@@ -278,6 +278,7 @@
     "previousWeek": "שבוע קודם",
     "nextWeek": "שבוע הבא",
     "weekLabel": "שבוע {week}",
+    "backToToday": "חזור להיום",
     "newEventOnDate": "אירוע חדש ב-{date}",
     "cellLabel": "{date}, שכבה {grade}",
     "drawer": {
