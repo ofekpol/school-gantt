@@ -120,6 +120,7 @@
       "expiresInHours": "תוקף ההזמנה בשעות",
       "inviteCreated": "ההזמנה נוצרה",
       "noInvites": "אין הזמנות.",
+      "mobileInviteListLabel": "רשימת הזמנות למובייל",
       "scopes": "הרשאות",
       "staffMember": "איש צוות",
       "actions": "פעולות",
@@ -128,6 +129,7 @@
       "filterByStatus": "סינון לפי סטטוס",
       "allRoles": "כל התפקידים",
       "allStatuses": "כל הסטטוסים",
+      "mobileListLabel": "רשימת צוות למובייל",
       "noStaffMatches": "אין אנשי צוות שמתאימים לסינון.",
       "expiresAt": "תוקף עד",
       "status": "סטטוס",
@@ -161,6 +163,7 @@
       "inUse": "לא ניתן למחוק — אירועים משויכים",
       "chooseColor": "בחר צבע",
       "customColor": "צבע מותאם אישית",
+      "mobileListLabel": "רשימת סוגי אירועים למובייל",
       "empty": "אין סוגי אירועים עדיין. הוסף את הראשון."
     },
     "queue": {
@@ -268,6 +271,9 @@
     "empty": "אין אירועים מאושרים בשנה הנוכחית.",
     "zoomLabel": "רמת הגדלה",
     "gradesColumnLabel": "שכבות",
+    "mobileWeekList": "רשימת השבוע",
+    "mobileNewEventOnDate": "אירוע חדש ב-{date}",
+    "mobileNoEvents": "אין אירועים ביום זה",
     "newEventOnDate": "אירוע חדש ב-{date}",
     "cellLabel": "{date}, שכבה {grade}",
     "drawer": {

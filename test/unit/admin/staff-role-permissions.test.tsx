@@ -1,8 +1,9 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PendingRequestsTable } from "@/components/admin/PendingRequestsTable";
 import { InviteForm } from "@/components/admin/InviteForm";
+import { InviteTable } from "@/components/admin/InviteTable";
 import { StaffTable } from "@/components/admin/StaffTable";
 
 vi.mock("next/navigation", () => ({
@@ -25,6 +26,61 @@ const eventTypes = [
 afterEach(() => cleanup());
 
 describe("admin staff role permissions", () => {
+  it("renders invite mobile cards with copy actions", () => {
+    render(
+      <InviteTable
+        invites={[
+          {
+            id: "invite-1",
+            token: "abc",
+            role: "editor",
+            gradeScopes: [7],
+            eventTypeScopes: ["trip"],
+            multiUse: true,
+            expiresAt: new Date("2026-06-27T08:00:00.000Z"),
+            usedAt: null,
+          },
+        ]}
+      />,
+    );
+
+    const mobileList = screen.getByLabelText("mobileInviteListLabel");
+
+    expect(within(mobileList).getByText("roleEditor")).toBeInTheDocument();
+    expect(within(mobileList).getByText("ז, trip")).toBeInTheDocument();
+    expect(within(mobileList).getByRole("button", { name: "copyInvite roleEditor" })).toBeInTheDocument();
+  });
+
+  it("renders staff mobile cards with edit and status actions", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <StaffTable
+        initialStaff={[
+          {
+            id: "staff-1",
+            email: "editor@test",
+            fullName: "Editor User",
+            role: "editor",
+            deactivatedAt: null,
+            gradeScopes: [7],
+            eventTypeScopes: ["trip"],
+          },
+        ]}
+        eventTypes={eventTypes}
+      />,
+    );
+
+    const mobileList = screen.getByLabelText("mobileListLabel");
+    expect(within(mobileList).getByText("Editor User")).toBeInTheDocument();
+    expect(within(mobileList).getByText("editor@test")).toBeInTheDocument();
+    expect(within(mobileList).getByText("roleEditor")).toBeInTheDocument();
+
+    await user.click(within(mobileList).getByRole("button", { name: "edit Editor User" }));
+
+    expect(screen.getByRole("dialog", { name: "editUserTitle" })).toBeInTheDocument();
+  });
+
   it("hides scope controls while editing a viewer and shows them for an editor", async () => {
     const user = userEvent.setup();
 

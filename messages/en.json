@@ -120,6 +120,7 @@
       "expiresInHours": "Invite expires in hours",
       "inviteCreated": "Invite created",
       "noInvites": "No invites.",
+      "mobileInviteListLabel": "Mobile invite list",
       "scopes": "Scopes",
       "staffMember": "Staff Member",
       "actions": "Actions",
@@ -128,6 +129,7 @@
       "filterByStatus": "Filter by status",
       "allRoles": "All roles",
       "allStatuses": "All statuses",
+      "mobileListLabel": "Mobile staff list",
       "noStaffMatches": "No staff members match the current filters.",
       "expiresAt": "Expires",
       "status": "Status",
@@ -161,6 +163,7 @@
       "inUse": "Cannot delete — events are assigned to this type",
       "chooseColor": "Choose a color",
       "customColor": "Custom color",
+      "mobileListLabel": "Mobile event type list",
       "empty": "No event types yet. Add your first one."
     },
     "queue": {
@@ -268,6 +271,9 @@
     "empty": "No approved events in the current year.",
     "zoomLabel": "Zoom level",
     "gradesColumnLabel": "Grades",
+    "mobileWeekList": "Weekly mobile list",
+    "mobileNewEventOnDate": "New event on {date}",
+    "mobileNoEvents": "No events this day",
     "newEventOnDate": "New event on {date}",
     "cellLabel": "{date}, grade {grade}",
     "drawer": {

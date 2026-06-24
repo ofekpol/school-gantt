@@ -68,4 +68,17 @@ describe("EventTypeTable sorting", () => {
 
     expect(screen.queryByRole("button", { name: "colorHex" })).not.toBeInTheDocument();
   });
+
+  it("renders a mobile card list with the same manage actions", async () => {
+    const user = userEvent.setup();
+    render(<EventTypeTable initial={initial} />);
+
+    const mobileList = screen.getByLabelText("mobileListLabel");
+    expect(within(mobileList).getByText("אסיפה")).toBeInTheDocument();
+    expect(within(mobileList).getByText("#9467bd")).toBeInTheDocument();
+
+    await user.click(within(mobileList).getByRole("button", { name: "edit אסיפה" }));
+
+    expect(within(mobileList).getByDisplayValue("mceremony")).toBeInTheDocument();
+  });
 });

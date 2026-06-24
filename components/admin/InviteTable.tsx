@@ -45,7 +45,68 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
   }
 
   return (
-    <div className="max-h-[420px] overflow-auto rounded-lg border border-neutral-200">
+    <div className="rounded-lg border border-neutral-200">
+      <div aria-label={t("mobileInviteListLabel")} className="space-y-3 p-3 md:hidden">
+        {invites.map((invite) => {
+          const expired = new Date(invite.expiresAt) <= new Date();
+          const isActive = !invite.usedAt && !expired;
+          const status = invite.usedAt
+            ? t("used")
+            : expired
+              ? t("expired")
+              : t("active");
+          const role = t(`role${capitalize(invite.role)}`);
+          const scopeLabels = formatInviteScopes(invite);
+          return (
+            <article key={invite.id} className="rounded-lg border border-neutral-200 p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-medium text-neutral-950">{role}</h3>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    {EXPIRES_AT_FMT.format(new Date(invite.expiresAt))}
+                  </p>
+                </div>
+                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">
+                  {status}
+                </span>
+              </div>
+              {invite.multiUse && (
+                <span className="mt-3 inline-flex rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700">
+                  {t("multiUseBadge")}
+                </span>
+              )}
+              <dl className="mt-4 text-sm">
+                <dt className="text-xs font-medium text-neutral-500">{t("scopes")}</dt>
+                <dd className="mt-1 text-neutral-700">{scopeLabels || "—"}</dd>
+              </dl>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  aria-label={`${t("copyInvite")} ${role}`}
+                  onClick={() => copyInviteUrl(invite.token)}
+                >
+                  {t("copyInvite")}
+                </Button>
+                {isActive && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    aria-label={`${t("revokeInvite")} ${role}`}
+                    disabled={revoking === invite.id}
+                    onClick={() => handleRevoke(invite.id)}
+                  >
+                    {t("revokeInvite")}
+                  </Button>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="hidden max-h-[420px] overflow-auto md:block">
       <table className="w-full min-w-[720px] text-sm">
         <thead className="sticky top-0 z-10 bg-white text-xs font-semibold text-neutral-500 uppercase shadow-[0_1px_0_var(--color-border)]">
           <tr>
@@ -65,10 +126,7 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
               : expired
                 ? t("expired")
                 : t("active");
-            const scopeLabels = [
-              ...invite.gradeScopes.map((g) => formatGradeLabel(g)),
-              ...invite.eventTypeScopes,
-            ].join(", ");
+            const scopeLabels = formatInviteScopes(invite);
             return (
               <tr key={invite.id} className="border-t border-neutral-100 hover:bg-neutral-50">
                 <td className="py-3 ps-4 pe-4">
@@ -89,10 +147,7 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        const url = `${window.location.origin}/invite/${invite.token}`;
-                        void navigator.clipboard.writeText(url);
-                      }}
+                      onClick={() => copyInviteUrl(invite.token)}
                     >
                       {t("copyInvite")}
                     </Button>
@@ -114,8 +169,21 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
+}
+
+function copyInviteUrl(token: string) {
+  const url = `${window.location.origin}/invite/${token}`;
+  void navigator.clipboard.writeText(url);
+}
+
+function formatInviteScopes(invite: Pick<InviteRow, "gradeScopes" | "eventTypeScopes">) {
+  return [
+    ...invite.gradeScopes.map((g) => formatGradeLabel(g)),
+    ...invite.eventTypeScopes,
+  ].join(", ");
 }
 
 function capitalize(value: string) {

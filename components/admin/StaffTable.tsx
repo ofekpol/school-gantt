@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { formatGradeLabel } from "@/lib/grades";
 import { useRouteProgress } from "@/components/RouteProgress";
 import { cn } from "@/lib/utils";
-import { ALL_GRADES, ScopeFields } from "@/components/admin/ScopeFields";
+import { ALL_GRADES, EditStaffForm } from "@/components/admin/StaffEditForm";
+import { StaffMobileList } from "@/components/admin/StaffMobileList";
 
 interface StaffRow {
   id: string;
@@ -172,7 +173,29 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
         </label>
       </div>
 
-      <div className="max-h-[620px] overflow-auto">
+      <StaffMobileList
+        staff={filteredStaff}
+        labels={{
+          list: t("mobileListLabel"),
+          scopes: t("scopes"),
+          edit: t("edit"),
+          active: t("active"),
+          deactivated: t("deactivated"),
+          reactivate: t("reactivate"),
+          deactivate: t("deactivate"),
+          loading: tc("loading"),
+        }}
+        roleLabel={roleLabel}
+        scopeLabel={scopeLabel}
+        busyId={busyId}
+        onEdit={(id) => {
+          setError(null);
+          setEditingId(id);
+        }}
+        onDeactivate={handleDeactivate}
+      />
+
+      <div className="hidden max-h-[620px] overflow-auto md:block">
         <table className="w-full min-w-[780px] text-sm">
           <thead className="sticky top-0 z-10 bg-white text-xs font-semibold text-neutral-500 uppercase shadow-[0_1px_0_var(--color-border)]">
             <tr className="border-b border-neutral-200">
@@ -313,84 +336,5 @@ function StatusBadge(props: { active: boolean; activeLabel: string; deactivatedL
     >
       {active ? activeLabel : deactivatedLabel}
     </span>
-  );
-}
-
-function EditStaffForm({
-  row,
-  eventTypes,
-  busy,
-  error,
-  onCancel,
-  onSave,
-}: {
-  row: StaffRow;
-  eventTypes: EventTypeRow[];
-  busy: boolean;
-  error: string | null;
-  onCancel: () => void;
-  onSave: (row: StaffRow, form: FormData) => void;
-}) {
-  const t = useTranslations("admin.staff");
-  const tc = useTranslations("common");
-  const [role, setRole] = useState<StaffRow["role"]>(row.role);
-
-  useEffect(() => {
-    setRole(row.role);
-  }, [row.id, row.role]);
-
-  return (
-    <form action={(form) => onSave(row, form)} className="mt-5 space-y-4">
-      <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px]">
-        <label className="space-y-1.5">
-          <span className="text-sm font-medium text-neutral-700">{t("fullName")}</span>
-          <input
-            name="fullName"
-            defaultValue={row.fullName}
-            className="h-10 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-900 focus:ring-3 focus:ring-neutral-200"
-            required
-          />
-        </label>
-        <label className="space-y-1.5">
-          <span className="text-sm font-medium text-neutral-700">{t("role")}</span>
-          <select
-            name="role"
-            value={role}
-            onChange={(event) => setRole(event.target.value as StaffRow["role"])}
-            className="h-10 w-full rounded-md border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-900 focus:ring-3 focus:ring-neutral-200"
-          >
-            <option value="viewer">{t("roleViewer")}</option>
-            <option value="editor">{t("roleEditor")}</option>
-            <option value="admin">{t("roleAdmin")}</option>
-          </select>
-        </label>
-      </div>
-      {role === "editor" && (
-        <ScopeFields
-          eventTypes={eventTypes}
-          gradeName={(grade) => `staff-grade-${row.id}-${grade}`}
-          typeName={(key) => `staff-type-${row.id}-${key}`}
-          defaultGradeScopes={row.gradeScopes}
-          defaultEventTypeScopes={row.eventTypeScopes}
-          labels={{
-            gradeScopes: t("gradeScopes"),
-            eventTypeScopes: t("eventTypeScopes"),
-            selectAllGrades: t("selectAllGrades"),
-            clearAllGrades: t("clearAllGrades"),
-            selectAllEventTypes: t("selectAllEventTypes"),
-            clearAllEventTypes: t("clearAllEventTypes"),
-          }}
-        />
-      )}
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={busy}>
-          {busy ? tc("saving") : t("save")}
-        </Button>
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-          {t("cancel")}
-        </Button>
-        {error && <span className="text-sm text-red-600">{error}</span>}
-      </div>
-    </form>
   );
 }
