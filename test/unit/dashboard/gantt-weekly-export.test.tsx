@@ -126,9 +126,9 @@ describe("GanttWeekly export action", () => {
     render(<GanttWeekly model={model} events={[]} navigationMode="local" />);
 
     const nav = screen.getByLabelText("weeklyPeriodNavigation");
-    expect(within(nav).getByRole("button", { name: "שבוע קודם" })).toBeInTheDocument();
+    expect(within(nav).getByRole("button", { name: "שבוע קודם" })).toHaveTextContent("‹");
     expect(within(nav).getByRole("heading", { name: "שבוע 7–13 ביולי" })).toBeInTheDocument();
-    expect(within(nav).getByRole("button", { name: "שבוע הבא" })).toBeInTheDocument();
+    expect(within(nav).getByRole("button", { name: "שבוע הבא" })).toHaveTextContent("›");
     expect(nav).toHaveClass("justify-center");
   });
 });
