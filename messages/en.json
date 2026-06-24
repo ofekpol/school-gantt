@@ -278,6 +278,7 @@
     "previousWeek": "Previous week",
     "nextWeek": "Next week",
     "weekLabel": "Week {week}",
+    "backToToday": "Back to today",
     "newEventOnDate": "New event on {date}",
     "cellLabel": "{date}, grade {grade}",
     "drawer": {
