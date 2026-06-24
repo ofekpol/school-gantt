@@ -274,6 +274,10 @@
     "mobileWeekList": "Weekly mobile list",
     "mobileNewEventOnDate": "New event on {date}",
     "mobileNoEvents": "No events this day",
+    "weeklyPeriodNavigation": "Weekly navigation",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "weekLabel": "Week {week}",
     "newEventOnDate": "New event on {date}",
     "cellLabel": "{date}, grade {grade}",
     "drawer": {

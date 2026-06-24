@@ -446,22 +446,29 @@ interface WeekNavProps {
 }
 
 function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
+  const t = useTranslations("gantt");
   return (
-    <div className="flex items-center gap-3 px-3 py-3 sm:px-6" style={{ gap: 14 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-        <h1 style={{
-          fontFamily: "var(--sg-font-display)", fontSize: 26, fontWeight: 600,
-          color: "var(--sg-ink)", margin: 0,
-        }}>
-          שבוע {model.weekLabel}
-        </h1>
-      </div>
-      <div style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-        <NavBtn onClick={onNext} aria-label="שבוע הבא">‹</NavBtn>
-        <NavBtn onClick={onPrev} aria-label="שבוע קודם">›</NavBtn>
-        <div style={{ width: 1, height: 22, background: "var(--sg-hairline)", margin: "0 4px" }} />
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3 sm:px-6">
+      <div className="justify-self-start">
         <DashboardExportBtn />
       </div>
+      <div
+        aria-label={t("weeklyPeriodNavigation")}
+        className="col-start-2 flex items-center justify-center gap-2"
+      >
+        <NavBtn onClick={onPrev} aria-label={t("previousWeek")}>›</NavBtn>
+        <h1
+          className="min-w-36 text-center"
+          style={{
+            fontFamily: "var(--sg-font-display)", fontSize: 26, fontWeight: 600,
+            color: "var(--sg-ink)", margin: 0,
+          }}
+        >
+          {t("weekLabel", { week: model.weekLabel })}
+        </h1>
+        <NavBtn onClick={onNext} aria-label={t("nextWeek")}>‹</NavBtn>
+      </div>
+      <div aria-hidden="true" />
     </div>
   );
 }
