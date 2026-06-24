@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
@@ -21,6 +21,9 @@ const translations: Record<string, string> = {
   loginAction: "התחברות",
   errorGeneric: "אירעה שגיאה",
   close: "סגור",
+  mobileWeekList: "רשימת השבוע",
+  mobileNewEventOnDate: "אירוע חדש",
+  mobileNoEvents: "אין אירועים",
 };
 
 vi.mock("next/navigation", () => ({
@@ -64,5 +67,45 @@ describe("GanttWeekly export action", () => {
     expect(screen.getByRole("dialog", { name: "חיבור ל-Google Calendar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "צור קישור ליומן" })).toBeInTheDocument();
     expect(screen.queryByText("הורד קובץ ‎.ics")).not.toBeInTheDocument();
+  });
+
+  it("renders a mobile weekly list whose event buttons use the existing selection handler", async () => {
+    const user = userEvent.setup();
+    const onEventClick = vi.fn();
+    const event = {
+      id: "event-1",
+      title: "Trip day",
+      startAt: "2026-07-07T08:00:00.000Z",
+      endAt: "2026-07-07T10:00:00.000Z",
+      allDay: false,
+      description: null,
+      location: null,
+      eventTypeId: "type-1",
+      eventTypeKey: "trip",
+      eventTypeLabelHe: "טיול",
+      eventTypeColor: "#1f77b4",
+      eventTypeGlyph: "T",
+      grades: [7],
+    };
+    const model = buildWeeklyModel(
+      new Date(Date.UTC(2026, 6, 7)),
+      [{ ...event, startAt: new Date(event.startAt), endAt: new Date(event.endAt) }],
+      [7, 8],
+      new Date(Date.UTC(2026, 6, 7)),
+    );
+
+    render(
+      <GanttWeekly
+        model={model}
+        events={[event]}
+        navigationMode="local"
+        onEventClick={onEventClick}
+      />,
+    );
+
+    const mobileList = screen.getByLabelText("רשימת השבוע");
+    await user.click(within(mobileList).getByRole("button", { name: "Trip day" }));
+
+    expect(onEventClick).toHaveBeenCalledWith("event-1");
   });
 });

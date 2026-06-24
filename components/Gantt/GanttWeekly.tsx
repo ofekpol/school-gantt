@@ -12,6 +12,7 @@ import { Ban, Pencil } from "lucide-react";
 import { EventDrawer } from "./EventDrawer";
 import { useRouteProgress } from "@/components/RouteProgress";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
+import { GanttWeeklyMobileList } from "@/components/Gantt/GanttWeeklyMobileList";
 
 /* ---- Layout constants ---- */
 const AXIS_H = 72;
@@ -131,8 +132,14 @@ export function GanttWeekly({
       {/* Week navigation */}
       <WeekNav model={displayModel} onPrev={() => navigate(-1)} onNext={() => navigate(1)} />
 
+      <GanttWeeklyMobileList
+        model={displayModel}
+        onDayClick={onDayClick}
+        onEventClick={selectEvent}
+      />
+
       {/* Gantt body — scrollable horizontally on narrow screens */}
-      <div className="overflow-x-auto px-2 pb-1 sm:px-6 sm:pb-0">
+      <div className="hidden overflow-x-auto px-2 pb-1 md:block sm:px-6 sm:pb-0">
       <div style={{
         marginBottom: 16,
         minWidth: 480,

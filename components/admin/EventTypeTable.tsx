@@ -6,6 +6,11 @@ import { useTranslations } from "next-intl";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/admin/ColorPicker";
+import {
+  ColorSwatch,
+  EventTypeEditForm,
+  EventTypeMobileList,
+} from "@/components/admin/EventTypeResponsiveViews";
 import { useRouteProgress } from "@/components/RouteProgress";
 
 interface EventTypeRow {
@@ -71,6 +76,20 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [sort, setSort] = useState<SortState>({ key: "labelHe", direction: "asc" });
+  const labels = {
+    key: t("key"),
+    labelHe: t("labelHe"),
+    labelEn: t("labelEn"),
+    colorHex: t("colorHex"),
+    glyph: t("glyph"),
+    edit: t("edit"),
+    delete: t("delete"),
+    save: savingEdit ? tc("saving") : t("save"),
+    cancel: t("cancel"),
+    empty: t("empty"),
+    loading: tc("loading"),
+    mobileListLabel: t("mobileListLabel"),
+  };
 
   const sortedRows = useMemo(() => {
     return initial.slice().sort((a, b) => {
@@ -95,7 +114,7 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
 
   function renderSortableHeader(key: SortKey, labelKey: "key" | "labelHe" | "labelEn" | "glyph") {
     const active = sort.key === key;
-  return (
+    return (
       <th
         key={key}
         className="py-2 pe-3 text-start"
@@ -116,6 +135,19 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
         </button>
       </th>
     );
+  }
+
+  function openEdit(row: EventTypeRow) {
+    setEditState({
+      id: row.id,
+      form: {
+        key: row.key,
+        labelHe: row.labelHe,
+        labelEn: row.labelEn,
+        colorHex: row.colorHex,
+        glyph: row.glyph,
+      },
+    });
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -174,7 +206,7 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
       </Button>
       {showCreate && (
         <form onSubmit={handleCreate} className="border rounded p-3 mb-4 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <label className="space-y-1">
               <span className="block text-sm">{t("key")}</span>
               <input
@@ -211,7 +243,7 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
                 className="w-full border rounded px-2 py-1"
               />
             </label>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <span className="block text-sm mb-1">{t("colorHex")}</span>
               <ColorPicker
                 value={createForm.colorHex}
@@ -234,7 +266,23 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
           </div>
         </form>
       )}
-      <table className="w-full text-sm">
+      <EventTypeMobileList
+        rows={sortedRows}
+        editState={editState}
+        labels={labels}
+        savingEdit={savingEdit}
+        canManage={canManage}
+        deletingId={deletingId}
+        onOpenEdit={openEdit}
+        onChangeEdit={(key, value) =>
+          setEditState((s) => (s ? { ...s, form: { ...s.form, [key]: value } } : s))
+        }
+        onSubmitEdit={handleEdit}
+        onCancelEdit={() => setEditState(null)}
+        onDelete={handleDelete}
+      />
+
+      <table className="hidden w-full text-sm md:table">
         <thead>
           <tr className="border-b">
             {SORTABLE_HEADERS.slice(0, 3).map((header) =>
@@ -257,58 +305,17 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
             editState?.id === row.id ? (
               <tr key={row.id} className="border-t">
                 <td colSpan={6} className="py-2">
-                  <form onSubmit={handleEdit} className="flex flex-wrap gap-2 items-center">
-                    <input
-                      value={editState.form.key}
-                      onChange={(e) =>
-                        setEditState((s) =>
-                          s ? { ...s, form: { ...s.form, key: e.target.value } } : s,
-                        )
-                      }
-                      className="border rounded px-2 py-1 w-24"
-                    />
-                    <input
-                      value={editState.form.labelHe}
-                      onChange={(e) =>
-                        setEditState((s) =>
-                          s ? { ...s, form: { ...s.form, labelHe: e.target.value } } : s,
-                        )
-                      }
-                      className="border rounded px-2 py-1 w-28"
-                    />
-                    <input
-                      value={editState.form.labelEn}
-                      onChange={(e) =>
-                        setEditState((s) =>
-                          s ? { ...s, form: { ...s.form, labelEn: e.target.value } } : s,
-                        )
-                      }
-                      className="border rounded px-2 py-1 w-28"
-                    />
-                    <ColorPicker
-                      value={editState.form.colorHex}
-                      onChange={(hex) =>
-                        setEditState((s) =>
-                          s ? { ...s, form: { ...s.form, colorHex: hex } } : s,
-                        )
-                      }
-                    />
-                    <input
-                      value={editState.form.glyph}
-                      onChange={(e) =>
-                        setEditState((s) =>
-                          s ? { ...s, form: { ...s.form, glyph: e.target.value } } : s,
-                        )
-                      }
-                      className="border rounded px-2 py-1 w-16"
-                    />
-                    <Button type="submit" size="sm" disabled={savingEdit}>
-                      {savingEdit ? tc("saving") : t("save")}
-                    </Button>
-                    <Button type="button" size="sm" variant="ghost" onClick={() => setEditState(null)} disabled={savingEdit}>
-                      {t("cancel")}
-                    </Button>
-                  </form>
+                  <EventTypeEditForm
+                    form={editState.form}
+                    saving={savingEdit}
+                    desktop
+                    onCancel={() => setEditState(null)}
+                    onChange={(key, value) =>
+                      setEditState((s) => (s ? { ...s, form: { ...s.form, [key]: value } } : s))
+                    }
+                    onSubmit={handleEdit}
+                    labels={labels}
+                  />
                 </td>
               </tr>
             ) : (
@@ -318,9 +325,7 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
                 <td className="py-2 pe-3">{row.labelEn}</td>
                 <td className="py-2 pe-3">
                   <span className="flex items-center gap-2">
-                    <span
-                      style={{ background: row.colorHex, width: "1rem", height: "1rem", display: "inline-block", borderRadius: "2px" }}
-                    />
+                    <ColorSwatch colorHex={row.colorHex} />
                     {row.colorHex}
                   </span>
                 </td>
@@ -331,18 +336,7 @@ export function EventTypeTable({ initial, canManage = true }: Props) {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() =>
-                        setEditState({
-                          id: row.id,
-                          form: {
-                            key: row.key,
-                            labelHe: row.labelHe,
-                            labelEn: row.labelEn,
-                            colorHex: row.colorHex,
-                            glyph: row.glyph,
-                          },
-                        })
-                      }
+                      onClick={() => openEdit(row)}
                     >
                       {t("edit")}
                     </Button>
