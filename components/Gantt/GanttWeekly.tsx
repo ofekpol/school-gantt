@@ -456,7 +456,7 @@ function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
         aria-label={t("weeklyPeriodNavigation")}
         className="col-start-2 flex items-center justify-center gap-2"
       >
-        <NavBtn onClick={onPrev} aria-label={t("previousWeek")}>›</NavBtn>
+        <NavBtn onClick={onPrev} aria-label={t("previousWeek")}>‹</NavBtn>
         <h1
           className="min-w-36 text-center"
           style={{
@@ -466,7 +466,7 @@ function WeekNav({ model, onPrev, onNext }: WeekNavProps) {
         >
           {t("weekLabel", { week: model.weekLabel })}
         </h1>
-        <NavBtn onClick={onNext} aria-label={t("nextWeek")}>‹</NavBtn>
+        <NavBtn onClick={onNext} aria-label={t("nextWeek")}>›</NavBtn>
       </div>
       <div aria-hidden="true" />
     </div>
