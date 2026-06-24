@@ -274,6 +274,10 @@
     "mobileWeekList": "רשימת השבוע",
     "mobileNewEventOnDate": "אירוע חדש ב-{date}",
     "mobileNoEvents": "אין אירועים ביום זה",
+    "weeklyPeriodNavigation": "ניווט שבועי",
+    "previousWeek": "שבוע קודם",
+    "nextWeek": "שבוע הבא",
+    "weekLabel": "שבוע {week}",
     "newEventOnDate": "אירוע חדש ב-{date}",
     "cellLabel": "{date}, שכבה {grade}",
     "drawer": {

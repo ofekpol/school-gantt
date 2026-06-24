@@ -24,6 +24,9 @@ const translations: Record<string, string> = {
   mobileWeekList: "רשימת השבוע",
   mobileNewEventOnDate: "אירוע חדש",
   mobileNoEvents: "אין אירועים",
+  weeklyPeriodNavigation: "weeklyPeriodNavigation",
+  previousWeek: "שבוע קודם",
+  nextWeek: "שבוע הבא",
 };
 
 vi.mock("next/navigation", () => ({
@@ -33,7 +36,10 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => translations[key] ?? key,
+  useTranslations: () => (key: string, values?: Record<string, string>) => {
+    if (key === "weekLabel") return `שבוע ${values?.week ?? ""}`;
+    return translations[key] ?? key;
+  },
 }));
 
 vi.mock("@/components/RouteProgress", () => ({
@@ -107,5 +113,22 @@ describe("GanttWeekly export action", () => {
     await user.click(within(mobileList).getByRole("button", { name: "Trip day" }));
 
     expect(onEventClick).toHaveBeenCalledWith("event-1");
+  });
+
+  it("centers the weekly date label between previous and next week buttons", () => {
+    const model = buildWeeklyModel(
+      new Date(Date.UTC(2026, 6, 7)),
+      [],
+      [7, 8],
+      new Date(Date.UTC(2026, 6, 7)),
+    );
+
+    render(<GanttWeekly model={model} events={[]} navigationMode="local" />);
+
+    const nav = screen.getByLabelText("weeklyPeriodNavigation");
+    expect(within(nav).getByRole("button", { name: "שבוע קודם" })).toBeInTheDocument();
+    expect(within(nav).getByRole("heading", { name: "שבוע 7–13 ביולי" })).toBeInTheDocument();
+    expect(within(nav).getByRole("button", { name: "שבוע הבא" })).toBeInTheDocument();
+    expect(nav).toHaveClass("justify-center");
   });
 });
