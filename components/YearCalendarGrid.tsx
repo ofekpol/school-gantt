@@ -150,75 +150,87 @@ export function YearCalendarGrid({
         </div>
         <div className="grid grid-cols-7 gap-px bg-neutral-200">
           {month.weeks.flatMap((w, wi) =>
-            w.days.map((day, di) => (
+            w.days.map((day, di) => {
+              if (!day) {
+                return (
+                  <div
+                    key={`${wi}-${di}`}
+                    className="calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top sm:min-h-[88px] sm:p-1"
+                  />
+                );
+              }
+
+              return (
               <div
                 key={`${wi}-${di}`}
-                aria-current={day?.date === todayKey ? "date" : undefined}
-                data-date-status={day?.dateStatus}
-                style={day?.closureColor ? { "--closure-color": day.closureColor } as React.CSSProperties : undefined}
+                aria-current={day.date === todayKey ? "date" : undefined}
+                data-date-status={day.dateStatus}
+                data-outside-month={day.inMonth ? undefined : "true"}
+                style={day.closureColor ? { "--closure-color": day.closureColor } as React.CSSProperties : undefined}
                 className={`calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top sm:min-h-[88px] sm:p-1 ${
-                  day?.date === todayKey ? "ring-2 ring-inset ring-blue-500" : ""
+                  day.date === todayKey ? "ring-2 ring-inset ring-blue-500" : ""
                 }`}
               >
-                {day && (
-                  <>
-                    {onDayClick && (
+                {onDayClick && (
+                  <button
+                    type="button"
+                    aria-label={tv("newEventOnDate", { date: day.date })}
+                    onClick={() => onDayClick(day.date)}
+                    className="absolute inset-0 z-0 bg-transparent hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300"
+                  />
+                )}
+                <div
+                  className={`pointer-events-none relative z-10 mb-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-medium ${
+                    day.date === todayKey
+                      ? "bg-blue-600 text-white"
+                      : day.inMonth
+                        ? "text-neutral-700"
+                        : "text-neutral-400"
+                  }`}
+                >
+                  {day.dayOfMonth}
+                </div>
+                <ul className="relative z-10 space-y-0.5">
+                  {day.events.slice(0, 4).map((chip) => (
+                    <li
+                      key={chip.id}
+                      title={eventTitle(chip.title, chip.isCanceled, chip.isUpdated, tv)}
+                    >
                       <button
                         type="button"
-                        aria-label={tv("newEventOnDate", { date: day.date })}
-                        onClick={() => onDayClick(day.date)}
-                        className="absolute inset-0 z-0 bg-transparent hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300"
-                      />
-                    )}
-                    <div
-                      className={`pointer-events-none relative z-10 mb-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-medium ${
-                        day.date === todayKey ? "bg-blue-600 text-white" : "text-neutral-700"
-                      }`}
-                    >
-                      {day.dayOfMonth}
-                    </div>
-                    <ul className="relative z-10 space-y-0.5">
-                      {day.events.slice(0, 4).map((chip) => (
-                        <li
-                          key={chip.id}
-                          title={eventTitle(chip.title, chip.isCanceled, chip.isUpdated, tv)}
-                        >
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onEventClick?.(chip.eventId);
-                            }}
-                            disabled={!onEventClick}
-                            className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
-                            style={{
-                              backgroundColor: chip.isCanceled ? "#fee2e2" : chip.eventTypeColor,
-                              color: chip.isCanceled ? "#991b1b" : readableTextColor(chip.eventTypeColor),
-                              textDecoration: chip.isCanceled ? "line-through" : "none",
-                            }}
-                          >
-                            <span aria-hidden="true" className="event-chip-glyph">
-                              {chip.eventTypeGlyph}
-                            </span>
-                            <span className="truncate">{chip.title}</span>
-                            {(chip.isCanceled || chip.isUpdated) && (
-                              <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
-                                {chip.isCanceled ? tv("canceled") : tv("updated")}
-                              </span>
-                            )}
-                          </button>
-                        </li>
-                      ))}
-                      {day.events.length > 4 && (
-                        <li className="text-[9px] text-neutral-500">
-                          {tc("more", { count: day.events.length - 4 })}
-                        </li>
-                      )}
-                    </ul>
-                  </>
-                )}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onEventClick?.(chip.eventId);
+                        }}
+                        disabled={!onEventClick}
+                        className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
+                        style={{
+                          backgroundColor: chip.isCanceled ? "#fee2e2" : chip.eventTypeColor,
+                          color: chip.isCanceled ? "#991b1b" : readableTextColor(chip.eventTypeColor),
+                          textDecoration: chip.isCanceled ? "line-through" : "none",
+                        }}
+                      >
+                        <span aria-hidden="true" className="event-chip-glyph">
+                          {chip.eventTypeGlyph}
+                        </span>
+                        <span className="truncate">{chip.title}</span>
+                        {(chip.isCanceled || chip.isUpdated) && (
+                          <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
+                            {chip.isCanceled ? tv("canceled") : tv("updated")}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                  {day.events.length > 4 && (
+                    <li className="text-[9px] text-neutral-500">
+                      {tc("more", { count: day.events.length - 4 })}
+                    </li>
+                  )}
+                </ul>
               </div>
-            )),
+              );
+            }),
           )}
         </div>
       </section>

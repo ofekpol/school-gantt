@@ -54,13 +54,25 @@ describe("buildCalendarModel: month sequence and grid shape", () => {
     }
   });
 
-  it("September 2026 starts on a Tuesday — week 0 has two leading nulls", () => {
+  it("fills September's leading cells with dimmed August dates", () => {
     const model = buildCalendarModel({ year: YEAR, events: [] });
     const sep = model.months[0];
-    // Sept 1, 2026 is a Tuesday → Sunday=0, Monday=1, Tuesday=2, so 2 leading null cells.
-    expect(sep.weeks[0].days[0]).toBeNull();
-    expect(sep.weeks[0].days[1]).toBeNull();
-    expect(sep.weeks[0].days[2]?.dayOfMonth).toBe(1);
+    // Sept 1, 2026 is a Tuesday, so Sunday and Monday show Aug 30–31.
+    expect(sep.weeks[0].days[0]).toMatchObject({
+      date: "2026-08-30",
+      dayOfMonth: 30,
+      inMonth: false,
+    });
+    expect(sep.weeks[0].days[1]).toMatchObject({
+      date: "2026-08-31",
+      dayOfMonth: 31,
+      inMonth: false,
+    });
+    expect(sep.weeks[0].days[2]).toMatchObject({
+      date: "2026-09-01",
+      dayOfMonth: 1,
+      inMonth: true,
+    });
   });
 });
 
@@ -92,6 +104,21 @@ describe("buildCalendarModel: event distribution", () => {
     expect(day15?.events.map((e) => e.id)).toEqual(["single"]);
   });
 
+  it("shows events on visible dates from the preceding month", () => {
+    const evt = mkEvent(
+      "previous-month",
+      "2026-08-31T08:00:00+03:00",
+      "2026-08-31T16:00:00+03:00",
+    );
+    const september = buildCalendarModel({ year: YEAR, events: [evt] }).months[0];
+    const day = september.weeks
+      .flatMap((week) => week.days)
+      .find((item) => item?.date === "2026-08-31");
+
+    expect(day).toMatchObject({ inMonth: false });
+    expect(day?.events.map((chip) => chip.id)).toEqual(["previous-month"]);
+  });
+
   it("spreads a 3-day event across all 3 days", () => {
     const evt = mkEvent(
       "trip",
@@ -106,7 +133,7 @@ describe("buildCalendarModel: event distribution", () => {
     expect(days.map((d) => d!.dayOfMonth).sort((a, b) => a - b)).toEqual([10, 11, 12]);
   });
 
-  it("clips a multi-day event that spans across months", () => {
+  it("repeats a multi-day event in adjacent-month cells", () => {
     const evt = mkEvent(
       "cross",
       "2026-09-29T08:00:00+03:00",
@@ -125,8 +152,8 @@ describe("buildCalendarModel: event distribution", () => {
       .filter((d) => d !== null && d.events.some((e) => e.id === "cross"))
       .map((d) => d!.dayOfMonth)
       .sort((a, b) => a - b);
-    expect(septDays).toEqual([29, 30]);
-    expect(octDays).toEqual([1, 2]);
+    expect(septDays).toEqual([1, 2, 29, 30]);
+    expect(octDays).toEqual([1, 2, 29, 30]);
   });
 
   it("skips events fully outside the display range", () => {

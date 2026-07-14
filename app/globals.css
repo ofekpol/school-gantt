@@ -213,6 +213,24 @@
   box-shadow: inset 0 3px 0 var(--closure-color);
 }
 
+/* Adjacent-month dates remain usable, but recede behind the selected month. */
+.calendar-day[data-outside-month="true"] {
+  background-color: color-mix(in oklch, var(--sg-surface) 82%, var(--sg-page));
+}
+
+.calendar-day[data-outside-month="true"] .event-chip {
+  opacity: 0.78;
+}
+
+.calendar-day[data-outside-month="true"][data-date-status="weekend"] {
+  background-color: color-mix(in oklch, var(--sg-weekend-bg) 72%, var(--sg-page));
+}
+
+.calendar-day[data-outside-month="true"][data-date-status="holiday"],
+.calendar-day[data-outside-month="true"][data-date-status="vacation"] {
+  background-color: color-mix(in oklch, var(--closure-color) 12%, var(--sg-surface));
+}
+
 /* ---- Skeleton loader animation ---- */
 @keyframes sg-shimmer {
   0%   { background-position: -200% 0; }
