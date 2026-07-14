@@ -136,7 +136,7 @@ export function GanttWeekly({
   const todayIndex = displayModel.days.findIndex((d) => d.isToday);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", fontFamily: "var(--sg-font-ui)" }}>
+    <div className="sg-calendar-frame" style={{ display: "flex", flexDirection: "column", fontFamily: "var(--sg-font-ui)" }}>
       {/* Week navigation */}
       <WeekNav
         model={displayModel}
@@ -158,7 +158,7 @@ export function GanttWeekly({
         minWidth: 480,
         background: "var(--sg-surface)",
         border: "1px solid var(--sg-hairline)",
-        borderRadius: 12,
+        borderRadius: 16,
         overflow: "hidden",
         display: "grid",
         gridTemplateColumns: `1fr ${GRADE_COL_W}px`,

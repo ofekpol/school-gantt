@@ -130,8 +130,8 @@ export function StaffTable({ initialStaff, eventTypes }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-      <div className="grid gap-3 border-b border-neutral-200 bg-neutral-50 p-4 lg:grid-cols-[1fr_auto_auto]">
+    <div className="sg-staff-card overflow-hidden rounded-xl border bg-white">
+      <div className="grid gap-3 border-b border-violet-100 bg-[var(--sg-studio-violet-soft)] p-4 lg:grid-cols-[1fr_auto_auto]">
         <label className="relative block">
           <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-neutral-500" />
           <input

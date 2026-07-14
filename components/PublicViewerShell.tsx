@@ -198,7 +198,6 @@ function ViewTabs({
 }) {
   return (
     <div className="relative flex flex-wrap items-center justify-between gap-2 overflow-hidden border-b border-[var(--sg-hairline)] bg-[var(--sg-surface-raised)] px-3 py-2 sm:px-6">
-      <div className="sg-ribbon absolute inset-x-0 top-0" aria-hidden="true" />
       <div className="inline-flex rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] p-0.5 shadow-sm">
         {(["gantt", "calendar", "agenda"] as const).map((item) => (
           <button

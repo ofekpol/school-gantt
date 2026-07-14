@@ -168,10 +168,10 @@
   --et-other:       oklch(0.62 0.010 60);
 }
 
-.sg-ribbon {
-  height: 4px;
-  background: linear-gradient(90deg, var(--sg-studio-blue), var(--sg-studio-violet), var(--sg-studio-coral), var(--sg-studio-sun), var(--sg-studio-mint));
-}
+.sg-calendar-frame { box-shadow: 0 18px 40px rgb(37 99 235 / 10%); }
+.sg-staff-card { border-color: color-mix(in srgb, var(--sg-studio-violet) 18%, var(--sg-hairline)); box-shadow: 0 10px 24px rgb(139 92 246 / 7%); }
+.sg-interactive { transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease; }
+@media (hover: hover) { .sg-interactive:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgb(37 99 235 / 14%); } }
 
 .sg-card {
   background: var(--sg-surface-raised);
@@ -199,7 +199,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sg-ribbon { animation: none; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
 /* Calendar semantics: color shows availability, not decoration. */

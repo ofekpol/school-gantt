@@ -39,7 +39,7 @@ export default async function AdminStaffPage() {
   ).length;
 
   return (
-    <main className="space-y-6 bg-neutral-50 p-4 text-neutral-950 md:p-6">
+    <main className="space-y-6 bg-[var(--sg-page)] p-4 text-neutral-950 md:p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
@@ -76,7 +76,7 @@ export default async function AdminStaffPage() {
         <PendingRequestsTable pending={pendingRegs} eventTypes={eventTypes} />
       </section>
 
-      <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4">
+      <section className="sg-staff-card space-y-4 rounded-xl border bg-white p-4">
         <SectionHeader
           title={t("invites")}
           count={openInviteCount}
@@ -93,7 +93,7 @@ export default async function AdminStaffPage() {
 
 function StaffStat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4">
+    <div className="sg-card sg-interactive rounded-xl p-4">
       <div className="flex items-center gap-2 text-sm text-neutral-600">
         <span className="text-neutral-500">{icon}</span>
         {label}
