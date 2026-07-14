@@ -2,8 +2,9 @@
  * Printable yearly calendar projection — pure logic, no DB.
  *
  * Renders the caller-provided display range month by month, where each month
- * is a 6×7 grid of day cells (Sunday-start, Israeli convention). Multi-day
- * events are repeated across each day they touch, clipped to the year window.
+ * is a full-week grid of day cells (Sunday-start, Israeli convention). Leading
+ * and trailing cells show adjacent-month dates in a dimmed treatment. Multi-day
+ * events are repeated across each visible day they touch.
  *
  * Layout note (PRD §6.4): chips carry both color AND glyph so a black-and-
  * white printout still distinguishes event types — the print stylesheet hides
@@ -78,21 +79,49 @@ export interface CalendarModel {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+interface VisibleDateRange {
+  startMs: number;
+  endMs: number;
+}
+
 export function buildCalendarModel(input: BuildCalendarInput): CalendarModel {
   const start = parseIsoDate(input.year.startDate);
   const end = parseIsoDate(input.year.endDate);
-  const startMs = start.getTime();
-  const endMs = end.getTime() + DAY_MS; // exclusive
+  const visibleRange = getVisibleDateRange(start, end);
+  const eventsByDate = bucketEvents(input.events, visibleRange);
+  const months: CalendarMonth[] = [];
+  let cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
 
-  // Bucket events per YYYY-MM-DD across all days they touch.
+  while (cursor <= end) {
+    months.push(buildMonth(cursor, input.events, eventsByDate));
+    cursor = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1));
+  }
+
+  return { months };
+}
+
+function getVisibleDateRange(start: Date, end: Date): VisibleDateRange {
+  const firstMonthStart = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+  const lastMonthEnd = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0));
+  const startMs = firstMonthStart.getTime() - firstMonthStart.getUTCDay() * DAY_MS;
+  const endMs = lastMonthEnd.getTime() + (7 - lastMonthEnd.getUTCDay()) * DAY_MS;
+
+  return { startMs, endMs };
+}
+
+function bucketEvents(
+  events: CalendarInputEvent[],
+  visibleRange: VisibleDateRange,
+): Map<string, CalendarChip[]> {
   const eventsByDate = new Map<string, CalendarChip[]>();
-  for (const evt of input.events) {
+
+  for (const evt of events) {
     const evtStart = evt.startAt.getTime();
     const evtEnd = evt.endAt.getTime();
-    if (evtEnd <= startMs || evtStart >= endMs) continue;
+    if (evtEnd <= visibleRange.startMs || evtStart >= visibleRange.endMs) continue;
 
-    const fromDate = atUtcMidnight(Math.max(evtStart, startMs));
-    const toDate = atUtcMidnight(Math.min(evtEnd - 1, endMs - 1));
+    const fromDate = atUtcMidnight(Math.max(evtStart, visibleRange.startMs));
+    const toDate = atUtcMidnight(Math.min(evtEnd - 1, visibleRange.endMs - 1));
     let cursor = fromDate;
     while (cursor <= toDate) {
       const key = isoDate(new Date(cursor));
@@ -115,51 +144,49 @@ export function buildCalendarModel(input: BuildCalendarInput): CalendarModel {
     }
   }
 
-  const months: CalendarMonth[] = [];
-  let cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
-  while (cursor.getTime() < endMs) {
-    const year = cursor.getUTCFullYear();
-    const month = cursor.getUTCMonth(); // 0-based
-    const firstWeekday = new Date(Date.UTC(year, month, 1)).getUTCDay();
-    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return eventsByDate;
+}
 
-    const cells: (CalendarDay | null)[] = [];
-    for (let i = 0; i < firstWeekday; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const weekday = new Date(Date.UTC(year, month, d)).getUTCDay();
-      const status = getCalendarDateStatusDetail(
-        new Date(`${date}T12:00:00Z`),
-        input.events,
-      );
-      cells.push({
-        date,
-        dayOfMonth: d,
-        weekday,
-        inMonth: true,
-        dateStatus: status.status,
-        closureColor: status.closureColor,
-        events: eventsByDate.get(date) ?? [],
-      });
-    }
-    // Pad to a multiple of 7
-    while (cells.length % 7 !== 0) cells.push(null);
+function buildMonth(
+  monthStart: Date,
+  events: CalendarInputEvent[],
+  eventsByDate: Map<string, CalendarChip[]>,
+): CalendarMonth {
+  const year = monthStart.getUTCFullYear();
+  const month = monthStart.getUTCMonth();
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cellCount = Math.ceil((monthStart.getUTCDay() + daysInMonth) / 7) * 7;
+  const gridStart = monthStart.getTime() - monthStart.getUTCDay() * DAY_MS;
+  const cells = Array.from({ length: cellCount }, (_, index) =>
+    buildDay(new Date(gridStart + index * DAY_MS), month, events, eventsByDate),
+  );
+  const weeks: CalendarWeek[] = [];
 
-    const weeks: CalendarWeek[] = [];
-    for (let i = 0; i < cells.length; i += 7) {
-      weeks.push({ days: cells.slice(i, i + 7) });
-    }
-
-    months.push({
-      year,
-      monthIndex: month + 1,
-      weeks,
-    });
-
-    cursor = new Date(Date.UTC(year, month + 1, 1));
+  for (let index = 0; index < cells.length; index += 7) {
+    weeks.push({ days: cells.slice(index, index + 7) });
   }
 
-  return { months };
+  return { year, monthIndex: month + 1, weeks };
+}
+
+function buildDay(
+  value: Date,
+  month: number,
+  events: CalendarInputEvent[],
+  eventsByDate: Map<string, CalendarChip[]>,
+): CalendarDay {
+  const date = isoDate(value);
+  const status = getCalendarDateStatusDetail(new Date(`${date}T12:00:00Z`), events);
+
+  return {
+    date,
+    dayOfMonth: value.getUTCDate(),
+    weekday: value.getUTCDay(),
+    inMonth: value.getUTCMonth() === month,
+    dateStatus: status.status,
+    closureColor: status.closureColor,
+    events: eventsByDate.get(date) ?? [],
+  };
 }
 
 function parseIsoDate(iso: string): Date {
