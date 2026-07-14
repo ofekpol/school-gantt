@@ -79,6 +79,7 @@ export function QuickEventDialog({
   const t7 = useTranslations("wizard.step7");
   const te = useTranslations("wizard.editor");
   const td = useTranslations("dashboard");
+  const gradeOptions = Array.from(new Set(allowedGrades)).sort((a, b) => a - b);
   const [data, setData] = useState<QuickEventData>(EMPTY_DATA);
   const [error, setError] = useState("");
   const [publishing, setPublishing] = useState(false);
@@ -103,6 +104,9 @@ export function QuickEventDialog({
   }, [onClose, open]);
 
   if (!open) return null;
+
+  const allGradesSelected =
+    gradeOptions.length > 0 && gradeOptions.every((grade) => data.grades.includes(grade));
 
   function patch(patchData: Partial<QuickEventData>) {
     setData((current) => ({ ...current, ...patchData }));
@@ -297,8 +301,18 @@ export function QuickEventDialog({
           </Field>
 
           <Field label={t2("title")}>
+            {gradeOptions.length > 1 && (
+              <button
+                type="button"
+                aria-pressed={allGradesSelected}
+                onClick={() => patch({ grades: allGradesSelected ? [] : gradeOptions })}
+                className="mb-2 min-h-9 rounded-full border border-sky-200 bg-sky-50 px-3 text-sm font-semibold text-sky-800 transition-colors hover:bg-sky-100"
+              >
+                {allGradesSelected ? t2("clearAll") : t2("selectAll")}
+              </button>
+            )}
             <div className="flex flex-wrap gap-2">
-              {allowedGrades.map((grade) => {
+              {gradeOptions.map((grade) => {
                 const active = data.grades.includes(grade);
                 return (
                   <button
