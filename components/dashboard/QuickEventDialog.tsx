@@ -197,7 +197,7 @@ export function QuickEventDialog({
       dir="rtl"
     >
       <div
-        className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10"
+        className="sg-card w-full max-w-xl overflow-hidden rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between border-b border-[var(--sg-hairline)] px-5 py-4">
@@ -373,7 +373,7 @@ export function QuickEventDialog({
             type="button"
             onClick={publish}
             disabled={publishing}
-            className="h-10 rounded-xl bg-sky-500 px-5 text-sm font-bold text-white hover:bg-sky-600 disabled:opacity-50"
+            className="sg-button-primary h-10 rounded-xl px-5 text-sm font-bold disabled:opacity-50"
           >
             {publishing ? t7("submitting") : t7("submit")}
           </button>

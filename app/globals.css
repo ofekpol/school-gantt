@@ -102,7 +102,7 @@
 /* ---- end shadcn/ui RTL patches ---- */
 
 /* ============================================================
-   School-Gantt design tokens — calm institutional / editorial
+   School Studio — bright, structured, and school-friendly
    Hebrew RTL. Display serif + UI sans + mono date stamps.
 ============================================================ */
 
@@ -115,6 +115,14 @@
   --sg-surface-2:    oklch(0.982 0.004 80);
   --sg-surface-raised: oklch(1 0.006 85);
   --sg-weekend-bg:   oklch(0.965 0.012 270);
+  --sg-studio-blue:  #2563eb;
+  --sg-studio-violet:#8b5cf6;
+  --sg-studio-mint:  #34d399;
+  --sg-studio-sun:   #fbbf24;
+  --sg-studio-coral: #fb7185;
+  --sg-studio-blue-soft: #eaf2ff;
+  --sg-studio-violet-soft: #f1edff;
+  --sg-studio-mint-soft: #e9fbf4;
   --sg-hairline:     oklch(0.91 0.006 80);
   --sg-hairline-2:   oklch(0.95 0.005 80);
 
@@ -158,6 +166,40 @@
   --et-bagrut:      oklch(0.42 0.16 18);
   --et-counseling:  oklch(0.60 0.10 330);
   --et-other:       oklch(0.62 0.010 60);
+}
+
+.sg-ribbon {
+  height: 4px;
+  background: linear-gradient(90deg, var(--sg-studio-blue), var(--sg-studio-violet), var(--sg-studio-coral), var(--sg-studio-sun), var(--sg-studio-mint));
+}
+
+.sg-card {
+  background: var(--sg-surface-raised);
+  border: 1px solid color-mix(in srgb, var(--sg-studio-blue) 14%, var(--sg-hairline));
+  box-shadow: 0 10px 24px rgb(37 99 235 / 7%);
+}
+
+.sg-button-primary {
+  background: var(--sg-studio-blue);
+  color: white;
+  box-shadow: 0 6px 14px rgb(37 99 235 / 22%);
+}
+.sg-button-primary:hover { background: #1d4ed8; }
+
+.sg-button-violet {
+  background: var(--sg-studio-violet);
+  color: white;
+  box-shadow: 0 6px 14px rgb(139 92 246 / 22%);
+}
+.sg-button-violet:hover { background: #7c3aed; }
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--sg-studio-sun) 70%, white);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sg-ribbon { animation: none; }
 }
 
 /* Calendar semantics: color shows availability, not decoration. */

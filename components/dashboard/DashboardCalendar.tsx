@@ -296,7 +296,7 @@ export function DashboardCalendar({
           <button
             type="button"
             onClick={() => openNewEvent(new Date().toISOString().slice(0, 10))}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            className="sg-button-primary rounded-md px-4 py-2 text-sm"
           >
             {t("newEvent")}
           </button>
@@ -379,7 +379,7 @@ function ToggleBtn({
       onClick={onClick}
       aria-pressed={active}
       className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-        active ? "bg-blue-600 text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+        active ? "bg-[var(--sg-studio-violet)] text-white shadow-sm" : "bg-[var(--sg-studio-violet-soft)] text-[var(--sg-ink)] hover:bg-violet-100"
       }`}
     >
       {children}

@@ -30,7 +30,8 @@ export function AppHeader({
   const hasTitle = Boolean(title || subtitle);
 
   return (
-    <div className="border-b border-neutral-200 bg-white">
+    <div className="overflow-hidden border-b border-blue-100 bg-[var(--sg-surface-raised)] shadow-sm">
+      <div className="sg-ribbon" aria-hidden="true" />
       {/* Primary row: title + (desktop nav) + right slot */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">

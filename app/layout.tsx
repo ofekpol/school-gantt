@@ -72,7 +72,7 @@ export default async function RootLayout({
         ibmPlexMono.variable,
       )}
     >
-      <body className="min-h-screen bg-white text-neutral-900 antialiased">
+      <body className="min-h-screen bg-[var(--sg-page)] text-neutral-900 antialiased">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-50 focus:rounded-md focus:bg-neutral-900 focus:px-3 focus:py-2 focus:text-white"
