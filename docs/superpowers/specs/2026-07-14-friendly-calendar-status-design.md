@@ -22,8 +22,9 @@ schema or API contract changes are required.
   filter is active, so the closure is visible to everyone.
 - An approved, non-cancelled `vacation` marks every date it spans only where
   that event is otherwise visible/relevant to the current grade-scoped view.
-- A date can have both a weekend and a closure. Closure styling takes precedence
-  while a semantic marker preserves the weekend meaning for assistive users.
+- A date can have both a weekend and a closure. The closure styling takes
+  precedence while a semantic marker preserves the weekend meaning for
+  assistive users.
 - Ordinary events, including all-day events, do not block a date.
 
 A small pure date-status helper will expose this logic to view-model builders
@@ -37,8 +38,10 @@ The site receives a calm, professional visual refresh:
 - warm, lightly tinted page canvas instead of large plain-white expanses;
 - layered surfaces, subtle borders and shadows, and colored navigation/control
   accents;
-- a soft, distinct weekend tint;
-- a stronger but still legible closure tint for holidays and relevant vacations;
+- a very faint neutral weekend tint used only as a fast visual scan aid, not as
+  a closure or holiday treatment;
+- distinct, more prominent holiday and vacation closure treatments derived from
+  their existing event-type colors, so the two are immediately distinguishable;
 - existing event type color and glyph encodings remain unchanged.
 
 The refresh maintains RTL logical CSS, keyboard focus treatment, WCAG contrast,
