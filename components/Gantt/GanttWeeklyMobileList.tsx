@@ -37,6 +37,8 @@ export function GanttWeeklyMobileList({
       {mobileDays.map(({ day, events }) => (
         <article
           key={day.dayIndex}
+          data-date-status={day.dateStatus}
+          style={day.closureColor ? { "--closure-color": day.closureColor } as React.CSSProperties : undefined}
           className="rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface)] p-3 shadow-sm"
         >
           <button

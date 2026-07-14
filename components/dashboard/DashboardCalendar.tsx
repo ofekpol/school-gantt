@@ -354,8 +354,14 @@ export function DashboardCalendar({
   );
 }
 
-function eventMatchesGrades(event: Pick<SerializedEvent, "grades">, selectedGrades: number[]) {
-  return event.grades.some((grade) => selectedGrades.includes(grade));
+function eventMatchesGrades(
+  event: Pick<SerializedEvent, "grades" | "eventTypeKey">,
+  selectedGrades: number[],
+) {
+  return (
+    event.eventTypeKey === "holiday" ||
+    event.grades.some((grade) => selectedGrades.includes(grade))
+  );
 }
 
 function ToggleBtn({

@@ -49,7 +49,7 @@
     border-color: var(--color-border);
   }
   body {
-    background-color: var(--color-background);
+    background-color: var(--sg-page, var(--color-background));
     color: var(--color-foreground);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
       "Helvetica Neue", "Noto Sans Hebrew", "Arial Hebrew", sans-serif;
@@ -109,9 +109,12 @@
 :root {
   /* Surfaces */
   --sg-bg:           oklch(0.985 0.004 80);
+  --sg-page:         oklch(0.975 0.014 85);
   --sg-bg-deep:      oklch(0.97 0.005 80);
   --sg-surface:      oklch(1 0 0);
   --sg-surface-2:    oklch(0.982 0.004 80);
+  --sg-surface-raised: oklch(1 0.006 85);
+  --sg-weekend-bg:   oklch(0.965 0.012 270);
   --sg-hairline:     oklch(0.91 0.006 80);
   --sg-hairline-2:   oklch(0.95 0.005 80);
 
@@ -155,6 +158,17 @@
   --et-bagrut:      oklch(0.42 0.16 18);
   --et-counseling:  oklch(0.60 0.10 330);
   --et-other:       oklch(0.62 0.010 60);
+}
+
+/* Calendar semantics: color shows availability, not decoration. */
+[data-date-status="weekend"] {
+  background-color: var(--sg-weekend-bg);
+}
+
+[data-date-status="holiday"],
+[data-date-status="vacation"] {
+  background-color: color-mix(in oklch, var(--closure-color) 16%, var(--sg-surface));
+  box-shadow: inset 0 3px 0 var(--closure-color);
 }
 
 /* ---- Skeleton loader animation ---- */

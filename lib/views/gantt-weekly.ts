@@ -8,6 +8,10 @@
  */
 
 import type { AgendaItem } from "@/lib/views/agenda-model";
+import {
+  getCalendarDateStatusDetail,
+  type CalendarDateStatus,
+} from "@/lib/views/date-status";
 
 export const WEEK_DAY_START_HOUR = 7;
 export const WEEK_DAY_END_HOUR = 21;
@@ -36,6 +40,8 @@ export interface WeeklyDay {
   dayOfMonth: number;
   isToday: boolean;
   isWeekend: boolean;
+  dateStatus: CalendarDateStatus;
+  closureColor?: string;
 }
 
 export interface WeeklyEventBar {
@@ -63,6 +69,8 @@ export interface WeeklyGradeRow {
   grade: number;
   hebrewLabel: string;
   bars: WeeklyEventBar[];
+  dayStatuses: CalendarDateStatus[];
+  closureColors: (string | undefined)[];
 }
 
 export interface WeeklyModel {
@@ -152,6 +160,7 @@ export function buildWeeklyModel(
     const isSameWeek = todayStart.getTime() === weekStart.getTime();
     const todayDow =
       (today.getUTCDay() - weekStart.getUTCDay() + 7) % 7;
+    const status = getCalendarDateStatusDetail(date, events);
     return {
       date,
       dayIndex: i,
@@ -161,6 +170,8 @@ export function buildWeeklyModel(
       dayOfMonth: dayOfMonthInJerusalem(date),
       isToday: isSameWeek && todayDow === i,
       isWeekend: i >= 5,
+      dateStatus: status.status,
+      closureColor: status.closureColor,
     };
   });
 
@@ -203,10 +214,17 @@ export function buildWeeklyModel(
       };
     });
 
+    const scopedEvents = events.filter(
+      (event) => event.eventTypeKey === "holiday" || event.grades.includes(grade),
+    );
+    const statuses = days.map((day) => getCalendarDateStatusDetail(day.date, scopedEvents));
+
     return {
       grade,
       hebrewLabel: HEBREW_GRADE_LABELS[grade] ?? String(grade),
       bars: assignLanes(bars),
+      dayStatuses: statuses.map((status) => status.status),
+      closureColors: statuses.map((status) => status.closureColor),
     };
   });
 

@@ -65,6 +65,19 @@ describe("buildCalendarModel: month sequence and grid shape", () => {
 });
 
 describe("buildCalendarModel: event distribution", () => {
+  it("marks a holiday date with its event type color", () => {
+    const holiday = {
+      ...mkEvent("holiday", "2026-09-15T00:00:00Z", "2026-09-16T00:00:00Z"),
+      eventTypeKey: "holiday",
+      eventTypeColor: "#64748b",
+    };
+    const day = buildCalendarModel({ year: YEAR, events: [holiday] }).months[0].weeks
+      .flatMap((week) => week.days)
+      .find((item) => item?.date === "2026-09-15");
+
+    expect(day).toMatchObject({ dateStatus: "holiday", closureColor: "#64748b" });
+  });
+
   it("places a single-day event on its day", () => {
     const evt = mkEvent(
       "single",

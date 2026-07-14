@@ -249,15 +249,12 @@ function DayAxis({ days, onDayClick }: { days: WeeklyModel["days"]; onDayClick?:
           type="button"
           onClick={() => onDayClick?.(isoDate(d.date))}
           disabled={!onDayClick}
+          data-date-status={d.dateStatus}
           style={{
           padding: "12px 16px 12px",
           borderInlineStart: "1px solid var(--sg-hairline-2)",
           borderTop: "none", borderBottom: "none", borderInlineEnd: "none",
-          background: d.isToday
-            ? "var(--sg-accent-soft)"
-            : d.isWeekend
-              ? "color-mix(in oklch, var(--sg-bg-deep) 60%, white)"
-              : "transparent",
+          background: statusBackground(d.dateStatus, d.closureColor, d.isToday),
           display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 2,
           textAlign: "start",
           cursor: onDayClick ? "pointer" : "default",
@@ -340,12 +337,16 @@ function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
         position: "absolute", inset: 0,
         display: "grid", gridTemplateColumns: "repeat(7, 1fr)",
       }}>
-        {days.map((d) => (
+        {days.map((d) => {
+          const status = row.dayStatuses[d.dayIndex] ?? d.dateStatus;
+          const color = row.closureColors[d.dayIndex] ?? d.closureColor;
+          return (
           <button
             key={d.dayIndex}
             type="button"
             onClick={onDayClick ? () => onDayClick(isoDate(d.date)) : undefined}
             disabled={!onDayClick}
+            data-date-status={status}
             aria-label={
               onDayClick
                 ? t("newEventOnDate", { date: isoDate(d.date) })
@@ -354,14 +355,13 @@ function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
             style={{
               borderInlineStart: "1px solid var(--sg-hairline-2)",
               borderTop: "none", borderBottom: "none", borderInlineEnd: "none",
-              background: d.isWeekend
-                ? "repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in oklch, var(--sg-bg-deep) 80%, transparent) 8px 9px)"
-                : "transparent",
+              background: statusBackground(status, color, false),
               cursor: onDayClick ? "pointer" : "default",
               padding: 0,
             }}
           />
-        ))}
+          );
+        })}
       </div>
 
       {/* Event bars */}
@@ -376,6 +376,18 @@ function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
       </div>
     </div>
   );
+}
+
+function statusBackground(
+  status: WeeklyModel["days"][number]["dateStatus"],
+  closureColor: string | undefined,
+  isToday: boolean,
+): string {
+  if ((status === "holiday" || status === "vacation") && closureColor) {
+    return `color-mix(in oklch, ${closureColor} 16%, var(--sg-surface))`;
+  }
+  if (isToday) return "var(--sg-accent-soft)";
+  return status === "weekend" ? "var(--sg-weekend-bg)" : "transparent";
 }
 
 /* ---- Event bar chip ---- */

@@ -15,8 +15,10 @@ export function Step2Grades({ data, saving, allowedGrades, onNext, onBack }: Ste
   const t = useTranslations("wizard.step2");
   const tc = useTranslations("common");
   const tg = useTranslations("grades");
+  const gradeOptions = Array.from(new Set(allowedGrades)).sort((a, b) => a - b);
   const [grades, setGrades] = useState<number[]>(data.grades ?? []);
   const [error, setError] = useState("");
+  const allSelected = gradeOptions.length > 0 && gradeOptions.every((grade) => grades.includes(grade));
 
   function toggle(g: number) {
     setGrades((prev) =>
@@ -36,8 +38,18 @@ export function Step2Grades({ data, saving, allowedGrades, onNext, onBack }: Ste
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">{t("title")}</h2>
+      {gradeOptions.length > 1 && (
+        <button
+          type="button"
+          aria-pressed={allSelected}
+          onClick={() => setGrades(allSelected ? [] : gradeOptions)}
+          className="min-h-11 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 transition-colors hover:bg-blue-100"
+        >
+          {allSelected ? t("clearAll") : t("selectAll")}
+        </button>
+      )}
       <div className="flex flex-wrap gap-2">
-        {allowedGrades.map((g) => {
+        {gradeOptions.map((g) => {
           const active = grades.includes(g);
           return (
             <button

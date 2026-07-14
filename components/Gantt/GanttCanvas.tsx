@@ -64,6 +64,10 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = selectedId ? (eventMap.get(selectedId) ?? null) : null;
+  const backgroundRanges = useMemo(
+    () => buildBackgroundRanges(events, months, grades),
+    [events, grades, months],
+  );
 
   useEffect(() => {
     if (!currentMonthStart) return;
@@ -144,6 +148,27 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
             }} />
           ))}
 
+          {backgroundRanges.map((range) => (
+            <div
+              key={range.id}
+              aria-hidden="true"
+              data-date-status={range.status}
+              style={{
+                position: "absolute",
+                insetInlineStart: `${range.leftPct}%`,
+                top: HEADER_HEIGHT_PX + range.rowStart * ROW_HEIGHT_PX,
+                width: `${range.widthPct}%`,
+                height: range.rowSpan * ROW_HEIGHT_PX,
+                background: range.color
+                  ? `color-mix(in oklch, ${range.color} 16%, var(--sg-surface))`
+                  : "var(--sg-weekend-bg)",
+                boxShadow: range.color ? `inset 0 3px 0 ${range.color}` : undefined,
+                pointerEvents: "none",
+                zIndex: 1,
+              }}
+            />
+          ))}
+
           {/* Event bars — smaller area gets higher z so they're always clickable */}
           {bars.map((bar) => {
             const area = bar.widthPct * bar.rowSpan;
@@ -203,6 +228,62 @@ export function GanttCanvas({ events, bars, months, grades, zoom, emptyLabel }: 
       <EventDrawer event={selected} onClose={() => setSelectedId(null)} />
     </div>
   );
+}
+
+interface BackgroundRange {
+  id: string;
+  leftPct: number;
+  widthPct: number;
+  rowStart: number;
+  rowSpan: number;
+  status: "weekend" | "holiday" | "vacation";
+  color?: string;
+}
+
+function buildBackgroundRanges(
+  events: SerializedAgendaItem[],
+  months: GanttMonth[],
+  grades: number[],
+): BackgroundRange[] {
+  const first = months[0];
+  const last = months.at(-1);
+  if (!first || !last || grades.length === 0) return [];
+  const start = new Date(`${first.startDate}T00:00:00Z`);
+  const [lastYear, lastMonth] = last.startDate.split("-").map(Number);
+  const end = new Date(Date.UTC(lastYear, lastMonth, 1));
+  const dayMs = 24 * 60 * 60 * 1000;
+  const days = Math.round((end.getTime() - start.getTime()) / dayMs);
+  const ranges: BackgroundRange[] = [];
+
+  for (let day = 0; day < days; day++) {
+    const date = new Date(start.getTime() + day * dayMs);
+    if (date.getUTCDay() === 5 || date.getUTCDay() === 6) {
+      ranges.push({ id: `weekend-${day}`, leftPct: (day / days) * 100, widthPct: 100 / days, rowStart: 0, rowSpan: grades.length, status: "weekend" });
+    }
+  }
+
+  for (const event of events) {
+    if (event.isCanceled || (event.eventTypeKey !== "holiday" && event.eventTypeKey !== "vacation")) continue;
+    const eventStart = new Date(event.startAt).getTime();
+    const eventEnd = new Date(event.endAt).getTime();
+    const leftPct = Math.max(0, ((eventStart - start.getTime()) / (end.getTime() - start.getTime())) * 100);
+    const rightPct = Math.min(100, ((eventEnd - start.getTime()) / (end.getTime() - start.getTime())) * 100);
+    if (rightPct <= 0 || leftPct >= 100) continue;
+    const matchingGrades = event.eventTypeKey === "holiday" ? grades : grades.filter((grade) => event.grades.includes(grade));
+    for (const grade of matchingGrades) {
+      ranges.push({
+        id: `${event.id}-${grade}`,
+        leftPct,
+        widthPct: Math.max(rightPct - leftPct, 100 / days),
+        rowStart: event.eventTypeKey === "holiday" ? 0 : grades.indexOf(grade),
+        rowSpan: event.eventTypeKey === "holiday" ? grades.length : 1,
+        status: event.eventTypeKey,
+        color: event.eventTypeColor,
+      });
+      if (event.eventTypeKey === "holiday") break;
+    }
+  }
+  return ranges;
 }
 
 interface EventBarButtonProps {

@@ -337,7 +337,9 @@
     },
     "step2": {
       "title": "Grades",
-      "errorRequired": "Please select at least one grade"
+      "errorRequired": "Please select at least one grade",
+      "selectAll": "Select all grades",
+      "clearAll": "Clear all grades"
     },
     "step3": {
       "title": "Event type",

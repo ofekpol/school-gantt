@@ -7,6 +7,7 @@ import type { AgendaItem } from "@/lib/views/agenda-model";
 import { formatGradeList } from "@/lib/grades";
 import { buildGoogleCalendarUrl } from "@/lib/google-calendar-url";
 import { findCurrentAgendaWeekStart } from "@/lib/views/current-period";
+import { getCalendarDateStatusDetail } from "@/lib/views/date-status";
 
 interface SerializedAgendaItem extends Omit<AgendaItem, "startAt" | "endAt"> {
   startAt: Date | string;
@@ -121,9 +122,23 @@ function AgendaRow({
   const tExport = useTranslations("export");
   const startDate = new Date(item.startAt);
   const endDate = new Date(item.endAt);
+  const status = getCalendarDateStatusDetail(startDate, [
+    {
+      startAt: startDate,
+      endAt: endDate,
+      eventTypeKey: item.eventTypeKey,
+      eventTypeColor: item.eventTypeColor,
+      isCanceled: item.isCanceled,
+      status: item.status,
+    },
+  ]);
 
   return (
-    <li>
+    <li
+      data-date-status={status.status}
+      style={status.closureColor ? { "--closure-color": status.closureColor } as React.CSSProperties : undefined}
+      className="rounded-lg"
+    >
       <button
         type="button"
         onClick={onToggle}

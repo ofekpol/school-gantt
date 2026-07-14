@@ -58,4 +58,15 @@ body.paper-a3 {
   .calendar-day {
     min-height: 28mm !important;
   }
+
+  @media (monochrome), (max-monochrome: 0) {
+    [data-date-status="weekend"] {
+      background: #fff !important;
+    }
+    [data-date-status="holiday"],
+    [data-date-status="vacation"] {
+      background: #fff !important;
+      outline: 1px solid #000;
+    }
+  }
 }

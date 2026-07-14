@@ -10,6 +10,11 @@
  * the color fill and reveals the glyph + border style instead.
  */
 
+import {
+  getCalendarDateStatusDetail,
+  type CalendarDateStatus,
+} from "@/lib/views/date-status";
+
 export interface CalendarInputEvent {
   id: string;
   title: string;
@@ -46,6 +51,8 @@ export interface CalendarDay {
   dayOfMonth: number;
   weekday: number; // 0=Sunday..6=Saturday
   inMonth: boolean;
+  dateStatus?: CalendarDateStatus;
+  closureColor?: string;
   events: CalendarChip[];
 }
 
@@ -121,11 +128,17 @@ export function buildCalendarModel(input: BuildCalendarInput): CalendarModel {
     for (let d = 1; d <= daysInMonth; d++) {
       const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const weekday = new Date(Date.UTC(year, month, d)).getUTCDay();
+      const status = getCalendarDateStatusDetail(
+        new Date(`${date}T12:00:00Z`),
+        input.events,
+      );
       cells.push({
         date,
         dayOfMonth: d,
         weekday,
         inMonth: true,
+        dateStatus: status.status,
+        closureColor: status.closureColor,
         events: eventsByDate.get(date) ?? [],
       });
     }

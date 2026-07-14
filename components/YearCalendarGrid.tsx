@@ -154,7 +154,9 @@ export function YearCalendarGrid({
               <div
                 key={`${wi}-${di}`}
                 aria-current={day?.date === todayKey ? "date" : undefined}
-                className={`calendar-day relative min-h-[64px] bg-white p-0.5 align-top sm:min-h-[88px] sm:p-1 ${
+                data-date-status={day?.dateStatus}
+                style={day?.closureColor ? { "--closure-color": day.closureColor } as React.CSSProperties : undefined}
+                className={`calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top sm:min-h-[88px] sm:p-1 ${
                   day?.date === todayKey ? "ring-2 ring-inset ring-blue-500" : ""
                 }`}
               >

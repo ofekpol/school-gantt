@@ -128,7 +128,7 @@ export function PublicViewerShell({
   }, [updateUrl, view]);
 
   return (
-    <main className="min-h-screen bg-neutral-50 pb-12">
+    <main className="min-h-screen bg-[var(--sg-page)] pb-12">
       <ViewTabs
         view={view}
         labels={{
@@ -197,8 +197,8 @@ function ViewTabs({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 bg-white px-3 py-2 sm:px-6">
-      <div className="inline-flex rounded-lg border border-neutral-200 bg-neutral-50 p-0.5">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--sg-hairline)] bg-[var(--sg-surface-raised)] px-3 py-2 sm:px-6">
+      <div className="inline-flex rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] p-0.5 shadow-sm">
         {(["gantt", "calendar", "agenda"] as const).map((item) => (
           <button
             key={item}
