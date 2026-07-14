@@ -26,6 +26,21 @@ purposeful role/status badges, and subtly differentiated interactive table rows.
 The result is more welcoming without reducing table density or operational
 clarity.
 
+## Motion
+
+Motion is functional and restrained rather than decorative:
+
+- buttons, cards, calendar day cells, and table rows use short hover/focus
+  transitions with a subtle lift or color shift;
+- view and tab changes use a brief opacity/position transition so the active
+  destination is clear without delaying navigation;
+- route loading uses the existing progress system with a refined blue-violet
+  indeterminate treatment and calm loading panels;
+- dialogs and menus use short entrance/exit transitions already supported by
+  the component stack.
+
+All non-essential movement is disabled under `prefers-reduced-motion: reduce`.
+
 ## Behavior and accessibility
 
 No event, staff, filtering, auth, permission, or calendar behavior changes.
