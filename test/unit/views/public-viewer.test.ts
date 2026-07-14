@@ -74,6 +74,15 @@ describe("public viewer event filtering", () => {
 
     expect(filtered.map((event) => event.id)).toEqual(["event-3"]);
   });
+
+  it("keeps holidays visible when a selected grade is not on the event", () => {
+    const filtered = filterPublicEvents(
+      [{ ...baseEvent, id: "holiday", eventTypeKey: "holiday", grades: [7] }],
+      { grades: [12], types: [], q: "", zoom: "year", week: null },
+    );
+
+    expect(filtered.map((event) => event.id)).toEqual(["holiday"]);
+  });
 });
 
 describe("public viewer event refresh decisions", () => {

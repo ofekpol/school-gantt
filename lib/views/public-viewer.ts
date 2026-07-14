@@ -48,7 +48,12 @@ export function filterPublicEvents(
   const q = params.q.trim().toLocaleLowerCase("he-IL");
 
   return events.filter((event) => {
-    if (gradeSet.size > 0 && !event.grades.some((grade) => gradeSet.has(grade))) return false;
+    const bypassesGradeFilter = event.eventTypeKey === "holiday";
+    if (
+      gradeSet.size > 0 &&
+      !bypassesGradeFilter &&
+      !event.grades.some((grade) => gradeSet.has(grade))
+    ) return false;
     if (typeSet.size > 0 && !typeSet.has(event.eventTypeKey)) return false;
     if (q && !event.title.toLocaleLowerCase("he-IL").includes(q)) return false;
     return true;
