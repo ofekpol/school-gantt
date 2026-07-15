@@ -28,4 +28,18 @@ describe("buildEventTimeRange", () => {
       }),
     ).toThrow(RangeError);
   });
+
+  it("keeps a timed event on its selected date", () => {
+    expect(
+      buildEventTimeRange({
+        startDate: "2026-07-14",
+        allDay: false,
+        startTime: "08:00",
+        endTime: "09:00",
+      }),
+    ).toEqual({
+      startAt: "2026-07-14T08:00:00+02:00",
+      endAt: "2026-07-14T09:00:00+02:00",
+    });
+  });
 });

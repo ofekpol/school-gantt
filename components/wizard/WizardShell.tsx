@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
+import { buildEventTimeRange } from "@/lib/events/date-range";
 
 export interface EventType {
   id: string;
@@ -29,6 +30,8 @@ export interface WizardData {
   startAt?: string;
   endAt?: string;
   allDay?: boolean;
+  multiDay?: boolean;
+  endDate?: string;
   responsibleText?: string;
   requirementsText?: string;
 }
@@ -84,12 +87,18 @@ export function WizardShell({
     // startAt is serialized as "YYYY-MM-DDTHH:MM:SS+02:00" by the page,
     // so slicing [0:10] gives the local date in Jerusalem time.
     const startAtStr = typeof resumeDraft.startAt === "string" ? resumeDraft.startAt : undefined;
+    const endAtStr = typeof resumeDraft.endAt === "string" ? resumeDraft.endAt : undefined;
+    const allDay = typeof resumeDraft.allDay === "boolean" ? resumeDraft.allDay : false;
+    const startDate = startAtStr?.slice(0, 10);
+    const endDate = endAtStr?.slice(0, 10);
     return {
-      date: initialDate ?? (startAtStr ? startAtStr.slice(0, 10) : undefined),
+      date: initialDate ?? startDate,
       title: typeof resumeDraft.title === "string" ? resumeDraft.title : undefined,
       startAt: startAtStr,
-      endAt: typeof resumeDraft.endAt === "string" ? resumeDraft.endAt : undefined,
-      allDay: typeof resumeDraft.allDay === "boolean" ? resumeDraft.allDay : false,
+      endAt: endAtStr,
+      allDay,
+      multiDay: Boolean(allDay && startDate && endDate && startDate !== endDate),
+      endDate,
       eventTypeId:
         typeof resumeDraft.eventTypeId === "string" ? resumeDraft.eventTypeId : undefined,
       grades: Array.isArray(resumeDraft.grades) ? (resumeDraft.grades as number[]) : undefined,
@@ -156,18 +165,12 @@ export function WizardShell({
 
   const normalizedData = useCallback((): WizardData => {
     const dateStr = data.date ?? "";
-    const allDay = data.allDay ?? false;
+    const allDay = data.multiDay || data.allDay || false;
     const startTime = data.startAt?.slice(11, 16) ?? "08:00";
     const endTime = data.endAt?.slice(11, 16) ?? "09:00";
-    const startAt = dateStr
-      ? allDay
-        ? `${dateStr}T00:00:00+02:00`
-        : `${dateStr}T${startTime}:00+02:00`
-      : undefined;
-    const endAt = dateStr
-      ? allDay
-        ? `${dateStr}T23:59:59+02:00`
-        : `${dateStr}T${endTime}:00+02:00`
+    const endDate = data.multiDay && data.endDate ? data.endDate : undefined;
+    const range = dateStr && (!endDate || endDate >= dateStr)
+      ? buildEventTimeRange({ startDate: dateStr, endDate, allDay, startTime, endTime })
       : undefined;
 
     return {
@@ -176,8 +179,8 @@ export function WizardShell({
       responsibleText: data.responsibleText?.trim(),
       requirementsText: data.requirementsText?.trim() || undefined,
       allDay,
-      startAt,
-      endAt,
+      startAt: range?.startAt,
+      endAt: range?.endAt,
     };
   }, [data]);
 
@@ -188,6 +191,9 @@ export function WizardShell({
       if (!draft.date) return t1("errorRequired");
       if (!draft.eventTypeId) return t3("errorRequired");
       if (!draft.grades || draft.grades.length === 0) return t2("errorRequired");
+      if (draft.multiDay && (!draft.date || !draft.endDate || draft.endDate < draft.date)) {
+        return t5("errorEndBeforeStart");
+      }
       if (!draft.allDay && draft.startAt && draft.endAt) {
         const start = draft.startAt.slice(11, 16);
         const end = draft.endAt.slice(11, 16);
@@ -300,17 +306,35 @@ export function WizardShell({
 
           <div className="grid gap-6 sm:grid-cols-2">
             <Field label={t1("title")}>
-              <input
-                type="date"
-                value={data.date ?? ""}
-                onChange={(e) => patchData({ date: e.target.value })}
-                aria-label={t1("title")}
-                className="block min-h-12 w-full rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 text-base transition outline-none focus:border-sky-400 focus:bg-white"
-              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  type="date"
+                  value={data.date ?? ""}
+                  onChange={(e) => {
+                    const date = e.target.value;
+                    patchData({
+                      date,
+                      endDate: data.multiDay && (data.endDate ?? "") < date ? date : data.endDate,
+                    });
+                  }}
+                  aria-label={t1("title")}
+                  className="block min-h-12 w-full rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 text-base transition outline-none focus:border-sky-400 focus:bg-white"
+                />
+                {data.multiDay && (
+                  <input
+                    type="date"
+                    value={data.endDate ?? ""}
+                    min={data.date}
+                    onChange={(e) => patchData({ endDate: e.target.value })}
+                    aria-label={t5("endDate")}
+                    className="block min-h-12 w-full rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-4 text-base transition outline-none focus:border-sky-400 focus:bg-white"
+                  />
+                )}
+              </div>
             </Field>
 
             <Field label={t5("title")}>
-              <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+              <div className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-2">
                 <input
                   type="time"
                   value={startTime}
@@ -339,9 +363,24 @@ export function WizardShell({
                   <input
                     type="checkbox"
                     checked={data.allDay ?? false}
+                    disabled={data.multiDay}
                     onChange={(e) => patchData({ allDay: e.target.checked })}
                   />
                   <span className="whitespace-nowrap">{t5("allDay")}</span>
+                </label>
+                <label className="flex min-h-12 items-center gap-2 rounded-[14px] border-2 border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-3 text-sm text-[var(--sg-ink)]">
+                  <input
+                    type="checkbox"
+                    checked={data.multiDay ?? false}
+                    onChange={(e) =>
+                      patchData({
+                        multiDay: e.target.checked,
+                        allDay: e.target.checked || data.allDay,
+                        endDate: e.target.checked ? data.date : data.endDate,
+                      })
+                    }
+                  />
+                  <span className="whitespace-nowrap">{t5("multiDay")}</span>
                 </label>
               </div>
             </Field>
