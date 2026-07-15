@@ -355,8 +355,11 @@
       "startLabel": "Start time",
       "endLabel": "End time",
       "allDay": "All-day",
+      "multiDay": "Multiple days",
+      "endDate": "End date",
       "errorInvalid": "Please enter a valid time",
-      "errorInverted": "End time must come after start time"
+      "errorInverted": "End time must come after start time",
+      "errorEndBeforeStart": "End date must be on or after the start date"
     },
     "step6": {
       "title": "Responsible",

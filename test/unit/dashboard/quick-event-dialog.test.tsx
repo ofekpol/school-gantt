@@ -8,6 +8,26 @@ vi.mock("next-intl", () => ({
 }));
 
 describe("QuickEventDialog", () => {
+  it("reveals the end date and locks all-day mode for a multi-day event", async () => {
+    const user = userEvent.setup();
+    render(
+      <QuickEventDialog
+        open
+        dateIso="2026-07-14"
+        eventTypes={[]}
+        allowedGrades={[]}
+        onClose={() => undefined}
+        onPublished={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByRole("checkbox", { name: "multiDay" }));
+
+    expect(screen.getByLabelText("endDate")).toHaveValue("2026-07-14");
+    expect(screen.getByRole("checkbox", { name: "allDay" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "allDay" })).toBeDisabled();
+  });
+
   it("selects every allowed grade with the select-all control", async () => {
     const user = userEvent.setup();
     render(

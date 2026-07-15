@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import type { EventType } from "@/components/wizard/WizardShell";
+import { buildEventTimeRange } from "@/lib/events/date-range";
 
 interface Props {
   open: boolean;
@@ -39,6 +40,8 @@ interface QuickEventData {
   startTime: string;
   endTime: string;
   allDay: boolean;
+  multiDay: boolean;
+  endDate: string;
   eventTypeId: string;
   grades: number[];
   responsibleText: string;
@@ -51,6 +54,8 @@ const EMPTY_DATA: QuickEventData = {
   startTime: "08:00",
   endTime: "09:00",
   allDay: false,
+  multiDay: false,
+  endDate: "",
   eventTypeId: "",
   grades: [],
   responsibleText: "",
@@ -122,6 +127,7 @@ export function QuickEventDialog({
       return t5("errorInvalid");
     }
     if (!data.allDay && data.startTime >= data.endTime) return t5("errorInverted");
+    if (data.multiDay && data.endDate < data.date) return t5("errorEndBeforeStart");
     return "";
   }
 
@@ -132,12 +138,14 @@ export function QuickEventDialog({
       return;
     }
 
-    const startAt = data.allDay
-      ? `${data.date}T00:00:00+02:00`
-      : `${data.date}T${data.startTime}:00+02:00`;
-    const endAt = data.allDay
-      ? `${data.date}T23:59:59+02:00`
-      : `${data.date}T${data.endTime}:00+02:00`;
+    const allDay = data.multiDay || data.allDay;
+    const { startAt, endAt } = buildEventTimeRange({
+      startDate: data.date,
+      endDate: data.multiDay ? data.endDate : undefined,
+      allDay,
+      startTime: data.startTime,
+      endTime: data.endTime,
+    });
 
     setPublishing(true);
     try {
@@ -152,7 +160,7 @@ export function QuickEventDialog({
           grades: data.grades,
           startAt,
           endAt,
-          allDay: data.allDay,
+          allDay,
         }),
       });
       if (!publishRes.ok) throw new Error("Failed to publish event");
@@ -165,7 +173,7 @@ export function QuickEventDialog({
           title: data.title.trim(),
           startAt,
           endAt,
-          allDay: data.allDay,
+          allDay,
           description: data.description.trim() || null,
           location: data.responsibleText.trim() || null,
           eventTypeId: selectedType.id,
@@ -240,16 +248,34 @@ export function QuickEventDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t1("title")}>
-              <input
-                type="date"
-                value={data.date}
-                onChange={(e) => patch({ date: e.target.value })}
-                aria-label={t1("title")}
-                className="h-10 w-full rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-3 text-sm outline-none focus:border-sky-400 focus:bg-white"
-              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  type="date"
+                  value={data.date}
+                  onChange={(e) => {
+                    const date = e.target.value;
+                    patch({
+                      date,
+                      endDate: data.multiDay && data.endDate < date ? date : data.endDate,
+                    });
+                  }}
+                  aria-label={t1("title")}
+                  className="h-10 w-full rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-3 text-sm outline-none focus:border-sky-400"
+                />
+                {data.multiDay && (
+                  <input
+                    type="date"
+                    value={data.endDate}
+                    min={data.date}
+                    onChange={(e) => patch({ endDate: e.target.value })}
+                    aria-label={t5("endDate")}
+                    className="h-10 w-full rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-3 text-sm outline-none focus:border-sky-400"
+                  />
+                )}
+              </div>
             </Field>
             <Field label={t5("title")}>
-              <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+              <div className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-2">
                 <label className="min-w-0">
                   <span className="mb-1 block text-[11px] font-semibold text-[var(--sg-ink-soft)]">
                     {t5("startLabel")}
@@ -276,9 +302,24 @@ export function QuickEventDialog({
                   <input
                     type="checkbox"
                     checked={data.allDay}
+                    disabled={data.multiDay}
                     onChange={(e) => patch({ allDay: e.target.checked })}
                   />
                   <span className="whitespace-nowrap">{t5("allDay")}</span>
+                </label>
+                <label className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] px-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={data.multiDay}
+                    onChange={(e) =>
+                      patch({
+                        multiDay: e.target.checked,
+                        allDay: e.target.checked || data.allDay,
+                        endDate: e.target.checked ? data.date : data.endDate,
+                      })
+                    }
+                  />
+                  <span className="whitespace-nowrap">{t5("multiDay")}</span>
                 </label>
               </div>
             </Field>
