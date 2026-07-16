@@ -92,11 +92,7 @@ describe("current period scrolling", () => {
 
   it("keeps the calendar day hover treatment in read-only mode", () => {
     render(
-      <YearCalendarGrid
-        months={[calendarMonthWithDay()]}
-        yearLabel="2026"
-        schoolName="Demo"
-      />,
+      <YearCalendarGrid months={[calendarMonthWithDay()]} yearLabel="2026" schoolName="Demo" />,
     );
 
     expect(screen.getByText("15").closest(".calendar-day")).toHaveClass("hover:bg-blue-50");
@@ -104,11 +100,7 @@ describe("current period scrolling", () => {
 
   it("marks today's date in the monthly calendar", () => {
     render(
-      <YearCalendarGrid
-        months={[calendarMonthWithDay()]}
-        yearLabel="2026"
-        schoolName="Demo"
-      />,
+      <YearCalendarGrid months={[calendarMonthWithDay()]} yearLabel="2026" schoolName="Demo" />,
     );
 
     expect(screen.getByText("15").closest("[aria-current='date']")).not.toBeNull();
@@ -131,6 +123,26 @@ describe("current period scrolling", () => {
 
     expect(onEventClick).toHaveBeenCalledWith("event-1");
     expect(onDayClick).not.toHaveBeenCalled();
+  });
+
+  it("renders a multi-day segment across its projected calendar columns", () => {
+    const onEventClick = vi.fn();
+    render(
+      <YearCalendarGrid
+        months={[calendarMonthWithSegment()]}
+        yearLabel="2026"
+        schoolName="Demo"
+        onEventClick={onEventClick}
+      />,
+    );
+
+    const bar = screen.getByRole("button", { name: "טיול" });
+    expect(bar).toHaveAttribute("data-calendar-segment", "true");
+    expect(bar).toHaveStyle({ gridColumn: "2 / 5" });
+
+    fireEvent.click(bar);
+
+    expect(onEventClick).toHaveBeenCalledWith("event-1");
   });
 
   it("shows the current agenda week and switches weeks with arrows", async () => {
@@ -179,7 +191,11 @@ describe("current period scrolling", () => {
       />,
     );
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ inline: "center", block: "nearest", behavior: "auto" });
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      inline: "center",
+      block: "nearest",
+      behavior: "auto",
+    });
   });
 
   it("opens event details above computed Gantt event layers", () => {
@@ -242,7 +258,7 @@ function calendarMonth(monthIndex: number, year = 2026): CalendarMonth {
   return {
     year,
     monthIndex,
-    weeks: [{ days: Array.from({ length: 7 }, () => null) }],
+    weeks: [{ days: Array.from({ length: 7 }, () => null), segments: [], laneCount: 0 }],
   };
 }
 
@@ -267,9 +283,34 @@ function calendarMonthWithDay(events: CalendarChip[] = []) {
           null,
           null,
         ],
+        segments: [],
+        laneCount: 0,
       },
     ],
   } satisfies CalendarMonth;
+}
+
+function calendarMonthWithSegment(): CalendarMonth {
+  return {
+    year: 2026,
+    monthIndex: 10,
+    weeks: [
+      {
+        days: Array.from({ length: 7 }, () => null),
+        segments: [
+          {
+            ...calendarChip(),
+            startColumn: 1,
+            endColumn: 3,
+            lane: 0,
+            continuesBefore: false,
+            continuesAfter: false,
+          },
+        ],
+        laneCount: 1,
+      },
+    ],
+  };
 }
 
 function calendarChip() {
