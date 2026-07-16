@@ -41,9 +41,9 @@ export function getCalendarDateStatusDetail(
   const closures = events.filter(
     (event) => !isCanceled(event) && eventTouchesJerusalemDate(event, dateKey),
   );
-  const holiday = closures.find((event) => event.eventTypeKey === "holiday");
+  const holiday = closures.find((event) => isClosureType(event, "holiday"));
   if (holiday) return { status: "holiday", closureColor: holiday.eventTypeColor };
-  const vacation = closures.find((event) => event.eventTypeKey === "vacation");
+  const vacation = closures.find((event) => isClosureType(event, "vacation"));
   if (vacation) return { status: "vacation", closureColor: vacation.eventTypeColor };
   return { status: isJerusalemWeekend(date) ? "weekend" : "normal" };
 }
@@ -64,6 +64,10 @@ export function jerusalemDateKey(date: Date): string {
 
 function isCanceled(event: CalendarStatusEvent): boolean {
   return event.isCanceled === true || event.status === "canceled";
+}
+
+function isClosureType(event: CalendarStatusEvent, kind: "holiday" | "vacation"): boolean {
+  return event.eventTypeKey.split(/[-_.]/).includes(kind);
 }
 
 function isJerusalemWeekend(date: Date): boolean {
