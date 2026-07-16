@@ -145,7 +145,8 @@ function bucketEvents(
   for (const evt of events) {
     const range = getEventDateRange(evt);
     if (!range || range.startDate !== range.endDate) continue;
-    if (range.startDate < visibleRange.startDate || range.startDate > visibleRange.endDate) continue;
+    if (range.startDate < visibleRange.startDate || range.startDate > visibleRange.endDate)
+      continue;
 
     const list = eventsByDate.get(range.startDate) ?? [];
     list.push(toCalendarChip(evt));
@@ -211,13 +212,15 @@ function toWeekSegmentCandidate(
 
   const startDate = maxDate(range.startDate, weekStart);
   const endDate = minDate(range.endDate, weekEnd);
-  return [{
-    event,
-    startColumn: dateDistance(weekStart, startDate),
-    endColumn: dateDistance(weekStart, endDate),
-    continuesBefore: range.startDate < weekStart,
-    continuesAfter: range.endDate > weekEnd,
-  }];
+  return [
+    {
+      event,
+      startColumn: dateDistance(weekStart, startDate),
+      endColumn: dateDistance(weekStart, endDate),
+      continuesBefore: range.startDate < weekStart,
+      continuesAfter: range.endDate > weekEnd,
+    },
+  ];
 }
 
 function getEventDateRange(event: CalendarInputEvent): EventDateRange | null {
