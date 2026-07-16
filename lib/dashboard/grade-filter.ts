@@ -12,7 +12,11 @@ export function getDashboardGradeSelection(
   const allowed = normalizeAllowedGrades(allowedGrades);
   const requested = parseGradeParams(rawGrades);
   const selected = requested.filter((grade) => allowed.includes(grade));
-  const selectedGrades = selected.length > 0 ? selected : allowed;
+  const selectedGrades = hasExplicitEmptySelection(rawGrades)
+    ? []
+    : selected.length > 0
+      ? selected
+      : allowed;
 
   return {
     selectedGrades,
@@ -37,4 +41,9 @@ function parseGradeParams(rawGrades: string | string[] | undefined): number[] {
     .filter((grade) => Number.isInteger(grade) && VALID_GRADES.has(grade));
 
   return Array.from(new Set(parsed)).sort((a, b) => a - b);
+}
+
+function hasExplicitEmptySelection(rawGrades: string | string[] | undefined): boolean {
+  const values = Array.isArray(rawGrades) ? rawGrades : rawGrades ? [rawGrades] : [];
+  return values.includes("none");
 }

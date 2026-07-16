@@ -26,6 +26,13 @@ describe("dashboard grade filtering", () => {
     expect(selection.dataGrades).toEqual([10]);
   });
 
+  it("preserves an explicit empty grade selection", () => {
+    const selection = getDashboardGradeSelection([9, 10, 11], "none");
+
+    expect(selection.selectedGrades).toEqual([]);
+    expect(selection.dataGrades).toEqual([9, 10, 11]);
+  });
+
   it("shows the picker only when more than one grade is allowed", () => {
     expect(shouldShowDashboardGradeFilter([10])).toBe(false);
     expect(shouldShowDashboardGradeFilter([9, 10])).toBe(true);

@@ -149,22 +149,21 @@ export function DashboardCalendar({
     const current = new Set(selectedGradeState);
     if (current.has(grade)) current.delete(grade);
     else current.add(grade);
-    const nextGrades =
-      current.size === 0 || current.size === allowedGradeOptions.length
-        ? []
-        : Array.from(current).sort((a, b) => a - b);
-    updateGradeSelection(nextGrades);
+    updateGradeSelection(Array.from(current).sort((a, b) => a - b));
   }
 
   function selectAllGrades() {
-    updateGradeSelection([]);
+    updateGradeSelection(selectedGradeState.length === allowedGradeOptions.length ? [] : allowedGradeOptions);
   }
 
   function updateGradeSelection(nextGrades: number[]) {
     const params = new URLSearchParams(window.location.search);
     params.delete("grades");
-    for (const grade of nextGrades) params.append("grades", String(grade));
-    setSelectedGradeState(nextGrades.length > 0 ? nextGrades : allowedGradeOptions);
+    if (nextGrades.length === 0) params.set("grades", "none");
+    else if (nextGrades.length < allowedGradeOptions.length) {
+      for (const grade of nextGrades) params.append("grades", String(grade));
+    }
+    setSelectedGradeState(nextGrades);
     if (selectedEventId) setSelectedEventId(null);
     const query = params.toString();
     window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
@@ -277,7 +276,7 @@ export function DashboardCalendar({
             onClick={selectAllGrades}
             className="h-8 rounded-md border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-600 transition-colors hover:bg-neutral-50"
           >
-            {t("selectAllGrades")}
+            {t(selectedGradeState.length === allowedGradeOptions.length ? "clearAllGrades" : "selectAllGrades")}
           </button>
           <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
             {allowedGradeOptions.map((grade) => {

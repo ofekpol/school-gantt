@@ -219,6 +219,7 @@
     "gradeFilterLabel": "שכבות",
     "gradeFilterOption": "הצג שכבה {grade}",
     "selectAllGrades": "בחר הכל",
+    "clearAllGrades": "נקה הכל",
     "confirmNewEventTitle": "אירוע חדש",
     "confirmNewEvent": "ליצור אירוע חדש בתאריך {date}?",
     "myDrafts": "האירועים שלי",

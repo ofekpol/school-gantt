@@ -134,6 +134,14 @@ describe("DashboardCalendar read-only mode", () => {
       "aria-pressed",
       "true",
     );
+
+    await user.click(screen.getByRole("button", { name: "clearAllGrades" }));
+
+    expect(screen.getByRole("button", { name: "gradeFilterOption ז" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(window.location.search).toBe("?grades=none");
     expect(screen.queryByRole("button", { name: "newEvent" })).not.toBeInTheDocument();
   });
 
