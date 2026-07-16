@@ -209,8 +209,8 @@
 
 [data-date-status="holiday"],
 [data-date-status="vacation"] {
-  background-color: color-mix(in oklch, var(--closure-color) 16%, var(--sg-surface));
-  box-shadow: inset 0 3px 0 var(--closure-color);
+  background-color: #fee2e2;
+  box-shadow: inset 0 3px 0 #fca5a5;
 }
 
 /* Adjacent-month dates remain usable, but recede behind the selected month. */
@@ -228,7 +228,7 @@
 
 .calendar-day[data-outside-month="true"][data-date-status="holiday"],
 .calendar-day[data-outside-month="true"][data-date-status="vacation"] {
-  background-color: color-mix(in oklch, var(--closure-color) 12%, var(--sg-surface));
+  background-color: #fef2f2;
 }
 
 /* ---- Skeleton loader animation ---- */
