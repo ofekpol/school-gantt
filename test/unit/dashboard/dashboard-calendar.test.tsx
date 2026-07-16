@@ -103,6 +103,40 @@ describe("DashboardCalendar grade filter", () => {
 });
 
 describe("DashboardCalendar read-only mode", () => {
+  it("lets viewers restore every grade with the choose-all control", async () => {
+    const user = userEvent.setup();
+    const weeklyModel = buildWeeklyModel(
+      new Date(Date.UTC(2026, 4, 24)),
+      [],
+      allGrades,
+      new Date(Date.UTC(2026, 4, 25)),
+    );
+
+    render(
+      <DashboardCalendar
+        view="weekly"
+        weeklyModel={weeklyModel}
+        months={[]}
+        events={[]}
+        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
+        schoolName="Demo School"
+        eventTypes={[]}
+        allowedGrades={allGrades}
+        selectedGrades={allGrades}
+        canCreateEvents={false}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "gradeFilterOption ז" }));
+    await user.click(screen.getByRole("button", { name: "selectAllGrades" }));
+
+    expect(screen.getByRole("button", { name: "gradeFilterOption ז" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.queryByRole("button", { name: "newEvent" })).not.toBeInTheDocument();
+  });
+
   it("hides event creation controls for viewers", () => {
     const weeklyModel = buildWeeklyModel(
       new Date(Date.UTC(2026, 4, 24)),

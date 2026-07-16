@@ -218,6 +218,7 @@
     "viewMonthly": "תצוגה חודשית",
     "gradeFilterLabel": "שכבות",
     "gradeFilterOption": "הצג שכבה {grade}",
+    "selectAllGrades": "בחר הכל",
     "confirmNewEventTitle": "אירוע חדש",
     "confirmNewEvent": "ליצור אירוע חדש בתאריך {date}?",
     "myDrafts": "האירועים שלי",
