@@ -4,7 +4,7 @@
  * Renders the caller-provided display range month by month, where each month
  * is a full-week grid of day cells (Sunday-start, Israeli convention). Leading
  * and trailing cells show adjacent-month dates in a dimmed treatment. Multi-day
- * events are repeated across each visible day they touch.
+ * events become connected segments while single-day events remain day chips.
  *
  * Layout note (PRD §6.4): chips carry both color AND glyph so a black-and-
  * white printout still distinguishes event types — the print stylesheet hides
@@ -13,6 +13,7 @@
 
 import {
   getCalendarDateStatusDetail,
+  jerusalemDateKey,
   type CalendarDateStatus,
 } from "@/lib/views/date-status";
 
@@ -46,6 +47,14 @@ export interface CalendarChip {
   isUpdated?: boolean;
 }
 
+export interface CalendarEventSegment extends CalendarChip {
+  startColumn: number;
+  endColumn: number;
+  lane: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
+}
+
 export interface CalendarDay {
   /** YYYY-MM-DD (Asia/Jerusalem-local). */
   date: string;
@@ -59,6 +68,8 @@ export interface CalendarDay {
 
 export interface CalendarWeek {
   days: (CalendarDay | null)[];
+  segments: CalendarEventSegment[];
+  laneCount: number;
 }
 
 export interface CalendarMonth {
@@ -80,8 +91,21 @@ export interface CalendarModel {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 interface VisibleDateRange {
-  startMs: number;
-  endMs: number;
+  startDate: string;
+  endDate: string;
+}
+
+interface EventDateRange {
+  startDate: string;
+  endDate: string;
+}
+
+interface SegmentCandidate {
+  event: CalendarInputEvent;
+  startColumn: number;
+  endColumn: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
 }
 
 export function buildCalendarModel(input: BuildCalendarInput): CalendarModel {
@@ -106,7 +130,10 @@ function getVisibleDateRange(start: Date, end: Date): VisibleDateRange {
   const startMs = firstMonthStart.getTime() - firstMonthStart.getUTCDay() * DAY_MS;
   const endMs = lastMonthEnd.getTime() + (7 - lastMonthEnd.getUTCDay()) * DAY_MS;
 
-  return { startMs, endMs };
+  return {
+    startDate: isoDate(new Date(startMs)),
+    endDate: isoDate(new Date(endMs - 1)),
+  };
 }
 
 function bucketEvents(
@@ -116,32 +143,13 @@ function bucketEvents(
   const eventsByDate = new Map<string, CalendarChip[]>();
 
   for (const evt of events) {
-    const evtStart = evt.startAt.getTime();
-    const evtEnd = evt.endAt.getTime();
-    if (evtEnd <= visibleRange.startMs || evtStart >= visibleRange.endMs) continue;
+    const range = getEventDateRange(evt);
+    if (!range || range.startDate !== range.endDate) continue;
+    if (range.startDate < visibleRange.startDate || range.startDate > visibleRange.endDate) continue;
 
-    const fromDate = atUtcMidnight(Math.max(evtStart, visibleRange.startMs));
-    const toDate = atUtcMidnight(Math.min(evtEnd - 1, visibleRange.endMs - 1));
-    let cursor = fromDate;
-    while (cursor <= toDate) {
-      const key = isoDate(new Date(cursor));
-      const list = eventsByDate.get(key) ?? [];
-      list.push({
-        id: evt.id,
-        eventId: evt.id,
-        title: evt.title,
-        eventTypeKey: evt.eventTypeKey,
-        eventTypeLabelHe: evt.eventTypeLabelHe,
-        eventTypeColor: evt.eventTypeColor,
-        eventTypeGlyph: evt.eventTypeGlyph,
-        grades: evt.grades.slice().sort((a, b) => a - b),
-        status: evt.status,
-        isCanceled: evt.isCanceled,
-        isUpdated: evt.isUpdated,
-      });
-      eventsByDate.set(key, list);
-      cursor += DAY_MS;
-    }
+    const list = eventsByDate.get(range.startDate) ?? [];
+    list.push(toCalendarChip(evt));
+    eventsByDate.set(range.startDate, list);
   }
 
   return eventsByDate;
@@ -163,10 +171,77 @@ function buildMonth(
   const weeks: CalendarWeek[] = [];
 
   for (let index = 0; index < cells.length; index += 7) {
-    weeks.push({ days: cells.slice(index, index + 7) });
+    weeks.push(buildWeek(cells.slice(index, index + 7), events));
   }
 
   return { year, monthIndex: month + 1, weeks };
+}
+
+function buildWeek(days: CalendarDay[], events: CalendarInputEvent[]): CalendarWeek {
+  const weekStart = days[0].date;
+  const weekEnd = days[6].date;
+  const candidates = events
+    .flatMap((event) => toWeekSegmentCandidate(event, weekStart, weekEnd))
+    .sort(
+      (a, b) =>
+        a.startColumn - b.startColumn ||
+        a.endColumn - b.endColumn ||
+        a.event.id.localeCompare(b.event.id),
+    );
+  const laneEnds: number[] = [];
+  const segments = candidates.map((candidate) => {
+    const lane = laneEnds.findIndex((endColumn) => endColumn < candidate.startColumn);
+    const assignedLane = lane === -1 ? laneEnds.length : lane;
+    laneEnds[assignedLane] = candidate.endColumn;
+
+    return { ...toCalendarChip(candidate.event), ...candidate, lane: assignedLane };
+  });
+
+  return { days, segments, laneCount: laneEnds.length };
+}
+
+function toWeekSegmentCandidate(
+  event: CalendarInputEvent,
+  weekStart: string,
+  weekEnd: string,
+): SegmentCandidate[] {
+  const range = getEventDateRange(event);
+  if (!range || range.startDate === range.endDate) return [];
+  if (range.endDate < weekStart || range.startDate > weekEnd) return [];
+
+  const startDate = maxDate(range.startDate, weekStart);
+  const endDate = minDate(range.endDate, weekEnd);
+  return [{
+    event,
+    startColumn: dateDistance(weekStart, startDate),
+    endColumn: dateDistance(weekStart, endDate),
+    continuesBefore: range.startDate < weekStart,
+    continuesAfter: range.endDate > weekEnd,
+  }];
+}
+
+function getEventDateRange(event: CalendarInputEvent): EventDateRange | null {
+  if (event.endAt <= event.startAt) return null;
+  return {
+    startDate: jerusalemDateKey(event.startAt),
+    endDate: jerusalemDateKey(new Date(event.endAt.getTime() - 1)),
+  };
+}
+
+function toCalendarChip(event: CalendarInputEvent): CalendarChip {
+  return {
+    id: event.id,
+    eventId: event.id,
+    title: event.title,
+    eventTypeKey: event.eventTypeKey,
+    eventTypeLabelHe: event.eventTypeLabelHe,
+    eventTypeColor: event.eventTypeColor,
+    eventTypeGlyph: event.eventTypeGlyph,
+    grades: event.grades.slice().sort((a, b) => a - b),
+    status: event.status,
+    isCanceled: event.isCanceled,
+    isUpdated: event.isUpdated,
+  };
 }
 
 function buildDay(
@@ -194,11 +269,18 @@ function parseIsoDate(iso: string): Date {
   return new Date(Date.UTC(y, m - 1, d));
 }
 
-function atUtcMidnight(ms: number): number {
-  const d = new Date(ms);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-}
-
 function isoDate(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+
+function dateDistance(from: string, to: string): number {
+  return (parseIsoDate(to).getTime() - parseIsoDate(from).getTime()) / DAY_MS;
+}
+
+function maxDate(first: string, second: string): string {
+  return first > second ? first : second;
+}
+
+function minDate(first: string, second: string): string {
+  return first < second ? first : second;
 }

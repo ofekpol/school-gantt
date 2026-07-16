@@ -119,21 +119,59 @@ describe("buildCalendarModel: event distribution", () => {
     expect(day?.events.map((chip) => chip.id)).toEqual(["previous-month"]);
   });
 
-  it("spreads a 3-day event across all 3 days", () => {
+  it("projects a 3-day event as one connected weekly segment", () => {
     const evt = mkEvent(
       "trip",
       "2026-09-10T08:00:00+03:00",
       "2026-09-12T16:00:00+03:00",
     );
     const model = buildCalendarModel({ year: YEAR, events: [evt] });
-    const sept = model.months[0];
-    const days = sept.weeks
-      .flatMap((w) => w.days)
-      .filter((d) => d !== null && d.events.some((e) => e.id === "trip"));
-    expect(days.map((d) => d!.dayOfMonth).sort((a, b) => a - b)).toEqual([10, 11, 12]);
+    const week = model.months[0].weeks[1];
+
+    expect(weekSegments(week)).toMatchObject([
+      {
+        eventId: "trip",
+        startColumn: 4,
+        endColumn: 6,
+        lane: 0,
+        continuesBefore: false,
+        continuesAfter: false,
+      },
+    ]);
+    expect(week.days.flatMap((day) => day?.events ?? [])).not.toContainEqual(
+      expect.objectContaining({ eventId: "trip" }),
+    );
   });
 
-  it("repeats a multi-day event in adjacent-month cells", () => {
+  it("splits a range at calendar-week boundaries with continuation edges", () => {
+    const evt = mkEvent(
+      "cross-week",
+      "2026-09-12T08:00:00+03:00",
+      "2026-09-15T16:00:00+03:00",
+    );
+    const weeks = buildCalendarModel({ year: YEAR, events: [evt] }).months[0].weeks;
+
+    expect(weekSegments(weeks[1])).toMatchObject([
+      { eventId: "cross-week", startColumn: 6, endColumn: 6, continuesAfter: true },
+    ]);
+    expect(weekSegments(weeks[2])).toMatchObject([
+      { eventId: "cross-week", startColumn: 0, endColumn: 2, continuesBefore: true },
+    ]);
+  });
+
+  it("assigns overlapping connected ranges to separate lanes", () => {
+    const first = mkEvent("first", "2026-09-09T08:00:00+03:00", "2026-09-11T16:00:00+03:00");
+    const second = mkEvent("second", "2026-09-10T08:00:00+03:00", "2026-09-12T16:00:00+03:00");
+    const week = buildCalendarModel({ year: YEAR, events: [first, second] }).months[0].weeks[1];
+
+    expect(weekSegments(week)).toMatchObject([
+      { eventId: "first", lane: 0 },
+      { eventId: "second", lane: 1 },
+    ]);
+    expect((week as { laneCount?: number }).laneCount).toBe(2);
+  });
+
+  it("projects a cross-month event in the adjacent-month week grid", () => {
     const evt = mkEvent(
       "cross",
       "2026-09-29T08:00:00+03:00",
@@ -142,18 +180,13 @@ describe("buildCalendarModel: event distribution", () => {
     const model = buildCalendarModel({ year: YEAR, events: [evt] });
     const sept = model.months[0];
     const oct = model.months[1];
-    const septDays = sept.weeks
-      .flatMap((w) => w.days)
-      .filter((d) => d !== null && d.events.some((e) => e.id === "cross"))
-      .map((d) => d!.dayOfMonth)
-      .sort((a, b) => a - b);
-    const octDays = oct.weeks
-      .flatMap((w) => w.days)
-      .filter((d) => d !== null && d.events.some((e) => e.id === "cross"))
-      .map((d) => d!.dayOfMonth)
-      .sort((a, b) => a - b);
-    expect(septDays).toEqual([1, 2, 29, 30]);
-    expect(octDays).toEqual([1, 2, 29, 30]);
+    const septSegment = sept.weeks.flatMap((week) => weekSegments(week) as unknown[])
+      .find((segment) => (segment as { eventId?: string }).eventId === "cross");
+    const octSegment = oct.weeks.flatMap((week) => weekSegments(week) as unknown[])
+      .find((segment) => (segment as { eventId?: string }).eventId === "cross");
+
+    expect(septSegment).toMatchObject({ startColumn: 2, endColumn: 5 });
+    expect(octSegment).toMatchObject({ startColumn: 2, endColumn: 5 });
   });
 
   it("skips events fully outside the display range", () => {
@@ -170,3 +203,7 @@ describe("buildCalendarModel: event distribution", () => {
     expect(total).toBe(0);
   });
 });
+
+function weekSegments(week: unknown): unknown {
+  return (week as { segments?: unknown }).segments;
+}
