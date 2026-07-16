@@ -37,7 +37,8 @@ body.paper-a3 {
 
   /* Default Chromium preview drops backgrounds. Force chip backgrounds
      to print so the colored variant is preserved if the user opts in. */
-  .year-calendar .event-chip {
+  .year-calendar .event-chip,
+  .year-calendar [data-calendar-segment] {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -47,7 +48,8 @@ body.paper-a3 {
      under `@media print and (monochrome)` covers true B&W devices, and
      the glyph stays visible regardless. */
   @media (monochrome), (max-monochrome: 0) {
-    .year-calendar .event-chip {
+    .year-calendar .event-chip,
+    .year-calendar [data-calendar-segment] {
       background-color: #fff !important;
       color: #000 !important;
       border: 1px solid #000 !important;

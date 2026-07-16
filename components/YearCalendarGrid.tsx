@@ -47,7 +47,8 @@ export function YearCalendarGrid({
   const selectedMonthOptionRef = useRef<HTMLButtonElement | null>(null);
   const currentMonthIndex = currentMonthStart
     ? months.findIndex(
-        (item) => `${item.year}-${String(item.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
+        (item) =>
+          `${item.year}-${String(item.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
       )
     : -1;
 
@@ -61,14 +62,15 @@ export function YearCalendarGrid({
   }, [monthPickerOpen, selectedIndex]);
 
   const month = months[selectedIndex];
-  const monthLabel = `${tm(String(month?.monthIndex ?? 1) as `${number}`)} ${month?.year ?? ""}`.trim();
+  const monthLabel =
+    `${tm(String(month?.monthIndex ?? 1) as `${number}`)} ${month?.year ?? ""}`.trim();
 
   if (!month) return null;
 
   return (
     <div className="year-calendar p-4">
       <section
-        className="calendar-month rounded-md border border-neutral-200 bg-white p-2 sm:p-4 print:border-0 print:rounded-none"
+        className="calendar-month rounded-md border border-neutral-200 bg-white p-2 sm:p-4 print:rounded-none print:border-0"
         aria-label={`${tm(String(month.monthIndex) as `${number}`)} ${month.year}`}
       >
         <header className="mb-3 flex items-center justify-center gap-2 print:mb-2">
@@ -86,7 +88,7 @@ export function YearCalendarGrid({
                 aria-haspopup="listbox"
                 aria-expanded={monthPickerOpen}
                 onClick={() => setMonthPickerOpen((open) => !open)}
-                className="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-300 print:pointer-events-none"
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-neutral-100 focus:ring-2 focus:ring-blue-300 focus:outline-none print:pointer-events-none"
               >
                 <span>{monthLabel}</span>
                 <ChevronDown className="size-4 text-neutral-500 print:hidden" aria-hidden="true" />
@@ -122,7 +124,7 @@ export function YearCalendarGrid({
                 </div>
               </div>
             )}
-            <p className="hidden print:block text-xs text-neutral-500">
+            <p className="hidden text-xs text-neutral-500 print:block">
               {schoolName} · {yearLabel}
             </p>
           </div>
@@ -148,90 +150,152 @@ export function YearCalendarGrid({
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-px bg-neutral-200">
-          {month.weeks.flatMap((w, wi) =>
-            w.days.map((day, di) => {
-              if (!day) {
-                return (
-                  <div
-                    key={`${wi}-${di}`}
-                    className="calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top sm:min-h-[88px] sm:p-1"
-                  />
-                );
-              }
+        <div className="space-y-px bg-neutral-200">
+          {month.weeks.map((week, wi) => {
+            const segmentSpace = week.laneCount * 22;
 
-              return (
-              <div
-                key={`${wi}-${di}`}
-                aria-current={day.date === todayKey ? "date" : undefined}
-                data-date-status={day.dateStatus}
-                data-outside-month={day.inMonth ? undefined : "true"}
-                style={day.closureColor ? { "--closure-color": day.closureColor } as React.CSSProperties : undefined}
-                className={`calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top transition-colors hover:bg-blue-50 sm:min-h-[88px] sm:p-1 ${
-                  day.date === todayKey ? "ring-2 ring-inset ring-blue-500" : ""
-                }`}
-              >
-                {onDayClick && (
-                  <button
-                    type="button"
-                    aria-label={tv("newEventOnDate", { date: day.date })}
-                    onClick={() => onDayClick(day.date)}
-                    className="absolute inset-0 z-0 bg-transparent hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-300"
-                  />
-                )}
-                <div
-                  className={`pointer-events-none relative z-10 mb-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-medium ${
-                    day.date === todayKey
-                      ? "bg-blue-600 text-white"
-                      : day.inMonth
-                        ? "text-neutral-700"
-                        : "text-neutral-400"
-                  }`}
-                >
-                  {day.dayOfMonth}
-                </div>
-                <ul className="relative z-10 space-y-0.5">
-                  {day.events.slice(0, 4).map((chip) => (
-                    <li
-                      key={chip.id}
-                      title={eventTitle(chip.title, chip.isCanceled, chip.isUpdated, tv)}
+            return (
+              <div key={wi} className="calendar-week relative grid grid-cols-7 gap-px">
+                {week.days.map((day, di) => {
+                  if (!day) {
+                    return (
+                      <div
+                        key={`${wi}-${di}`}
+                        className="calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top sm:min-h-[88px] sm:p-1"
+                        style={segmentSpace ? { minHeight: `${88 + segmentSpace}px` } : undefined}
+                      />
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={`${wi}-${di}`}
+                      aria-current={day.date === todayKey ? "date" : undefined}
+                      data-date-status={day.dateStatus}
+                      data-outside-month={day.inMonth ? undefined : "true"}
+                      style={
+                        {
+                          ...(day.closureColor ? { "--closure-color": day.closureColor } : {}),
+                          ...(segmentSpace ? { minHeight: `${88 + segmentSpace}px` } : {}),
+                        } as React.CSSProperties
+                      }
+                      className={`calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top transition-colors hover:bg-blue-50 sm:min-h-[88px] sm:p-1 ${
+                        day.date === todayKey ? "ring-2 ring-blue-500 ring-inset" : ""
+                      }`}
                     >
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onEventClick?.(chip.eventId);
-                        }}
-                        disabled={!onEventClick}
-                        className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
-                        style={{
-                          backgroundColor: chip.isCanceled ? "#fee2e2" : chip.eventTypeColor,
-                          color: chip.isCanceled ? "#991b1b" : readableTextColor(chip.eventTypeColor),
-                          textDecoration: chip.isCanceled ? "line-through" : "none",
-                        }}
+                      {onDayClick && (
+                        <button
+                          type="button"
+                          aria-label={tv("newEventOnDate", { date: day.date })}
+                          onClick={() => onDayClick(day.date)}
+                          className="absolute inset-0 z-0 bg-transparent hover:bg-blue-50 focus:ring-2 focus:ring-blue-300 focus:outline-none focus:ring-inset"
+                        />
+                      )}
+                      <div
+                        className={`pointer-events-none relative z-10 mb-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-medium ${
+                          day.date === todayKey
+                            ? "bg-blue-600 text-white"
+                            : day.inMonth
+                              ? "text-neutral-700"
+                              : "text-neutral-400"
+                        }`}
                       >
-                        <span aria-hidden="true" className="event-chip-glyph">
-                          {chip.eventTypeGlyph}
-                        </span>
-                        <span className="truncate">{chip.title}</span>
-                        {(chip.isCanceled || chip.isUpdated) && (
-                          <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
-                            {chip.isCanceled ? tv("canceled") : tv("updated")}
-                          </span>
+                        {day.dayOfMonth}
+                      </div>
+                      <ul
+                        className="relative z-10 space-y-0.5"
+                        style={segmentSpace ? { marginTop: `${segmentSpace}px` } : undefined}
+                      >
+                        {day.events.slice(0, 4).map((chip) => (
+                          <li
+                            key={chip.id}
+                            title={eventTitle(chip.title, chip.isCanceled, chip.isUpdated, tv)}
+                          >
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onEventClick?.(chip.eventId);
+                              }}
+                              disabled={!onEventClick}
+                              className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
+                              style={{
+                                backgroundColor: chip.isCanceled ? "#fee2e2" : chip.eventTypeColor,
+                                color: chip.isCanceled
+                                  ? "#991b1b"
+                                  : readableTextColor(chip.eventTypeColor),
+                                textDecoration: chip.isCanceled ? "line-through" : "none",
+                              }}
+                            >
+                              <span aria-hidden="true" className="event-chip-glyph">
+                                {chip.eventTypeGlyph}
+                              </span>
+                              <span className="truncate">{chip.title}</span>
+                              {(chip.isCanceled || chip.isUpdated) && (
+                                <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
+                                  {chip.isCanceled ? tv("canceled") : tv("updated")}
+                                </span>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                        {day.events.length > 4 && (
+                          <li className="text-[9px] text-neutral-500">
+                            {tc("more", { count: day.events.length - 4 })}
+                          </li>
                         )}
-                      </button>
-                    </li>
+                      </ul>
+                    </div>
+                  );
+                })}
+                <div className="pointer-events-none absolute inset-x-0 top-7 z-20 grid grid-cols-7 gap-y-0.5 px-1">
+                  {week.segments.map((segment) => (
+                    <button
+                      key={`${segment.id}-${segment.lane}`}
+                      type="button"
+                      data-calendar-segment="true"
+                      data-continues-before={segment.continuesBefore || undefined}
+                      data-continues-after={segment.continuesAfter || undefined}
+                      title={eventTitle(segment.title, segment.isCanceled, segment.isUpdated, tv)}
+                      aria-label={eventTitle(
+                        segment.title,
+                        segment.isCanceled,
+                        segment.isUpdated,
+                        tv,
+                      )}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onEventClick?.(segment.eventId);
+                      }}
+                      disabled={!onEventClick}
+                      className={`calendar-event-segment pointer-events-auto flex min-w-0 items-center gap-1 truncate border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default ${
+                        segment.continuesBefore ? "rounded-s-none" : "rounded-s-sm"
+                      } ${segment.continuesAfter ? "rounded-e-none" : "rounded-e-sm"}`}
+                      style={{
+                        gridColumn: `${segment.startColumn + 1} / ${segment.endColumn + 2}`,
+                        gridRow: segment.lane + 1,
+                        backgroundColor: segment.isCanceled ? "#fee2e2" : segment.eventTypeColor,
+                        color: segment.isCanceled
+                          ? "#991b1b"
+                          : readableTextColor(segment.eventTypeColor),
+                        textDecoration: segment.isCanceled ? "line-through" : "none",
+                      }}
+                    >
+                      <span aria-hidden="true" className="event-chip-glyph">
+                        {segment.eventTypeGlyph}
+                      </span>
+                      <span className="truncate">{segment.title}</span>
+                      {(segment.isCanceled || segment.isUpdated) && (
+                        <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
+                          {segment.isCanceled ? tv("canceled") : tv("updated")}
+                        </span>
+                      )}
+                    </button>
                   ))}
-                  {day.events.length > 4 && (
-                    <li className="text-[9px] text-neutral-500">
-                      {tc("more", { count: day.events.length - 4 })}
-                    </li>
-                  )}
-                </ul>
+                </div>
               </div>
-              );
-            }),
-          )}
+            );
+          })}
         </div>
       </section>
     </div>
@@ -288,7 +352,8 @@ function PeriodButton({
 function initialMonthIndex(months: CalendarMonth[], currentMonthStart: string | null): number {
   if (!currentMonthStart) return 0;
   const index = months.findIndex(
-    (month) => `${month.year}-${String(month.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
+    (month) =>
+      `${month.year}-${String(month.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
   );
   return index >= 0 ? index : 0;
 }
