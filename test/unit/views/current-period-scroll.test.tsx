@@ -90,6 +90,18 @@ describe("current period scrolling", () => {
     expect(onDayClick).toHaveBeenCalledWith("2026-10-15");
   });
 
+  it("keeps the calendar day hover treatment in read-only mode", () => {
+    render(
+      <YearCalendarGrid
+        months={[calendarMonthWithDay()]}
+        yearLabel="2026"
+        schoolName="Demo"
+      />,
+    );
+
+    expect(screen.getByText("15").closest(".calendar-day")).toHaveClass("hover:bg-blue-50");
+  });
+
   it("marks today's date in the monthly calendar", () => {
     render(
       <YearCalendarGrid

@@ -218,6 +218,7 @@
     "viewMonthly": "Monthly",
     "gradeFilterLabel": "Grades",
     "gradeFilterOption": "Show grade {grade}",
+    "selectAllGrades": "Select all",
     "confirmNewEventTitle": "New event",
     "confirmNewEvent": "Create a new event on {date}?",
     "myDrafts": "My events",

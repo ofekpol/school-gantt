@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { PendingRequestsTable } from "@/components/admin/PendingRequestsTable";
 import { InviteForm } from "@/components/admin/InviteForm";
 import { InviteTable } from "@/components/admin/InviteTable";
+import { ScopeFields } from "@/components/admin/ScopeFields";
 import { StaffTable } from "@/components/admin/StaffTable";
 
 vi.mock("next/navigation", () => ({
@@ -26,6 +27,29 @@ const eventTypes = [
 afterEach(() => cleanup());
 
 describe("admin staff role permissions", () => {
+  it("keeps each scope select-all action beside its label", () => {
+    const { container } = render(
+      <ScopeFields
+        eventTypes={eventTypes}
+        gradeName={(grade) => `grade-${grade}`}
+        typeName={(key) => `type-${key}`}
+        labels={{
+          gradeScopes: "gradeScopes",
+          eventTypeScopes: "eventTypeScopes",
+          selectAllGrades: "selectAllGrades",
+          clearAllGrades: "clearAllGrades",
+          selectAllEventTypes: "selectAllEventTypes",
+          clearAllEventTypes: "clearAllEventTypes",
+        }}
+      />,
+    );
+
+    for (const fieldset of container.querySelectorAll("fieldset")) {
+      expect(fieldset.firstElementChild).toHaveClass("justify-start");
+      expect(fieldset.firstElementChild).not.toHaveClass("justify-between");
+    }
+  });
+
   it("renders invite mobile cards with copy actions", () => {
     render(
       <InviteTable

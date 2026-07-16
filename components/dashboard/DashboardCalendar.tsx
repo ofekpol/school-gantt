@@ -146,22 +146,27 @@ export function DashboardCalendar({
   }
 
   function setGradeFilter(grade: number) {
-    const params = new URLSearchParams(window.location.search);
     const current = new Set(selectedGradeState);
     if (current.has(grade)) current.delete(grade);
     else current.add(grade);
-
-    params.delete("grades");
     const nextGrades =
       current.size === 0 || current.size === allowedGradeOptions.length
         ? []
         : Array.from(current).sort((a, b) => a - b);
-    for (const selectedGrade of nextGrades) params.append("grades", String(selectedGrade));
+    updateGradeSelection(nextGrades);
+  }
 
-    const query = params.toString();
-    const nextSelection = nextGrades.length > 0 ? nextGrades : allowedGradeOptions;
-    setSelectedGradeState(nextSelection);
+  function selectAllGrades() {
+    updateGradeSelection([]);
+  }
+
+  function updateGradeSelection(nextGrades: number[]) {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("grades");
+    for (const grade of nextGrades) params.append("grades", String(grade));
+    setSelectedGradeState(nextGrades.length > 0 ? nextGrades : allowedGradeOptions);
     if (selectedEventId) setSelectedEventId(null);
+    const query = params.toString();
     window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
   }
 
@@ -267,6 +272,13 @@ export function DashboardCalendar({
       {showGradeFilter && (
         <div className="flex flex-wrap items-center gap-2 px-6 pt-4">
           <span className="text-sm font-medium text-neutral-600">{t("gradeFilterLabel")}</span>
+          <button
+            type="button"
+            onClick={selectAllGrades}
+            className="h-8 rounded-md border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-600 transition-colors hover:bg-neutral-50"
+          >
+            {t("selectAllGrades")}
+          </button>
           <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
             {allowedGradeOptions.map((grade) => {
               const active = selectedGradeState.includes(grade);

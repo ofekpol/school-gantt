@@ -167,7 +167,7 @@ export function YearCalendarGrid({
                 data-date-status={day.dateStatus}
                 data-outside-month={day.inMonth ? undefined : "true"}
                 style={day.closureColor ? { "--closure-color": day.closureColor } as React.CSSProperties : undefined}
-                className={`calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top sm:min-h-[88px] sm:p-1 ${
+                className={`calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top transition-colors hover:bg-blue-50 sm:min-h-[88px] sm:p-1 ${
                   day.date === todayKey ? "ring-2 ring-inset ring-blue-500" : ""
                 }`}
               >
