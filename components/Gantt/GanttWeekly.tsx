@@ -12,7 +12,6 @@ import {
 import { Ban, Pencil } from "lucide-react";
 import { EventDrawer } from "./EventDrawer";
 import { useRouteProgress } from "@/components/RouteProgress";
-import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { GanttWeeklyMobileList } from "@/components/Gantt/GanttWeeklyMobileList";
 
 /* ---- Layout constants ---- */
@@ -475,10 +474,6 @@ function WeekNav({ model, onPrev, onNext, onToday }: WeekNavProps) {
   const t = useTranslations("gantt");
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3 sm:px-6">
-      <div className="flex items-center gap-2 justify-self-start">
-        <DashboardExportBtn />
-        <TodayBtn onClick={onToday} label={t("backToToday")} />
-      </div>
       <div
         aria-label={t("weeklyPeriodNavigation")}
         className="col-start-2 flex items-center justify-center gap-2"
@@ -494,6 +489,7 @@ function WeekNav({ model, onPrev, onNext, onToday }: WeekNavProps) {
           {t("weekLabel", { week: model.weekLabel })}
         </h1>
         <NavBtn onClick={onNext} aria-label={t("nextWeek")}>›</NavBtn>
+        <TodayBtn onClick={onToday} label={t("backToToday")} />
       </div>
       <div aria-hidden="true" />
     </div>
@@ -529,15 +525,6 @@ function NavBtn({ onClick, children, ...rest }: React.ButtonHTMLAttributes<HTMLB
     >
       {children}
     </button>
-  );
-}
-
-function DashboardExportBtn() {
-  return (
-    <ExportToGoogleCalendarButton
-      labelKey="shortButton"
-      buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-    />
   );
 }
 

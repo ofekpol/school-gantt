@@ -267,12 +267,10 @@ export function DashboardCalendar({
             {t("viewMonthly")}
           </ToggleBtn>
         </div>
-        {currentView === "monthly" && (
-          <ExportToGoogleCalendarButton
-            labelKey="shortButton"
-            buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          />
-        )}
+        <ExportToGoogleCalendarButton
+          labelKey="shortButton"
+          buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        />
       </div>
 
       {showGradeFilter && (

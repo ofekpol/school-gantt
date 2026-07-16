@@ -53,9 +53,8 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-describe("GanttWeekly export action", () => {
-  it("opens the Google Calendar URL subscription modal from the toolbar export button", async () => {
-    const user = userEvent.setup();
+describe("GanttWeekly toolbar", () => {
+  it("does not render a duplicate calendar export action", () => {
     const model = buildWeeklyModel(
       new Date(Date.UTC(2026, 6, 7)),
       [],
@@ -71,11 +70,7 @@ describe("GanttWeekly export action", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "ייצוא" }));
-
-    expect(screen.getByRole("dialog", { name: "חיבור ל-Google Calendar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "צור קישור ליומן" })).toBeInTheDocument();
-    expect(screen.queryByText("הורד קובץ ‎.ics")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ייצוא" })).not.toBeInTheDocument();
   });
 
   it("renders a mobile weekly list whose event buttons use the existing selection handler", async () => {
@@ -132,6 +127,7 @@ describe("GanttWeekly export action", () => {
     expect(within(nav).getByRole("button", { name: "שבוע קודם" })).toHaveTextContent("‹");
     expect(within(nav).getByRole("heading", { name: "שבוע 7–13 ביולי" })).toBeInTheDocument();
     expect(within(nav).getByRole("button", { name: "שבוע הבא" })).toHaveTextContent("›");
+    expect(within(nav).getByRole("button", { name: "חזור להיום" })).toBeInTheDocument();
     expect(nav).toHaveClass("justify-center");
   });
 
