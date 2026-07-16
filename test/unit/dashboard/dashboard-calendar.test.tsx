@@ -73,7 +73,7 @@ afterEach(() => {
 });
 
 describe("DashboardCalendar grade filter", () => {
-  it("shows the calendar export action after switching to the monthly view", async () => {
+  it("keeps the calendar export action beside the view toggle in both views", async () => {
     const user = userEvent.setup();
     const weeklyModel = buildWeeklyModel(
       new Date(Date.UTC(2026, 4, 24)),
@@ -95,6 +95,8 @@ describe("DashboardCalendar grade filter", () => {
         selectedGrades={allGrades}
       />,
     );
+
+    expect(screen.getByRole("button", { name: "shortButton" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "viewMonthly" }));
 
