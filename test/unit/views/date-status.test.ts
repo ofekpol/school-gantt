@@ -30,6 +30,21 @@ describe("getCalendarDateStatus", () => {
     expect(getCalendarDateStatus(new Date("2026-09-04T12:00:00Z"), events)).toBe("holiday");
   });
 
+  it("marks custom holiday and vacation event types as closures", () => {
+    expect(
+      getCalendarDateStatus(
+        new Date("2026-09-06T12:00:00Z"),
+        [event("bridge-vacation", "2026-09-06", "2026-09-07")],
+      ),
+    ).toBe("vacation");
+    expect(
+      getCalendarDateStatus(
+        new Date("2026-09-07T12:00:00Z"),
+        [event("national_holiday", "2026-09-07", "2026-09-08")],
+      ),
+    ).toBe("holiday");
+  });
+
   it("ignores cancelled closure events", () => {
     expect(
       getCalendarDateStatus(
