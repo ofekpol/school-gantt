@@ -69,9 +69,38 @@ const allGrades = [7, 8, 9, 10, 11, 12];
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  window.history.replaceState(null, "", "/dashboard");
 });
 
 describe("DashboardCalendar grade filter", () => {
+  it("shows the calendar export action after switching to the monthly view", async () => {
+    const user = userEvent.setup();
+    const weeklyModel = buildWeeklyModel(
+      new Date(Date.UTC(2026, 4, 24)),
+      [],
+      allGrades,
+      new Date(Date.UTC(2026, 4, 25)),
+    );
+
+    render(
+      <DashboardCalendar
+        view="weekly"
+        weeklyModel={weeklyModel}
+        months={[]}
+        events={[]}
+        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
+        schoolName="Demo School"
+        eventTypes={[]}
+        allowedGrades={allGrades}
+        selectedGrades={allGrades}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "viewMonthly" }));
+
+    expect(screen.getByRole("button", { name: "shortButton" })).toBeInTheDocument();
+  });
+
   it("removes deselected grades from the weekly rows immediately", async () => {
     const user = userEvent.setup();
     const weeklyModel = buildWeeklyModel(

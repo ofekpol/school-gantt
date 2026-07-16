@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
 import { EventDrawer } from "@/components/Gantt/EventDrawer";
+import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
 import { QuickEventDialog } from "./QuickEventDialog";
 import { buildWeeklyModel, type WeeklyModel } from "@/lib/views/gantt-weekly";
@@ -266,6 +267,12 @@ export function DashboardCalendar({
             {t("viewMonthly")}
           </ToggleBtn>
         </div>
+        {currentView === "monthly" && (
+          <ExportToGoogleCalendarButton
+            labelKey="shortButton"
+            buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          />
+        )}
       </div>
 
       {showGradeFilter && (
