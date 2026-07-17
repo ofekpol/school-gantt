@@ -20,7 +20,23 @@ body.paper-a3 {
      CSS body class is enough for Chromium/Safari to apply this. */
 }
 
+.print-calendar-sheet {
+  display: none;
+}
+
 @media print {
+  body.printing-calendar > *:not(.print-calendar-sheet) {
+    display: none !important;
+  }
+
+  body.printing-calendar > .print-calendar-sheet {
+    display: block !important;
+  }
+
+  body.printing-calendar .year-calendar {
+    padding: 0;
+  }
+
   body {
     background: #fff !important;
   }

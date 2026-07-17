@@ -82,6 +82,10 @@ export function PublicViewerShell({
     () => hydratePublicEvents(filteredEvents),
     [filteredEvents],
   );
+  const calendarMonths = useMemo(
+    () => buildCalendarModel({ year, events: hydratedEvents }).months,
+    [hydratedEvents, year],
+  );
   const visibleGrades = useMemo(
     () => (params.grades.length > 0 ? params.grades : ALL_GRADES),
     [params.grades],
@@ -144,6 +148,7 @@ export function PublicViewerShell({
             eventTypes={eventTypesForFilter}
             defaultGrades={params.grades}
             defaultTypes={params.types}
+            printCalendar={{ months: calendarMonths, schoolName, yearLabel: year.label }}
           />
         }
       />
@@ -165,11 +170,12 @@ export function PublicViewerShell({
           params={params}
           grades={visibleGrades}
           emptyLabel={gantt("empty")}
+          printCalendar={{ months: calendarMonths, schoolName, yearLabel: year.label }}
         />
       )}
       {deferredView === "calendar" && (
         <MemoCalendar
-          events={hydratedEvents}
+          months={calendarMonths}
           year={year}
           schoolName={schoolName}
         />
@@ -231,16 +237,15 @@ const MemoAgenda = memo(function MemoAgenda({
 });
 
 const MemoCalendar = memo(function MemoCalendar({
-  events,
+  months,
   year,
   schoolName,
 }: {
-  events: ReturnType<typeof hydratePublicEvents>;
+  months: ReturnType<typeof buildCalendarModel>["months"];
   year: PublicViewerYear;
   schoolName: string;
 }) {
-  const model = buildCalendarModel({ year, events });
-  return <YearCalendarGrid months={model.months} yearLabel={year.label} schoolName={schoolName} />;
+  return <YearCalendarGrid months={months} yearLabel={year.label} schoolName={schoolName} />;
 });
 
 const MemoGantt = memo(function MemoGantt({
@@ -250,6 +255,7 @@ const MemoGantt = memo(function MemoGantt({
   params,
   grades,
   emptyLabel,
+  printCalendar,
 }: {
   events: ReturnType<typeof hydratePublicEvents>;
   serializedEvents: PublicViewerEvent[];
@@ -257,6 +263,7 @@ const MemoGantt = memo(function MemoGantt({
   params: PublicViewerParams;
   grades: number[];
   emptyLabel: string;
+  printCalendar: import("@/components/ExportToGoogleCalendarButton").CalendarPrintOptions;
 }) {
   if (params.zoom === "week") {
     const model = buildWeeklyModel(
@@ -265,7 +272,7 @@ const MemoGantt = memo(function MemoGantt({
       grades,
       new Date(),
     );
-    return <GanttWeekly model={model} events={serializedEvents} navigationMode="local" />;
+    return <GanttWeekly model={model} events={serializedEvents} navigationMode="local" showExport={false} printCalendar={printCalendar} />;
   }
   const model = buildGanttModel({ year, grades, events });
   return (

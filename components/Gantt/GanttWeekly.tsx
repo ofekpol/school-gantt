@@ -12,7 +12,10 @@ import {
 import { Ban, Pencil } from "lucide-react";
 import { EventDrawer } from "./EventDrawer";
 import { useRouteProgress } from "@/components/RouteProgress";
-import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
+import {
+  ExportToGoogleCalendarButton,
+  type CalendarPrintOptions,
+} from "@/components/ExportToGoogleCalendarButton";
 import { GanttWeeklyMobileList } from "@/components/Gantt/GanttWeeklyMobileList";
 
 /* ---- Layout constants ---- */
@@ -48,6 +51,8 @@ interface Props {
   onDayClick?: (isoDate: string) => void;
   onEventClick?: (eventId: string) => void;
   navigationMode?: "router" | "local";
+  printCalendar?: CalendarPrintOptions;
+  showExport?: boolean;
 }
 
 export function GanttWeekly({
@@ -56,6 +61,8 @@ export function GanttWeekly({
   onDayClick,
   onEventClick,
   navigationMode = "router",
+  printCalendar,
+  showExport = true,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -143,6 +150,8 @@ export function GanttWeekly({
         onPrev={() => navigate(-1)}
         onNext={() => navigate(1)}
         onToday={jumpToToday}
+        printCalendar={printCalendar}
+        showExport={showExport}
       />
 
       <GanttWeeklyMobileList
@@ -457,14 +466,16 @@ interface WeekNavProps {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  printCalendar?: CalendarPrintOptions;
+  showExport: boolean;
 }
 
-function WeekNav({ model, onPrev, onNext, onToday }: WeekNavProps) {
+function WeekNav({ model, onPrev, onNext, onToday, printCalendar, showExport }: WeekNavProps) {
   const t = useTranslations("gantt");
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3 sm:px-6">
       <div className="flex items-center gap-2 justify-self-start">
-        <DashboardExportBtn />
+        {showExport && <DashboardExportBtn printCalendar={printCalendar} />}
         <TodayBtn onClick={onToday} label={t("backToToday")} />
       </div>
       <div
@@ -520,10 +531,11 @@ function NavBtn({ onClick, children, ...rest }: React.ButtonHTMLAttributes<HTMLB
   );
 }
 
-function DashboardExportBtn() {
+function DashboardExportBtn({ printCalendar }: { printCalendar?: CalendarPrintOptions }) {
   return (
     <ExportToGoogleCalendarButton
       labelKey="shortButton"
+      printCalendar={printCalendar}
       buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
     />
   );

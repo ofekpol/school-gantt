@@ -249,8 +249,14 @@
     }
   },
   "export": {
-    "button": "Export to Google Calendar",
+    "button": "Export",
     "shortButton": "Export",
+    "exportTitle": "Export calendar",
+    "googleCalendar": "Google Calendar",
+    "printCalendar": "Print calendar",
+    "printTitle": "Print calendar",
+    "chooseMonthToPrint": "Choose a month to print",
+    "print": "Print",
     "modalTitle": "Connect Google Calendar",
     "intro": "Create a private calendar URL with all school events you are allowed to see.",
     "googleInstructions": "Copy the URL and add it in Google Calendar using Add calendar → From URL.",

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
 import { EventDrawer } from "@/components/Gantt/EventDrawer";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
+import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { QuickEventDialog } from "./QuickEventDialog";
 import { buildWeeklyModel, type WeeklyModel } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
@@ -56,7 +57,6 @@ interface Props {
 export function DashboardCalendar({
   view,
   weeklyModel,
-  months,
   events,
   calendarRange,
   schoolName,
@@ -107,9 +107,8 @@ export function DashboardCalendar({
       new Date(),
     );
   }, [currentView, deferredSelectedGrades, hydratedEvents, weeklyModel]);
-  const displayMonths = useMemo(() => {
-    if (currentView !== "monthly") return months;
-    return buildCalendarModel({
+  const calendarMonths = useMemo(() =>
+    buildCalendarModel({
       year: calendarRange,
       events: hydratedEvents.map((event) => ({
         id: event.id,
@@ -126,8 +125,8 @@ export function DashboardCalendar({
         isCanceled: event.isCanceled,
         isUpdated: event.isUpdated,
       })),
-    }).months;
-  }, [calendarRange, currentView, hydratedEvents, months]);
+    }).months,
+  [calendarRange, hydratedEvents]);
 
   useEffect(() => setCurrentView(view), [view]);
   useEffect(() => setVisibleEvents(events), [events]);
@@ -262,6 +261,12 @@ export function DashboardCalendar({
             {t("viewMonthly")}
           </ToggleBtn>
         </div>
+        {currentView === "monthly" && (
+          <ExportToGoogleCalendarButton
+            labelKey="shortButton"
+            printCalendar={{ months: calendarMonths, schoolName, yearLabel: calendarRange.label }}
+          />
+        )}
       </div>
 
       {showGradeFilter && (
@@ -310,11 +315,12 @@ export function DashboardCalendar({
           onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
           navigationMode="local"
+          printCalendar={{ months: calendarMonths, schoolName, yearLabel: calendarRange.label }}
         />
       )}
-      {currentView === "monthly" && displayMonths && (
+      {currentView === "monthly" && (
         <YearCalendarGrid
-          months={displayMonths}
+          months={calendarMonths}
           yearLabel={calendarRange.label}
           schoolName={schoolName}
           onDayClick={canCreateEvents ? openNewEvent : undefined}

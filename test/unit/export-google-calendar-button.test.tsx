@@ -2,9 +2,16 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
+import { buildCalendarModel } from "@/lib/views/calendar";
 
 const translations: Record<string, string> = {
-  button: "Export to Google Calendar",
+  button: "Export",
+  exportTitle: "Export calendar",
+  googleCalendar: "Google Calendar",
+  printCalendar: "Print calendar",
+  printTitle: "Print calendar",
+  chooseMonthToPrint: "Choose a month to print",
+  print: "Print",
   modalTitle: "Connect Google Calendar",
   intro: "Create a private calendar URL for all events you are allowed to see.",
   googleInstructions: "Add it in Google Calendar using Add calendar → From URL.",
@@ -44,6 +51,22 @@ afterEach(() => {
 });
 
 function renderButton() {
+  const printMonths = buildCalendarModel({
+    year: { startDate: "2026-09-01", endDate: "2026-09-30" },
+    events: [{
+      id: "event-1",
+      title: "Staff meeting",
+      startAt: new Date("2026-09-15T08:00:00.000Z"),
+      endAt: new Date("2026-09-15T09:00:00.000Z"),
+      allDay: false,
+      grades: [9],
+      eventTypeKey: "meeting",
+      eventTypeLabelHe: "Meeting",
+      eventTypeColor: "#0ea5e9",
+      eventTypeGlyph: "M",
+    }],
+  }).months;
+
   return render(
     <ExportToGoogleCalendarButton
       schoolSlug="demo-school"
@@ -55,6 +78,7 @@ function renderButton() {
       }]}
       defaultGrades={[9]}
       defaultTypes={["trip"]}
+      printCalendar={{ months: printMonths, schoolName: "Demo School", yearLabel: "2026" }}
     />,
   );
 }
@@ -72,7 +96,8 @@ describe("ExportToGoogleCalendarButton", () => {
     });
 
     renderButton();
-    await user.click(screen.getByRole("button", { name: "Export to Google Calendar" }));
+    await user.click(screen.getByRole("button", { name: "Export" }));
+    await user.click(screen.getByRole("button", { name: "Google Calendar" }));
     await user.click(screen.getByRole("button", { name: "Create calendar URL" }));
 
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/ical-subscriptions/personal", {
@@ -89,7 +114,8 @@ describe("ExportToGoogleCalendarButton", () => {
     fetchMock.mockResolvedValueOnce({ status: 401, ok: false });
 
     renderButton();
-    await user.click(screen.getByRole("button", { name: "Export to Google Calendar" }));
+    await user.click(screen.getByRole("button", { name: "Export" }));
+    await user.click(screen.getByRole("button", { name: "Google Calendar" }));
     await user.click(screen.getByRole("button", { name: "Create calendar URL" }));
 
     expect(await screen.findByText("Sign in required")).toBeInTheDocument();
@@ -98,5 +124,24 @@ describe("ExportToGoogleCalendarButton", () => {
       "href",
       "/auth/login?next=%2Fdemo-school%2Fcalendar%3Fgrades%3D9",
     );
+  });
+
+  it("prints only the month selected from the export picker", async () => {
+    const user = userEvent.setup();
+    const print = vi.fn();
+    vi.stubGlobal("print", print);
+
+    renderButton();
+    await user.click(screen.getByRole("button", { name: "Export" }));
+    await user.click(screen.getByRole("button", { name: "Print calendar" }));
+
+    expect(screen.getByRole("dialog", { name: "Print calendar" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Choose a month to print" })).toHaveValue("0");
+
+    await user.click(screen.getByRole("button", { name: "Print" }));
+
+    expect(print).toHaveBeenCalledOnce();
+    expect(screen.getByText("Staff meeting")).toBeInTheDocument();
+    window.dispatchEvent(new Event("afterprint"));
   });
 });

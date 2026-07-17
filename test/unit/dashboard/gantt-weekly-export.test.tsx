@@ -7,6 +7,9 @@ import { buildWeeklyModel } from "@/lib/views/gantt-weekly";
 const translations: Record<string, string> = {
   button: "ייצוא",
   shortButton: "ייצוא",
+  exportTitle: "ייצוא לוח שנה",
+  googleCalendar: "Google Calendar",
+  printCalendar: "הדפסת לוח שנה",
   modalTitle: "חיבור ל-Google Calendar",
   intro: "צור קישור פרטי ליומן עם כל האירועים שמותר לך לראות בבית הספר.",
   googleInstructions: "העתק את הקישור והוסף אותו ב-Google Calendar דרך הוספת יומן ← מכתובת URL.",
@@ -54,7 +57,7 @@ afterEach(() => {
 });
 
 describe("GanttWeekly export action", () => {
-  it("opens the Google Calendar URL subscription modal from the toolbar export button", async () => {
+  it("keeps the Google Calendar subscription flow available from the export picker", async () => {
     const user = userEvent.setup();
     const model = buildWeeklyModel(
       new Date(Date.UTC(2026, 6, 7)),
@@ -72,6 +75,7 @@ describe("GanttWeekly export action", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "ייצוא" }));
+    await user.click(screen.getByRole("button", { name: "Google Calendar" }));
 
     expect(screen.getByRole("dialog", { name: "חיבור ל-Google Calendar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "צור קישור ליומן" })).toBeInTheDocument();
