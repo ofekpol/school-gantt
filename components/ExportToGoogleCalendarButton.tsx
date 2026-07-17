@@ -17,6 +17,7 @@ export interface CalendarPrintOptions {
   months: CalendarMonth[];
   schoolName: string;
   yearLabel: string;
+  defaultMonthIndex?: number;
 }
 
 interface Props {
@@ -151,7 +152,11 @@ function PrintDialog({
 }) {
   const t = useTranslations("export");
   const tm = useTranslations("months");
-  const [monthIndex, setMonthIndex] = useState(0);
+  const defaultMonthIndex = Math.min(
+    Math.max(calendar.defaultMonthIndex ?? 0, 0),
+    Math.max(calendar.months.length - 1, 0),
+  );
+  const [monthIndex, setMonthIndex] = useState(defaultMonthIndex);
   useEscape(onClose);
 
   return (
