@@ -46,6 +46,7 @@ interface Props {
   events: SerializedEvent[];
   onDayClick?: (isoDate: string) => void;
   onEventClick?: (eventId: string) => void;
+  onWeekChange?: (weekStart: Date) => void;
   navigationMode?: "router" | "local";
 }
 
@@ -54,6 +55,7 @@ export function GanttWeekly({
   events,
   onDayClick,
   onEventClick,
+  onWeekChange,
   navigationMode = "router",
 }: Props) {
   const router = useRouter();
@@ -113,6 +115,7 @@ export function GanttWeekly({
         : new URLSearchParams(searchParams.toString());
     params.set("week", iso);
     setDisplayWeekStartMs(next.getTime());
+    onWeekChange?.(next);
     if (navigationMode === "local") {
       const qs = params.toString();
       window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);

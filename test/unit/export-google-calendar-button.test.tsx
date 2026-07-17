@@ -52,7 +52,7 @@ afterEach(() => {
 
 function renderButton() {
   const printMonths = buildCalendarModel({
-    year: { startDate: "2026-09-01", endDate: "2026-09-30" },
+    year: { startDate: "2026-09-01", endDate: "2026-10-31" },
     events: [{
       id: "event-1",
       title: "Staff meeting",
@@ -78,7 +78,12 @@ function renderButton() {
       }]}
       defaultGrades={[9]}
       defaultTypes={["trip"]}
-      printCalendar={{ months: printMonths, schoolName: "Demo School", yearLabel: "2026" }}
+      printCalendar={{
+        months: printMonths,
+        schoolName: "Demo School",
+        yearLabel: "2026",
+        defaultMonthIndex: 1,
+      }}
     />,
   );
 }
@@ -136,12 +141,12 @@ describe("ExportToGoogleCalendarButton", () => {
     await user.click(screen.getByRole("button", { name: "Print calendar" }));
 
     expect(screen.getByRole("dialog", { name: "Print calendar" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Choose a month to print" })).toHaveValue("0");
+    expect(screen.getByRole("combobox", { name: "Choose a month to print" })).toHaveValue("1");
 
     await user.click(screen.getByRole("button", { name: "Print" }));
 
     expect(print).toHaveBeenCalledOnce();
-    expect(screen.getByText("Staff meeting")).toBeInTheDocument();
+    expect(screen.getByLabelText("10 2026")).toBeInTheDocument();
     window.dispatchEvent(new Event("afterprint"));
   });
 });

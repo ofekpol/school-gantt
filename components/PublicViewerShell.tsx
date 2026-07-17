@@ -58,6 +58,9 @@ export function PublicViewerShell({
   const [params, setParamsState] = useState(initialParams);
   const [events, setEvents] = useState(initialEvents);
   const [eventsSignature, setEventsSignature] = useState(initialEventsSignature);
+  const [printMonthKey, setPrintMonthKey] = useState(() => monthKeyForDate(
+    parseWeekParam(initialParams.week ?? undefined),
+  ));
   const [, startTransition] = useTransition();
   const deferredView = useDeferredValue(view);
   const deferredParams = useDeferredValue(params);
@@ -86,6 +89,7 @@ export function PublicViewerShell({
     () => buildCalendarModel({ year, events: hydratedEvents }).months,
     [hydratedEvents, year],
   );
+  const defaultPrintMonthIndex = monthIndexForKey(calendarMonths, printMonthKey);
   const visibleGrades = useMemo(
     () => (params.grades.length > 0 ? params.grades : ALL_GRADES),
     [params.grades],
@@ -130,6 +134,15 @@ export function PublicViewerShell({
     setParamsState(nextParams);
     updateUrl(view, nextParams, "replace");
   }, [updateUrl, view]);
+  const updatePrintMonth = useCallback((month: { year: number; monthIndex: number }) => {
+    setPrintMonthKey(monthKey(month.year, month.monthIndex));
+  }, []);
+
+  useEffect(() => {
+    if (view === "gantt" && params.zoom === "week") {
+      setPrintMonthKey(monthKeyForDate(parseWeekParam(params.week ?? undefined)));
+    }
+  }, [params.week, params.zoom, view]);
 
   return (
     <main className="min-h-screen bg-[var(--sg-page)] pb-12">
@@ -148,7 +161,12 @@ export function PublicViewerShell({
             eventTypes={eventTypesForFilter}
             defaultGrades={params.grades}
             defaultTypes={params.types}
-            printCalendar={{ months: calendarMonths, schoolName, yearLabel: year.label }}
+            printCalendar={{
+              months: calendarMonths,
+              schoolName,
+              yearLabel: year.label,
+              defaultMonthIndex: defaultPrintMonthIndex,
+            }}
           />
         }
       />
@@ -170,6 +188,7 @@ export function PublicViewerShell({
           params={params}
           grades={visibleGrades}
           emptyLabel={gantt("empty")}
+          onWeekChange={(weekStart) => setPrintMonthKey(monthKeyForDate(weekStart))}
         />
       )}
       {deferredView === "calendar" && (
@@ -177,6 +196,7 @@ export function PublicViewerShell({
           months={calendarMonths}
           year={year}
           schoolName={schoolName}
+          onMonthChange={updatePrintMonth}
         />
       )}
       {deferredView === "agenda" && (
@@ -239,12 +259,14 @@ const MemoCalendar = memo(function MemoCalendar({
   months,
   year,
   schoolName,
+  onMonthChange,
 }: {
   months: ReturnType<typeof buildCalendarModel>["months"];
   year: PublicViewerYear;
   schoolName: string;
+  onMonthChange: (month: { year: number; monthIndex: number }) => void;
 }) {
-  return <YearCalendarGrid months={months} yearLabel={year.label} schoolName={schoolName} />;
+  return <YearCalendarGrid months={months} yearLabel={year.label} schoolName={schoolName} onMonthChange={onMonthChange} />;
 });
 
 const MemoGantt = memo(function MemoGantt({
@@ -254,6 +276,7 @@ const MemoGantt = memo(function MemoGantt({
   params,
   grades,
   emptyLabel,
+  onWeekChange,
 }: {
   events: ReturnType<typeof hydratePublicEvents>;
   serializedEvents: PublicViewerEvent[];
@@ -261,6 +284,7 @@ const MemoGantt = memo(function MemoGantt({
   params: PublicViewerParams;
   grades: number[];
   emptyLabel: string;
+  onWeekChange: (weekStart: Date) => void;
 }) {
   if (params.zoom === "week") {
     const model = buildWeeklyModel(
@@ -269,7 +293,7 @@ const MemoGantt = memo(function MemoGantt({
       grades,
       new Date(),
     );
-    return <GanttWeekly model={model} events={serializedEvents} navigationMode="local" />;
+    return <GanttWeekly model={model} events={serializedEvents} navigationMode="local" onWeekChange={onWeekChange} />;
   }
   const model = buildGanttModel({ year, grades, events });
   return (
@@ -324,6 +348,22 @@ function viewFromPath(pathname: string, schoolSlug: string): PublicViewerView {
   if (pathname === `/${schoolSlug}/calendar`) return "calendar";
   if (pathname === `/${schoolSlug}/agenda`) return "agenda";
   return "gantt";
+}
+
+function monthKey(year: number, monthIndex: number): string {
+  return `${year}-${String(monthIndex).padStart(2, "0")}`;
+}
+
+function monthKeyForDate(date: Date): string {
+  return monthKey(date.getUTCFullYear(), date.getUTCMonth() + 1);
+}
+
+function monthIndexForKey(
+  months: ReturnType<typeof buildCalendarModel>["months"],
+  key: string,
+): number {
+  const index = months.findIndex((month) => monthKey(month.year, month.monthIndex) === key);
+  return index >= 0 ? index : 0;
 }
 
 function zoomOptionsForView(view: PublicViewerView) {

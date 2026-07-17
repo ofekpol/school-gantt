@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
@@ -76,6 +76,7 @@ export function DashboardCalendar({
   const deferredSelectedGrades = useDeferredValue(selectedGradeState);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [printMonthKey, setPrintMonthKey] = useState<string | null>(null);
   const allowedGradeOptions = useMemo(
     () => Array.from(new Set(allowedGrades)).sort((a, b) => a - b),
     [allowedGrades],
@@ -149,10 +150,22 @@ export function DashboardCalendar({
       })),
     }).months,
   [calendarRange, hydratedEvents]);
+  const defaultPrintMonthIndex = monthIndexForKey(printMonths, printMonthKey);
+  const updatePrintMonth = useCallback((month: CalendarMonth) => {
+    setPrintMonthKey(monthKey(month.year, month.monthIndex));
+  }, []);
 
   useEffect(() => setCurrentView(view), [view]);
   useEffect(() => setVisibleEvents(events), [events]);
   useEffect(() => setSelectedGradeState(selectedGrades), [selectedGrades]);
+  useEffect(() => {
+    if (currentView === "weekly" && displayWeeklyModel) {
+      setPrintMonthKey(monthKey(
+        displayWeeklyModel.weekStart.getUTCFullYear(),
+        displayWeeklyModel.weekStart.getUTCMonth() + 1,
+      ));
+    }
+  }, [currentView, displayWeeklyModel]);
 
   function refreshInBackground() {
     startTransition(() => router.refresh());
@@ -289,7 +302,12 @@ export function DashboardCalendar({
         </div>
         <ExportToGoogleCalendarButton
           labelKey="shortButton"
-          printCalendar={{ months: printMonths, schoolName, yearLabel: calendarRange.label }}
+          printCalendar={{
+            months: printMonths,
+            schoolName,
+            yearLabel: calendarRange.label,
+            defaultMonthIndex: defaultPrintMonthIndex,
+          }}
           buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         />
       </div>
@@ -346,6 +364,10 @@ export function DashboardCalendar({
           events={displayEvents}
           onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
+          onWeekChange={(weekStart) => setPrintMonthKey(monthKey(
+            weekStart.getUTCFullYear(),
+            weekStart.getUTCMonth() + 1,
+          ))}
           navigationMode="local"
         />
       )}
@@ -356,6 +378,7 @@ export function DashboardCalendar({
           schoolName={schoolName}
           onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
+          onMonthChange={updatePrintMonth}
         />
       )}
 
@@ -399,6 +422,16 @@ function eventMatchesGrades(
     event.eventTypeKey === "holiday" ||
     event.grades.some((grade) => selectedGrades.includes(grade))
   );
+}
+
+function monthKey(year: number, monthIndex: number): string {
+  return `${year}-${String(monthIndex).padStart(2, "0")}`;
+}
+
+function monthIndexForKey(months: CalendarMonth[], key: string | null): number {
+  if (!key) return 0;
+  const index = months.findIndex((month) => monthKey(month.year, month.monthIndex) === key);
+  return index >= 0 ? index : 0;
 }
 
 function ToggleBtn({

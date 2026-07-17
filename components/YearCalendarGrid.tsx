@@ -13,6 +13,7 @@ interface Props {
   schoolName: string;
   onDayClick?: (isoDate: string) => void;
   onEventClick?: (eventId: string) => void;
+  onMonthChange?: (month: CalendarMonth) => void;
 }
 
 /**
@@ -26,6 +27,7 @@ export function YearCalendarGrid({
   schoolName,
   onDayClick,
   onEventClick,
+  onMonthChange,
 }: Props) {
   const tm = useTranslations("months");
   const tw = useTranslations("weekdays");
@@ -64,6 +66,10 @@ export function YearCalendarGrid({
   const month = months[selectedIndex];
   const monthLabel =
     `${tm(String(month?.monthIndex ?? 1) as `${number}`)} ${month?.year ?? ""}`.trim();
+
+  useEffect(() => {
+    if (month) onMonthChange?.(month);
+  }, [month, onMonthChange]);
 
   if (!month) return null;
 
