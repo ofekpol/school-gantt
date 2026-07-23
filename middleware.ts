@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { shouldBypassAuthRefresh } from "@/lib/auth/public-request";
 
 /**
  * Auth gate + Supabase session refresh.
@@ -14,6 +15,9 @@ export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
+
+  const { pathname } = request.nextUrl;
+  if (shouldBypassAuthRefresh(pathname)) return response;
 
   // Skip Supabase setup in test envs without the keys.
   if (
@@ -50,39 +54,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-
-  // Public allowlist — no auth required
-  const PUBLIC_PATHS = [
-    "/auth/login",
-    "/auth/callback",
-    "/auth/confirm",
-    "/auth/register",
-    "/auth/pending",
-    "/auth/deactivated",
-    "/auth/change-password",
-    "/invite/",
-    "/ical/",
-    "/api/v1/auth/signin",
-    "/api/v1/auth/register",
-    "/api/v1/auth/login",
-    "/api/v1/public/",
-    "/api/v1/export/",
-    "/api/v1/ical-subscriptions/personal",
-  ];
-
-  // Viewer school paths are public: /:school, /:school/calendar, /:school/agenda
-  const RESERVED_PREFIXES = [
-    "/auth", "/invite", "/ical", "/api", "/admin",
-    "/dashboard", "/events", "/profile", "/_next",
-  ];
-  const isViewerPath =
-    !RESERVED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/")) &&
-    /^\/[^/]+(\/calendar|\/agenda)?$/.test(pathname);
-
-  const isPublic = isViewerPath || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-
-  if (!isPublic && !user) {
+  if (!user) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
