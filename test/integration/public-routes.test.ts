@@ -74,14 +74,14 @@ describe("AUTH-07: public routes pass through without session", () => {
   });
 });
 
-describe("AUTH-07: PUBLIC_PATHS allowlist (static guard)", () => {
-  it("middleware source whitelists auth, invite, and ical routes", async () => {
+describe("AUTH-07: public-path allowlist (static guard)", () => {
+  it("public request helper whitelists auth, invite, and iCal routes", async () => {
     // Regressions that remove these would force-redirect public traffic
     // (login pages, invite acceptance, unauthenticated iCal feeds) to /auth/login.
     const fs = await import("node:fs");
     const path = await import("node:path");
     const src = fs.readFileSync(
-      path.join(__dirname, "../../middleware.ts"),
+      path.join(__dirname, "../../lib/auth/public-request.ts"),
       "utf8",
     );
     for (const route of [
