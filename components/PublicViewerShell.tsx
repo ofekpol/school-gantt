@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { FilterBar } from "@/components/FilterBar";
+import { LoadingPanel } from "@/components/LoadingPanel";
 import type { CalendarMonth, buildCalendarModel } from "@/lib/views/calendar";
 import { parseWeekParam } from "@/lib/views/gantt-weekly";
 import {
@@ -28,12 +29,15 @@ const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
 const PublicGanttView = dynamic(() =>
   import("@/components/public/PublicGanttView").then((module) => module.PublicGanttView),
+  { loading: () => <LoadingPanel compact /> },
 );
 const PublicCalendarView = dynamic(() =>
   import("@/components/public/PublicCalendarView").then((module) => module.PublicCalendarView),
+  { loading: () => <LoadingPanel compact /> },
 );
 const PublicAgendaView = dynamic(() =>
   import("@/components/public/PublicAgendaView").then((module) => module.PublicAgendaView),
+  { loading: () => <LoadingPanel compact /> },
 );
 
 interface Props {

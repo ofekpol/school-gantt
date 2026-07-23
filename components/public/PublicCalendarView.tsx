@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { LoadingPanel } from "@/components/LoadingPanel";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
 import type { buildCalendarModel } from "@/lib/views/calendar";
 import type { PublicViewerYear } from "@/lib/views/public-viewer-data";
@@ -18,6 +19,8 @@ export const PublicCalendarView = memo(function PublicCalendarView({
   schoolName,
   onMonthChange,
 }: Props) {
+  if (months.length === 0) return <LoadingPanel compact />;
+
   return (
     <YearCalendarGrid
       months={months}
