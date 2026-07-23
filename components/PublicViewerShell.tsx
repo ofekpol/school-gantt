@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
@@ -12,6 +12,7 @@ import {
   hydratePublicEvents,
   parsePublicViewerParams,
   serializePublicViewerParams,
+  shouldPollPublicViewer,
   shouldRefreshPublicEvents,
   type PublicViewerEvent,
   type PublicViewerParams,
@@ -63,6 +64,10 @@ export function PublicViewerShell({
   const [params, setParamsState] = useState(initialParams);
   const [events, setEvents] = useState(initialEvents);
   const [eventsSignature, setEventsSignature] = useState(initialEventsSignature);
+  const [isDocumentVisible, setIsDocumentVisible] = useState(
+    () => typeof document === "undefined" || !document.hidden,
+  );
+  const wasDocumentHidden = useRef(false);
   const [printMonthKey, setPrintMonthKey] = useState(() =>
     monthKeyForDate(parseWeekParam(initialParams.week ?? undefined)),
   );
@@ -103,18 +108,35 @@ export function PublicViewerShell({
     return () => window.removeEventListener("popstate", syncFromLocation);
   }, [schoolSlug]);
 
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      void refreshEventsIfChanged(schoolSlug, eventsSignature).then((result) => {
-        if (!result) return;
-        startTransition(() => {
-          setEventsSignature(result.signature);
-          if (result.events) setEvents(result.events);
-        });
+  const refreshEvents = useCallback(() => {
+    void refreshEventsIfChanged(schoolSlug, eventsSignature).then((result) => {
+      if (!result) return;
+      startTransition(() => {
+        setEventsSignature(result.signature);
+        if (result.events) setEvents(result.events);
       });
-    }, 5_000);
-    return () => window.clearInterval(interval);
+    });
   }, [eventsSignature, schoolSlug, startTransition]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = shouldPollPublicViewer(!document.hidden);
+      if (!visible) wasDocumentHidden.current = true;
+      setIsDocumentVisible(visible);
+      if (visible && wasDocumentHidden.current) {
+        wasDocumentHidden.current = false;
+        refreshEvents();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [refreshEvents]);
+
+  useEffect(() => {
+    if (!shouldPollPublicViewer(isDocumentVisible)) return;
+    const interval = window.setInterval(refreshEvents, 5_000);
+    return () => window.clearInterval(interval);
+  }, [isDocumentVisible, refreshEvents]);
 
   const updateUrl = useCallback(
     (nextView: PublicViewerView, nextParams: PublicViewerParams, mode: "push" | "replace") => {

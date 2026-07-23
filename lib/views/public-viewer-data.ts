@@ -68,8 +68,19 @@ async function loadPublicViewerDataUncached(slug: string): Promise<PublicViewerD
 }
 
 export async function loadPublicViewerEvents(slug: string): Promise<PublicViewerEvent[] | null> {
-  const data = await loadPublicViewerData(slug);
-  return data ? data.events : null;
+  return unstable_cache(
+    () => loadPublicViewerEventsUncached(slug),
+    ["public-viewer-events", slug],
+    { revalidate: 5, tags: [getPublicViewerCacheTag(slug)] },
+  )();
+}
+
+async function loadPublicViewerEventsUncached(slug: string): Promise<PublicViewerEvent[] | null> {
+  const school = await getSchoolBySlug(slug);
+  if (!school) return null;
+
+  const events = await getAgendaForSchool(school.id, {});
+  return events.map(toPublicEventPayload);
 }
 
 export async function loadPublicViewerEventSignature(slug: string): Promise<string | null> {
