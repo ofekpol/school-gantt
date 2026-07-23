@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import "@/app/print.css";
 import { PublicViewerShell } from "@/components/PublicViewerShell";
 import { loadPublicViewerData } from "@/lib/views/public-viewer-data";
 import { parsePublicViewerParams } from "@/lib/views/public-viewer";

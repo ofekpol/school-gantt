@@ -1,14 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal, flushSync } from "react-dom";
 import { useTranslations } from "next-intl";
 import { CalendarPlus, Check, Copy, Link as LinkIcon, LogIn } from "lucide-react";
+import {
+  ExportChoiceDialog,
+  PrintDialog,
+  type CalendarPrintOptions,
+  type PrintMode,
+} from "@/components/CalendarPrintDialogs";
+import { YearCalendarGrid } from "@/components/YearCalendarGrid";
+import type { CalendarMonth } from "@/lib/views/calendar";
 
 interface ExportEventType {
   key: string;
   labelHe: string;
   colorHex: string;
 }
+
+export type { CalendarPrintOptions } from "@/components/CalendarPrintDialogs";
 
 interface Props {
   schoolSlug?: string;
@@ -18,7 +29,10 @@ interface Props {
   defaultTypes?: string[];
   buttonClassName?: string;
   labelKey?: "button" | "shortButton";
+  printCalendar?: CalendarPrintOptions;
 }
+
+type ExportMode = "choices" | "google" | "print";
 
 /**
  * Opens a modal to export the school's events as an `.ics` file, pre-seeded
@@ -34,31 +48,74 @@ export function ExportToGoogleCalendarButton({
   defaultTypes: _defaultTypes,
   buttonClassName,
   labelKey = "button",
+  printCalendar,
 }: Props) {
   const t = useTranslations("export");
-  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<ExportMode | null>(null);
+  const [printMonth, setPrintMonth] = useState<CalendarMonth | null>(null);
+
+  function close() {
+    setMode(null);
+  }
+
+  function print(monthIndex: number, printMode: PrintMode) {
+    const month = printCalendar?.months[monthIndex];
+    if (!month) return;
+    flushSync(() => setPrintMonth(month));
+    document.body.dataset.printMode = printMode;
+    window.addEventListener(
+      "afterprint",
+      () => {
+        delete document.body.dataset.printMode;
+        setPrintMonth(null);
+      },
+      { once: true },
+    );
+    window.print();
+  }
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => setMode("choices")}
         className={
           buttonClassName ??
-          "inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          "inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
         }
       >
         <CalendarPlus className="size-4" aria-hidden="true" />
         {t(labelKey)}
       </button>
-      {open && <ExportModal onClose={() => setOpen(false)} />}
+      {mode === "choices" && (
+        <ExportChoiceDialog
+          canPrint={Boolean(printCalendar?.months.length)}
+          onClose={close}
+          onGoogle={() => setMode("google")}
+          onPrint={() => setMode("print")}
+        />
+      )}
+      {mode === "google" && <ExportModal onClose={close} />}
+      {mode === "print" && printCalendar && (
+        <PrintDialog calendar={printCalendar} onClose={close} onPrint={print} />
+      )}
+      {printMonth &&
+        printCalendar &&
+        createPortal(
+          <div className="print-calendar-sheet">
+            <YearCalendarGrid
+              months={[printMonth]}
+              yearLabel={printCalendar.yearLabel}
+              schoolName={printCalendar.schoolName}
+            />
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
 
-function ExportModal({
-  onClose,
-}: { onClose: () => void }) {
+function ExportModal({ onClose }: { onClose: () => void }) {
   const t = useTranslations("export");
   const [creating, setCreating] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
@@ -146,9 +203,7 @@ function ExportModal({
 
         {url && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-            <label className="mb-2 block text-sm font-medium text-green-900">
-              {t("urlLabel")}
-            </label>
+            <label className="mb-2 block text-sm font-medium text-green-900">{t("urlLabel")}</label>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -160,7 +215,7 @@ function ExportModal({
               <button
                 type="button"
                 onClick={copyUrl}
-                className="inline-flex shrink-0 items-center gap-2 rounded-md bg-green-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+                className="inline-flex shrink-0 items-center gap-2 rounded-md bg-green-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800 focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:outline-none"
               >
                 {copied ? (
                   <Check className="size-4" aria-hidden="true" />
@@ -179,7 +234,7 @@ function ExportModal({
             <p className="mt-1">{t("loginRequiredBody")}</p>
             <a
               href={loginHref()}
-              className="mt-3 inline-flex items-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+              className="mt-3 inline-flex items-center gap-2 rounded-md bg-amber-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-800 focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:outline-none"
             >
               <LogIn className="size-4" aria-hidden="true" />
               {t("loginAction")}

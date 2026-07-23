@@ -15,9 +15,8 @@
   margin: 10mm;
 }
 
-body.paper-a3 {
-  /* @page rules inside a body class don't cascade in all engines, but a
-     CSS body class is enough for Chromium/Safari to apply this. */
+.print-calendar-sheet {
+  display: none;
 }
 
 @media print {
@@ -25,50 +24,81 @@ body.paper-a3 {
     background: #fff !important;
   }
 
-  .year-calendar .calendar-month {
-    /* Break before each month so every month gets its own page. */
-    page-break-before: always;
-    break-before: page;
-  }
-  .year-calendar .calendar-month:first-child {
-    page-break-before: avoid;
-    break-before: avoid;
+  body[data-print-mode] > *:not(.print-calendar-sheet) {
+    display: none !important;
   }
 
-  /* Default Chromium preview drops backgrounds. Force chip backgrounds
-     to print so the colored variant is preserved if the user opts in. */
-  .year-calendar .event-chip,
-  .year-calendar [data-calendar-segment] {
+  body[data-print-mode] > .print-calendar-sheet {
+    display: block !important;
+  }
+
+  body[data-print-mode] .year-calendar {
+    padding: 0;
+  }
+
+  body[data-print-mode="color"] .print-calendar-sheet .event-chip,
+  body[data-print-mode="color"] .print-calendar-sheet [data-calendar-segment] {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  /* Monochrome fallback — applies when the browser strips backgrounds.
-     We can't detect that directly in CSS, but stacking these styles
-     under `@media print and (monochrome)` covers true B&W devices, and
-     the glyph stays visible regardless. */
-  @media (monochrome), (max-monochrome: 0) {
-    .year-calendar .event-chip,
-    .year-calendar [data-calendar-segment] {
-      background-color: #fff !important;
-      color: #000 !important;
-      border: 1px solid #000 !important;
-      border-bottom-style: dashed;
-    }
+  body[data-print-mode="monochrome"] .print-calendar-sheet .event-chip,
+  body[data-print-mode="monochrome"] .print-calendar-sheet [data-calendar-segment] {
+    background: #fff !important;
+    color: #000 !important;
+    border-color: #000 !important;
+    border-style: solid !important;
+    border-width: 1px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  .calendar-day {
+  body[data-print-mode] .calendar-day {
     min-height: 28mm !important;
   }
 
-  @media (monochrome), (max-monochrome: 0) {
-    [data-date-status="weekend"] {
-      background: #fff !important;
-    }
-    [data-date-status="holiday"],
-    [data-date-status="vacation"] {
-      background: #fff !important;
-      outline: 1px solid #000;
-    }
+  body[data-print-mode="monochrome"] .print-calendar-sheet [data-date-status="weekend"] {
+    background: #fff !important;
+  }
+
+  body[data-print-mode="monochrome"] .print-calendar-sheet [data-date-status="holiday"],
+  body[data-print-mode="monochrome"] .print-calendar-sheet [data-date-status="vacation"] {
+    background: #fff !important;
+    outline: 1px solid #000;
+  }
+
+  body[data-print-mode="monochrome"] [data-event-type="trip"] {
+    border-inline-start-width: 4px !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="exam"] {
+    border-block-end: 3px double #000 !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="ceremony"] {
+    border-block-start: 3px double #000 !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="vacation"] {
+    border-style: dashed !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="parent_meeting"] {
+    border-style: dotted !important;
+    border-width: 2px !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="counseling"] {
+    border-inline-end-width: 4px !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="lecture"] {
+    border-block-start-width: 4px !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="workshop"] {
+    border-block-end-width: 4px !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="sport"] {
+    border-style: dashed solid !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="holiday"] {
+    border-style: solid dotted !important;
+  }
+  body[data-print-mode="monochrome"] [data-event-type="general"] {
+    border-style: dotted solid !important;
   }
 }

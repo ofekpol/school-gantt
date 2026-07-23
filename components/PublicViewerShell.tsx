@@ -82,6 +82,10 @@ export function PublicViewerShell({
     () => hydratePublicEvents(filteredEvents),
     [filteredEvents],
   );
+  const calendarMonths = useMemo(
+    () => buildCalendarModel({ year, events: hydratedEvents }).months,
+    [hydratedEvents, year],
+  );
   const visibleGrades = useMemo(
     () => (params.grades.length > 0 ? params.grades : ALL_GRADES),
     [params.grades],
@@ -144,6 +148,7 @@ export function PublicViewerShell({
             eventTypes={eventTypesForFilter}
             defaultGrades={params.grades}
             defaultTypes={params.types}
+            printCalendar={{ months: calendarMonths, schoolName, yearLabel: year.label }}
           />
         }
       />
@@ -169,7 +174,7 @@ export function PublicViewerShell({
       )}
       {deferredView === "calendar" && (
         <MemoCalendar
-          events={hydratedEvents}
+          months={calendarMonths}
           year={year}
           schoolName={schoolName}
         />
@@ -231,16 +236,15 @@ const MemoAgenda = memo(function MemoAgenda({
 });
 
 const MemoCalendar = memo(function MemoCalendar({
-  events,
+  months,
   year,
   schoolName,
 }: {
-  events: ReturnType<typeof hydratePublicEvents>;
+  months: ReturnType<typeof buildCalendarModel>["months"];
   year: PublicViewerYear;
   schoolName: string;
 }) {
-  const model = buildCalendarModel({ year, events });
-  return <YearCalendarGrid months={model.months} yearLabel={year.label} schoolName={schoolName} />;
+  return <YearCalendarGrid months={months} yearLabel={year.label} schoolName={schoolName} />;
 });
 
 const MemoGantt = memo(function MemoGantt({

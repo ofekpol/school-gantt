@@ -7,10 +7,12 @@ import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
 import { EventDrawer } from "@/components/Gantt/EventDrawer";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
+import { CalendarViewToggle } from "./CalendarViewToggle";
 import { QuickEventDialog } from "./QuickEventDialog";
 import { buildWeeklyModel, type WeeklyModel } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
 import type { CalendarMonth } from "@/lib/views/calendar";
+import { toCalendarInputEvents } from "@/lib/views/calendar-event-input";
 import type { CalendarRange } from "@/lib/views/date-range";
 import type { EventType } from "@/components/wizard/WizardShell";
 import { formatGradeLabel } from "@/lib/grades";
@@ -48,12 +50,7 @@ interface Props {
   selectedGrades: number[];
   canCreateEvents?: boolean;
 }
-
-/**
- * Dashboard calendar wrapper — segmented toggle (weekly/monthly) + day-clicks
- * open a compact event dialog with `date` pre-filled.
- * Toggle state is URL-driven via `?view=`.
- */
+/** Dashboard calendar with URL-driven weekly/monthly view selection. */
 export function DashboardCalendar({
   view,
   weeklyModel,
@@ -112,23 +109,17 @@ export function DashboardCalendar({
     if (currentView !== "monthly") return months;
     return buildCalendarModel({
       year: calendarRange,
-      events: hydratedEvents.map((event) => ({
-        id: event.id,
-        title: event.title,
-        startAt: event.startAt,
-        endAt: event.endAt,
-        allDay: event.allDay,
-        grades: event.grades,
-        eventTypeKey: event.eventTypeKey,
-        eventTypeLabelHe: event.eventTypeLabelHe,
-        eventTypeColor: event.eventTypeColor,
-        eventTypeGlyph: event.eventTypeGlyph,
-        status: event.status,
-        isCanceled: event.isCanceled,
-        isUpdated: event.isUpdated,
-      })),
+      events: toCalendarInputEvents(hydratedEvents),
     }).months;
   }, [calendarRange, currentView, hydratedEvents, months]);
+  const printMonths = useMemo(
+    () =>
+      buildCalendarModel({
+        year: calendarRange,
+        events: toCalendarInputEvents(hydratedEvents),
+      }).months,
+    [calendarRange, hydratedEvents],
+  );
 
   useEffect(() => setCurrentView(view), [view]);
   useEffect(() => setVisibleEvents(events), [events]);
@@ -154,7 +145,9 @@ export function DashboardCalendar({
   }
 
   function selectAllGrades() {
-    updateGradeSelection(selectedGradeState.length === allowedGradeOptions.length ? [] : allowedGradeOptions);
+    updateGradeSelection(
+      selectedGradeState.length === allowedGradeOptions.length ? [] : allowedGradeOptions,
+    );
   }
 
   function updateGradeSelection(nextGrades: number[]) {
@@ -260,15 +253,20 @@ export function DashboardCalendar({
     <div>
       <div className="flex flex-wrap items-center gap-3 px-6 pt-4">
         <div className="flex items-center gap-2">
-          <ToggleBtn active={currentView === "weekly"} onClick={() => setView("weekly")}>
+          <CalendarViewToggle active={currentView === "weekly"} onClick={() => setView("weekly")}>
             {t("viewWeekly")}
-          </ToggleBtn>
-          <ToggleBtn active={currentView === "monthly"} onClick={() => setView("monthly")}>
+          </CalendarViewToggle>
+          <CalendarViewToggle active={currentView === "monthly"} onClick={() => setView("monthly")}>
             {t("viewMonthly")}
-          </ToggleBtn>
+          </CalendarViewToggle>
         </div>
         <ExportToGoogleCalendarButton
           labelKey="shortButton"
+          printCalendar={{
+            months: printMonths,
+            schoolName,
+            yearLabel: calendarRange.label,
+          }}
           buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         />
       </div>
@@ -281,7 +279,11 @@ export function DashboardCalendar({
             onClick={selectAllGrades}
             className="h-8 rounded-md border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-600 transition-colors hover:bg-neutral-50"
           >
-            {t(selectedGradeState.length === allowedGradeOptions.length ? "clearAllGrades" : "selectAllGrades")}
+            {t(
+              selectedGradeState.length === allowedGradeOptions.length
+                ? "clearAllGrades"
+                : "selectAllGrades",
+            )}
           </button>
           <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
             {allowedGradeOptions.map((grade) => {
@@ -375,30 +377,6 @@ function eventMatchesGrades(
   selectedGrades: number[],
 ) {
   return (
-    event.eventTypeKey === "holiday" ||
-    event.grades.some((grade) => selectedGrades.includes(grade))
-  );
-}
-
-function ToggleBtn({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-        active ? "bg-[var(--sg-studio-violet)] text-white shadow-sm" : "bg-[var(--sg-studio-violet-soft)] text-[var(--sg-ink)] hover:bg-violet-100"
-      }`}
-    >
-      {children}
-    </button>
+    event.eventTypeKey === "holiday" || event.grades.some((grade) => selectedGrades.includes(grade))
   );
 }

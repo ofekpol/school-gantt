@@ -213,6 +213,7 @@ export function YearCalendarGrid({
                           >
                             <button
                               type="button"
+                              data-event-type={chip.eventTypeKey}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 onEventClick?.(chip.eventId);
@@ -254,6 +255,7 @@ export function YearCalendarGrid({
                       key={`${segment.id}-${segment.lane}`}
                       type="button"
                       data-calendar-segment="true"
+                      data-event-type={segment.eventTypeKey}
                       data-continues-before={segment.continuesBefore || undefined}
                       data-continues-after={segment.continuesAfter || undefined}
                       title={eventTitle(segment.title, segment.isCanceled, segment.isUpdated, tv)}

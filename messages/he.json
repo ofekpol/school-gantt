@@ -251,8 +251,17 @@
     }
   },
   "export": {
-    "button": "ייצוא ל-Google Calendar",
+    "button": "ייצוא",
     "shortButton": "ייצוא",
+    "exportTitle": "ייצוא לוח שנה",
+    "googleCalendar": "Google Calendar",
+    "printCalendar": "הדפסת לוח שנה",
+    "printTitle": "הדפסת לוח שנה",
+    "chooseMonthToPrint": "בחר חודש להדפסה",
+    "printMode": "מצב הדפסה",
+    "color": "הדפסה בצבע",
+    "blackAndWhite": "שחור-לבן",
+    "print": "הדפס",
     "modalTitle": "חיבור ל-Google Calendar",
     "intro": "צור קישור פרטי ליומן עם כל האירועים שמותר לך לראות בבית הספר.",
     "googleInstructions": "העתק את הקישור והוסף אותו ב-Google Calendar דרך הוספת יומן ← מכתובת URL.",
