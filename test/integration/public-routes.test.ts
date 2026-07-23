@@ -5,10 +5,12 @@ import { NextRequest, NextResponse } from "next/server";
 // Supabase project (no network calls, no secrets in CI). We always return
 // `user: null` so we exercise the unauthenticated path — that's what AUTH-07
 // is about: public routes that should pass through *without* a session.
+const getUserMock = vi.fn(async () => ({ data: { user: null }, error: null }));
+
 vi.mock("@supabase/ssr", () => ({
   createServerClient: () => ({
     auth: {
-      getUser: async () => ({ data: { user: null }, error: null }),
+      getUser: getUserMock,
     },
   }),
 }));
@@ -27,6 +29,15 @@ const importMiddleware = async () =>
   (await import("@/middleware")).middleware;
 
 describe("AUTH-07: public routes pass through without session", () => {
+  it("lets the root loading boundary stream without a duplicate middleware auth call", async () => {
+    getUserMock.mockClear();
+    const middleware = await importMiddleware();
+    const res = await middleware(new NextRequest("http://localhost:3000/"));
+
+    expect(res.headers.get("location")).toBeNull();
+    expect(getUserMock).not.toHaveBeenCalled();
+  });
+
   it("does not redirect /auth/login (allowlisted)", async () => {
     const middleware = await importMiddleware();
     const res = await middleware(new NextRequest("http://localhost:3000/auth/login"));
