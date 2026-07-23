@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { FilterBar } from "@/components/FilterBar";
-import { buildCalendarModel } from "@/lib/views/calendar";
+import type { CalendarMonth, buildCalendarModel } from "@/lib/views/calendar";
 import { parseWeekParam } from "@/lib/views/gantt-weekly";
 import {
   filterPublicEvents,
@@ -88,11 +88,7 @@ export function PublicViewerShell({
     [events, filteredParams],
   );
   const hydratedEvents = useMemo(() => hydratePublicEvents(filteredEvents), [filteredEvents]);
-  const calendarMonths = useMemo(
-    () => buildCalendarModel({ year, events: hydratedEvents }).months,
-    [hydratedEvents, year],
-  );
-  const defaultPrintMonthIndex = monthIndexForKey(calendarMonths, printMonthKey);
+  const [calendarMonths, setCalendarMonths] = useState<CalendarMonth[] | null>(null);
   const visibleGrades = useMemo(
     () => (params.grades.length > 0 ? params.grades : ALL_GRADES),
     [params.grades],
@@ -149,12 +145,30 @@ export function PublicViewerShell({
   const updatePrintMonth = useCallback((month: { year: number; monthIndex: number }) => {
     setPrintMonthKey(monthKey(month.year, month.monthIndex));
   }, []);
+  const loadCalendarMonths = useCallback(async () => {
+    const { buildCalendarModel } = await import("@/lib/views/calendar");
+    return buildCalendarModel({ year, events: hydratedEvents }).months;
+  }, [hydratedEvents, year]);
+  const loadPrintCalendar = useCallback(async () => {
+    const months = await loadCalendarMonths();
+    return {
+      months,
+      schoolName,
+      yearLabel: year.label,
+      defaultMonthIndex: monthIndexForKey(months, printMonthKey),
+    };
+  }, [loadCalendarMonths, printMonthKey, schoolName, year.label]);
 
   useEffect(() => {
     if (view === "gantt" && params.zoom === "week") {
       setPrintMonthKey(monthKeyForDate(parseWeekParam(params.week ?? undefined)));
     }
   }, [params.week, params.zoom, view]);
+
+  useEffect(() => {
+    if (deferredView !== "calendar") return;
+    void loadCalendarMonths().then(setCalendarMonths);
+  }, [deferredView, loadCalendarMonths]);
 
   useEffect(() => {
     const loaders = inactiveViewLoaders(view);
@@ -185,12 +199,7 @@ export function PublicViewerShell({
             eventTypes={eventTypesForFilter}
             defaultGrades={params.grades}
             defaultTypes={params.types}
-            printCalendar={{
-              months: calendarMonths,
-              schoolName,
-              yearLabel: year.label,
-              defaultMonthIndex: defaultPrintMonthIndex,
-            }}
+            loadPrintCalendar={loadPrintCalendar}
           />
         }
       />
@@ -217,7 +226,7 @@ export function PublicViewerShell({
       )}
       {deferredView === "calendar" && (
         <PublicCalendarView
-          months={calendarMonths}
+          months={calendarMonths ?? []}
           year={year}
           schoolName={schoolName}
           onMonthChange={updatePrintMonth}
