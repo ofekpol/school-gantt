@@ -1,25 +1,12 @@
 "use client";
 
-import {
-  memo,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { AgendaList } from "@/components/AgendaList";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { FilterBar } from "@/components/FilterBar";
-import { GanttCanvas } from "@/components/Gantt/GanttCanvas";
-import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
-import { YearCalendarGrid } from "@/components/YearCalendarGrid";
-import { groupByWeek } from "@/lib/views/agenda-model";
 import { buildCalendarModel } from "@/lib/views/calendar";
-import { buildGanttModel } from "@/lib/views/gantt";
-import { buildWeeklyModel, parseWeekParam } from "@/lib/views/gantt-weekly";
+import { parseWeekParam } from "@/lib/views/gantt-weekly";
 import {
   filterPublicEvents,
   hydratePublicEvents,
@@ -37,6 +24,16 @@ import {
 } from "@/lib/validations/public-viewer";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
+
+const PublicGanttView = dynamic(() =>
+  import("@/components/public/PublicGanttView").then((module) => module.PublicGanttView),
+);
+const PublicCalendarView = dynamic(() =>
+  import("@/components/public/PublicCalendarView").then((module) => module.PublicCalendarView),
+);
+const PublicAgendaView = dynamic(() =>
+  import("@/components/public/PublicAgendaView").then((module) => module.PublicAgendaView),
+);
 
 interface Props {
   schoolSlug: string;
@@ -159,6 +156,18 @@ export function PublicViewerShell({
     }
   }, [params.week, params.zoom, view]);
 
+  useEffect(() => {
+    const loaders = inactiveViewLoaders(view);
+    const prefetch = () => loaders.forEach((load) => void load());
+    const idleWindow = window as IdleCallbackWindow;
+    if (idleWindow.requestIdleCallback) {
+      const id = idleWindow.requestIdleCallback(prefetch);
+      return () => idleWindow.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(prefetch, 1);
+    return () => window.clearTimeout(id);
+  }, [view]);
+
   return (
     <main className="min-h-screen bg-[var(--sg-page)] pb-12">
       <ViewTabs
@@ -196,7 +205,7 @@ export function PublicViewerShell({
         onChange={setParams}
       />
       {deferredView === "gantt" && (
-        <MemoGantt
+        <PublicGanttView
           events={hydratedEvents}
           serializedEvents={filteredEvents}
           year={year}
@@ -207,7 +216,7 @@ export function PublicViewerShell({
         />
       )}
       {deferredView === "calendar" && (
-        <MemoCalendar
+        <PublicCalendarView
           months={calendarMonths}
           year={year}
           schoolName={schoolName}
@@ -215,7 +224,7 @@ export function PublicViewerShell({
         />
       )}
       {deferredView === "agenda" && (
-        <MemoAgenda
+        <PublicAgendaView
           events={hydratedEvents}
           emptyLabel={agenda("empty")}
           mode={params.zoom === "month" ? "month" : "week"}
@@ -258,84 +267,20 @@ function ViewTabs({
   );
 }
 
-const MemoAgenda = memo(function MemoAgenda({
-  events,
-  emptyLabel,
-  mode,
-}: {
-  events: ReturnType<typeof hydratePublicEvents>;
-  emptyLabel: string;
-  mode: "week" | "month";
-}) {
-  return <AgendaList weeks={groupByWeek(events)} emptyLabel={emptyLabel} mode={mode} />;
-});
+function inactiveViewLoaders(view: PublicViewerView): Array<() => Promise<unknown>> {
+  const loaders = {
+    gantt: () => import("@/components/public/PublicGanttView"),
+    calendar: () => import("@/components/public/PublicCalendarView"),
+    agenda: () => import("@/components/public/PublicAgendaView"),
+  };
+  return Object.entries(loaders)
+    .filter(([name]) => name !== view)
+    .map(([, load]) => load);
+}
 
-const MemoCalendar = memo(function MemoCalendar({
-  months,
-  year,
-  schoolName,
-  onMonthChange,
-}: {
-  months: ReturnType<typeof buildCalendarModel>["months"];
-  year: PublicViewerYear;
-  schoolName: string;
-  onMonthChange: (month: { year: number; monthIndex: number }) => void;
-}) {
-  return (
-    <YearCalendarGrid
-      months={months}
-      yearLabel={year.label}
-      schoolName={schoolName}
-      onMonthChange={onMonthChange}
-    />
-  );
-});
-
-const MemoGantt = memo(function MemoGantt({
-  events,
-  serializedEvents,
-  year,
-  params,
-  grades,
-  emptyLabel,
-  onWeekChange,
-}: {
-  events: ReturnType<typeof hydratePublicEvents>;
-  serializedEvents: PublicViewerEvent[];
-  year: PublicViewerYear;
-  params: PublicViewerParams;
-  grades: number[];
-  emptyLabel: string;
-  onWeekChange: (weekStart: Date) => void;
-}) {
-  if (params.zoom === "week") {
-    const model = buildWeeklyModel(
-      parseWeekParam(params.week ?? undefined),
-      events,
-      grades,
-      new Date(),
-    );
-    return (
-      <GanttWeekly
-        model={model}
-        events={serializedEvents}
-        navigationMode="local"
-        onWeekChange={onWeekChange}
-      />
-    );
-  }
-  const model = buildGanttModel({ year, grades, events });
-  return (
-    <GanttCanvas
-      events={serializedEvents}
-      bars={model.bars}
-      months={model.months}
-      grades={grades}
-      zoom={params.zoom}
-      emptyLabel={emptyLabel}
-    />
-  );
-});
+type IdleCallbackWindow = Window & {
+  requestIdleCallback?: (callback: IdleRequestCallback) => number;
+};
 
 async function refreshEvents(schoolSlug: string): Promise<PublicViewerEvent[] | null> {
   const response = await fetch(`/api/v1/public/${schoolSlug}/events`);
