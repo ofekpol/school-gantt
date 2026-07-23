@@ -29,13 +29,14 @@ const importMiddleware = async () =>
   (await import("@/middleware")).middleware;
 
 describe("AUTH-07: public routes pass through without session", () => {
-  it("lets the root loading boundary stream without a duplicate middleware auth call", async () => {
+  it("redirects unauthenticated requests to / instantly, without streaming HomePage", async () => {
     getUserMock.mockClear();
     const middleware = await importMiddleware();
     const res = await middleware(new NextRequest("http://localhost:3000/"));
 
-    expect(res.headers.get("location")).toBeNull();
-    expect(getUserMock).not.toHaveBeenCalled();
+    const location = res.headers.get("location") ?? "";
+    expect(location).toContain("/auth/login");
+    expect(getUserMock).toHaveBeenCalled();
   });
 
   it("does not redirect /auth/login (allowlisted)", async () => {

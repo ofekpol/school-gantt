@@ -22,7 +22,10 @@ const RESERVED_PREFIXES = [
 ];
 
 export function shouldBypassAuthRefresh(pathname: string): boolean {
-  if (pathname === "/") return true;
+  // "/" must stay gated: HomePage's own auth check runs after the shell has
+  // already started streaming, so a redirect() there degrades to a client-side
+  // <meta refresh> with a hardcoded ~1s delay instead of a real HTTP redirect.
+  // Letting middleware redirect unauthenticated requests here keeps it instant.
   if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
   return (
     !RESERVED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
