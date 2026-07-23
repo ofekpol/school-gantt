@@ -1,6 +1,14 @@
 "use client";
 
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { useTranslations } from "next-intl";
 import { AgendaList } from "@/components/AgendaList";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
@@ -58,19 +66,20 @@ export function PublicViewerShell({
   const [params, setParamsState] = useState(initialParams);
   const [events, setEvents] = useState(initialEvents);
   const [eventsSignature, setEventsSignature] = useState(initialEventsSignature);
-  const [printMonthKey, setPrintMonthKey] = useState(() => monthKeyForDate(
-    parseWeekParam(initialParams.week ?? undefined),
-  ));
+  const [printMonthKey, setPrintMonthKey] = useState(() =>
+    monthKeyForDate(parseWeekParam(initialParams.week ?? undefined)),
+  );
   const [, startTransition] = useTransition();
   const deferredView = useDeferredValue(view);
   const deferredParams = useDeferredValue(params);
   const deferredQuery = useDeferredValue(params.q);
   const eventTypesForFilter = useMemo(
-    () => eventTypes.map((type) => ({
-      key: type.key,
-      labelHe: type.labelHe,
-      colorHex: type.colorHex,
-    })),
+    () =>
+      eventTypes.map((type) => ({
+        key: type.key,
+        labelHe: type.labelHe,
+        colorHex: type.colorHex,
+      })),
     [eventTypes],
   );
   const filteredParams = useMemo(
@@ -81,10 +90,7 @@ export function PublicViewerShell({
     () => filterPublicEvents(events, filteredParams),
     [events, filteredParams],
   );
-  const hydratedEvents = useMemo(
-    () => hydratePublicEvents(filteredEvents),
-    [filteredEvents],
-  );
+  const hydratedEvents = useMemo(() => hydratePublicEvents(filteredEvents), [filteredEvents]);
   const calendarMonths = useMemo(
     () => buildCalendarModel({ year, events: hydratedEvents }).months,
     [hydratedEvents, year],
@@ -117,23 +123,32 @@ export function PublicViewerShell({
     return () => window.clearInterval(interval);
   }, [eventsSignature, schoolSlug, startTransition]);
 
-  const updateUrl = useCallback((nextView: PublicViewerView, nextParams: PublicViewerParams, mode: "push" | "replace") => {
-    const query = serializePublicViewerParams(nextParams);
-    const path = pathForView(schoolSlug, nextView);
-    const nextUrl = query ? `${path}?${query}` : path;
-    if (mode === "push") window.history.pushState(null, "", nextUrl);
-    else window.history.replaceState(null, "", nextUrl);
-  }, [schoolSlug]);
+  const updateUrl = useCallback(
+    (nextView: PublicViewerView, nextParams: PublicViewerParams, mode: "push" | "replace") => {
+      const query = serializePublicViewerParams(nextParams);
+      const path = pathForView(schoolSlug, nextView);
+      const nextUrl = query ? `${path}?${query}` : path;
+      if (mode === "push") window.history.pushState(null, "", nextUrl);
+      else window.history.replaceState(null, "", nextUrl);
+    },
+    [schoolSlug],
+  );
 
-  const setView = useCallback((nextView: PublicViewerView) => {
-    setViewState(nextView);
-    updateUrl(nextView, params, "push");
-  }, [params, updateUrl]);
+  const setView = useCallback(
+    (nextView: PublicViewerView) => {
+      setViewState(nextView);
+      updateUrl(nextView, params, "push");
+    },
+    [params, updateUrl],
+  );
 
-  const setParams = useCallback((nextParams: PublicViewerParams) => {
-    setParamsState(nextParams);
-    updateUrl(view, nextParams, "replace");
-  }, [updateUrl, view]);
+  const setParams = useCallback(
+    (nextParams: PublicViewerParams) => {
+      setParamsState(nextParams);
+      updateUrl(view, nextParams, "replace");
+    },
+    [updateUrl, view],
+  );
   const updatePrintMonth = useCallback((month: { year: number; monthIndex: number }) => {
     setPrintMonthKey(monthKey(month.year, month.monthIndex));
   }, []);
@@ -266,7 +281,14 @@ const MemoCalendar = memo(function MemoCalendar({
   schoolName: string;
   onMonthChange: (month: { year: number; monthIndex: number }) => void;
 }) {
-  return <YearCalendarGrid months={months} yearLabel={year.label} schoolName={schoolName} onMonthChange={onMonthChange} />;
+  return (
+    <YearCalendarGrid
+      months={months}
+      yearLabel={year.label}
+      schoolName={schoolName}
+      onMonthChange={onMonthChange}
+    />
+  );
 });
 
 const MemoGantt = memo(function MemoGantt({
@@ -293,7 +315,14 @@ const MemoGantt = memo(function MemoGantt({
       grades,
       new Date(),
     );
-    return <GanttWeekly model={model} events={serializedEvents} navigationMode="local" onWeekChange={onWeekChange} />;
+    return (
+      <GanttWeekly
+        model={model}
+        events={serializedEvents}
+        navigationMode="local"
+        onWeekChange={onWeekChange}
+      />
+    );
   }
   const model = buildGanttModel({ year, grades, events });
   return (
