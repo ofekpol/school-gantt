@@ -3,6 +3,7 @@ import {
   filterPublicEvents,
   parsePublicViewerParams,
   serializePublicViewerParams,
+  shouldPollPublicViewer,
   shouldRefreshPublicEvents,
   toPublicEventPayload,
   type PublicViewerEvent,
@@ -86,6 +87,11 @@ describe("public viewer event filtering", () => {
 });
 
 describe("public viewer event refresh decisions", () => {
+  it("polls only while the document is visible", () => {
+    expect(shouldPollPublicViewer(true)).toBe(true);
+    expect(shouldPollPublicViewer(false)).toBe(false);
+  });
+
   it("fetches full events only when the lightweight signature changes", () => {
     expect(shouldRefreshPublicEvents("2:4:now", "2:4:now")).toBe(false);
     expect(shouldRefreshPublicEvents("2:4:now", "3:5:later")).toBe(true);

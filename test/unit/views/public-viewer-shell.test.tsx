@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PublicViewerShell } from "@/components/PublicViewerShell";
@@ -41,6 +41,46 @@ vi.mock("@/components/YearCalendarGrid", () => ({
   YearCalendarGrid: () => <div />,
 }));
 
+vi.mock("@/components/public/PublicGanttView", () => ({
+  PublicGanttView: ({
+    serializedEvents,
+    grades,
+  }: {
+    serializedEvents: PublicViewerEvent[];
+    grades: number[];
+  }) => (
+    <div data-testid="public-gantt-view">
+      {serializedEvents.map((item) => item.title).join(",")}
+      {grades.map((grade) => (
+        <div key={grade}>grade-{grade}</div>
+      ))}
+    </div>
+  ),
+}));
+
+vi.mock("@/components/public/PublicCalendarView", () => ({
+  PublicCalendarView: ({
+    months,
+  }: {
+    months: { weeks: { days: ({ events: { title: string }[] } | null)[] }[] }[];
+  }) => (
+    <div data-testid="public-calendar-view">
+      {months
+        .flatMap((month) =>
+          month.weeks.flatMap((week) => week.days.flatMap((day) => day?.events ?? [])),
+        )
+        .map((chip) => chip.title)
+        .join(",")}
+    </div>
+  ),
+}));
+
+vi.mock("@/components/public/PublicAgendaView", () => ({
+  PublicAgendaView: ({ events }: { events: PublicViewerEvent[] }) => (
+    <div data-testid="public-agenda-view">{events.map((item) => item.title).join(",")}</div>
+  ),
+}));
+
 vi.mock("@/components/RouteProgress", () => ({
   useRouteProgress: () => vi.fn(),
 }));
@@ -80,15 +120,17 @@ describe("PublicViewerShell grade filter", () => {
         initialView="gantt"
         initialParams={{ grades: [], types: [], q: "", zoom: "year", week: null }}
         year={{ label: "2026", startDate: "2026-09-01", endDate: "2027-07-31" }}
-        eventTypes={[{
-          id: "type-1",
-          key: "trip",
-          labelHe: "טיול",
-          labelEn: "Trip",
-          colorHex: "#0ea5e9",
-          glyph: "compass",
-          sortOrder: 1,
-        }]}
+        eventTypes={[
+          {
+            id: "type-1",
+            key: "trip",
+            labelHe: "טיול",
+            labelEn: "Trip",
+            colorHex: "#0ea5e9",
+            glyph: "compass",
+            sortOrder: 1,
+          },
+        ]}
         initialEvents={[event]}
         initialEventsSignature="1:1:now"
       />,
@@ -118,8 +160,39 @@ describe("PublicViewerShell zoom controls", () => {
   });
 });
 
+describe("PublicViewerShell view-specific rendering", () => {
+  it("mounts the active Gantt view with its event data without mounting the calendar view", async () => {
+    renderPublicViewer("gantt");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("public-gantt-view")).toHaveTextContent(event.title);
+    });
+    expect(screen.queryByTestId("public-calendar-view")).not.toBeInTheDocument();
+  });
+
+  it("mounts the active calendar view with its event data", async () => {
+    renderPublicViewer("calendar");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("public-calendar-view")).toHaveTextContent(event.title);
+    });
+  });
+
+  it("mounts the active agenda view with its event data", async () => {
+    renderPublicViewer("agenda");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("public-agenda-view")).toHaveTextContent(event.title);
+    });
+  });
+});
+
 function renderPublicViewer(initialView: "gantt" | "calendar" | "agenda") {
-  window.history.replaceState(null, "", `/demo-school${initialView === "gantt" ? "" : `/${initialView}`}`);
+  window.history.replaceState(
+    null,
+    "",
+    `/demo-school${initialView === "gantt" ? "" : `/${initialView}`}`,
+  );
 
   return render(
     <PublicViewerShell
@@ -128,15 +201,17 @@ function renderPublicViewer(initialView: "gantt" | "calendar" | "agenda") {
       initialView={initialView}
       initialParams={{ grades: [], types: [], q: "", zoom: "year", week: null }}
       year={{ label: "2026", startDate: "2026-09-01", endDate: "2027-07-31" }}
-      eventTypes={[{
-        id: "type-1",
-        key: "trip",
-        labelHe: "טיול",
-        labelEn: "Trip",
-        colorHex: "#0ea5e9",
-        glyph: "compass",
-        sortOrder: 1,
-      }]}
+      eventTypes={[
+        {
+          id: "type-1",
+          key: "trip",
+          labelHe: "טיול",
+          labelEn: "Trip",
+          colorHex: "#0ea5e9",
+          glyph: "compass",
+          sortOrder: 1,
+        },
+      ]}
       initialEvents={[event]}
       initialEventsSignature="1:1:now"
     />,

@@ -30,6 +30,7 @@ interface Props {
   buttonClassName?: string;
   labelKey?: "button" | "shortButton";
   printCalendar?: CalendarPrintOptions;
+  loadPrintCalendar?: () => Promise<CalendarPrintOptions>;
 }
 
 type ExportMode = "choices" | "google" | "print";
@@ -44,17 +45,20 @@ export function ExportToGoogleCalendarButton({
   buttonClassName,
   labelKey = "button",
   printCalendar,
+  loadPrintCalendar,
 }: Props) {
   const t = useTranslations("export");
   const [mode, setMode] = useState<ExportMode | null>(null);
   const [printMonth, setPrintMonth] = useState<CalendarMonth | null>(null);
+  const [loadedPrintCalendar, setLoadedPrintCalendar] = useState<CalendarPrintOptions | null>(null);
+  const activePrintCalendar = printCalendar ?? loadedPrintCalendar;
 
   function close() {
     setMode(null);
   }
 
   function print(monthIndex: number, printMode: PrintMode) {
-    const month = printCalendar?.months[monthIndex];
+    const month = activePrintCalendar?.months[monthIndex];
     if (!month) return;
     flushSync(() => setPrintMonth(month));
     document.body.dataset.printMode = printMode;
@@ -67,6 +71,17 @@ export function ExportToGoogleCalendarButton({
       { once: true },
     );
     window.print();
+  }
+
+  async function openPrintDialog() {
+    if (printCalendar) {
+      setMode("print");
+      return;
+    }
+    if (!loadPrintCalendar) return;
+    const calendar = await loadPrintCalendar();
+    setLoadedPrintCalendar(calendar);
+    setMode("print");
   }
 
   return (
@@ -84,24 +99,24 @@ export function ExportToGoogleCalendarButton({
       </button>
       {mode === "choices" && (
         <ExportChoiceDialog
-          canPrint={Boolean(printCalendar?.months.length)}
+          canPrint={Boolean(printCalendar?.months.length || loadPrintCalendar)}
           onClose={close}
           onGoogle={() => setMode("google")}
-          onPrint={() => setMode("print")}
+          onPrint={() => void openPrintDialog()}
         />
       )}
       {mode === "google" && <ExportModal onClose={close} />}
-      {mode === "print" && printCalendar && (
-        <PrintDialog calendar={printCalendar} onClose={close} onPrint={print} />
+      {mode === "print" && activePrintCalendar && (
+        <PrintDialog calendar={activePrintCalendar} onClose={close} onPrint={print} />
       )}
       {printMonth &&
-        printCalendar &&
+        activePrintCalendar &&
         createPortal(
           <div className="print-calendar-sheet">
             <YearCalendarGrid
               months={[printMonth]}
-              yearLabel={printCalendar.yearLabel}
-              schoolName={printCalendar.schoolName}
+              yearLabel={activePrintCalendar.yearLabel}
+              schoolName={activePrintCalendar.schoolName}
             />
           </div>,
           document.body,

@@ -131,6 +131,26 @@ describe("ExportToGoogleCalendarButton", () => {
     expect(screen.getByRole("button", { name: "Print calendar" })).toBeInTheDocument();
   });
 
+  it("requests the print calendar only after Print is selected", async () => {
+    const user = userEvent.setup();
+    const loadPrintCalendar = vi.fn().mockResolvedValue(printCalendar);
+
+    render(
+      <ExportToGoogleCalendarButton
+        schoolSlug="demo-school"
+        loadPrintCalendar={loadPrintCalendar}
+      />,
+    );
+
+    expect(loadPrintCalendar).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Export to Google Calendar" }));
+    await user.click(screen.getByRole("button", { name: "Print calendar" }));
+
+    expect(loadPrintCalendar).toHaveBeenCalledOnce();
+    expect(await screen.findByRole("radio", { name: "Print in color" })).toBeChecked();
+  });
+
   it("prints the selected month in black and white", async () => {
     const user = userEvent.setup();
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined);

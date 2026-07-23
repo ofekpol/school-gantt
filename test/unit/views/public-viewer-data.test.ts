@@ -27,6 +27,7 @@ import {
   getPublicViewerCacheTag,
   invalidatePublicViewerCache,
   loadPublicViewerData,
+  loadPublicViewerEvents,
 } from "@/lib/views/public-viewer-data";
 
 describe("public viewer data cache", () => {
@@ -88,5 +89,34 @@ describe("public viewer data cache", () => {
     expect(data?.eventSignature).toBe("1:1:2035-08-15T07:00:00.000Z");
     expect(getAgendaForSchoolMock).toHaveBeenCalledWith("school-1", {});
     expect(getAgendaSignatureForSchoolMock).toHaveBeenCalledWith("school-1", {});
+  });
+
+  it("loads the event endpoint payload without loading the full viewer data", async () => {
+    getSchoolBySlugMock.mockResolvedValue({ id: "school-1", slug: "school-a" });
+    getAgendaForSchoolMock.mockResolvedValue([{
+      id: "event-1",
+      title: "Summer event",
+      startAt: new Date("2035-08-15T06:00:00.000Z"),
+      endAt: new Date("2035-08-15T07:00:00.000Z"),
+      allDay: false,
+      description: null,
+      location: null,
+      eventTypeId: "type-1",
+      eventTypeKey: "general",
+      eventTypeLabelHe: "כללי",
+      eventTypeColor: "#0ea5e9",
+      eventTypeGlyph: "circle",
+      grades: [9],
+      status: "approved",
+      isCanceled: false,
+      isUpdated: false,
+    }]);
+
+    const events = await loadPublicViewerEvents("school-a");
+
+    expect(events).toHaveLength(1);
+    expect(listEventTypesMock).not.toHaveBeenCalled();
+    expect(getAgendaSignatureForSchoolMock).not.toHaveBeenCalled();
+    expect(getAgendaForSchoolMock).toHaveBeenCalledWith("school-1", {});
   });
 });

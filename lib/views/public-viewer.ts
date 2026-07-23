@@ -75,6 +75,10 @@ export function shouldRefreshPublicEvents(
   return currentSignature !== nextSignature;
 }
 
+export function shouldPollPublicViewer(isDocumentVisible: boolean): boolean {
+  return isDocumentVisible;
+}
+
 export function toPublicEventPayload(
   event: Omit<AgendaItem, "startAt" | "endAt"> & { startAt: Date | string; endAt: Date | string },
 ): PublicViewerEvent {
