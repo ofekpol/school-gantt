@@ -3,6 +3,7 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
+import { AppHeader } from "@/components/AppHeader";
 import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalendarButton";
 import { FilterBar } from "@/components/FilterBar";
 import { LoadingPanel } from "@/components/LoadingPanel";
@@ -209,63 +210,66 @@ export function PublicViewerShell({
   }, [view]);
 
   return (
-    <main className="min-h-screen bg-[var(--sg-page)] pb-12">
-      <ViewTabs
-        view={view}
-        labels={{
-          gantt: nav("gantt"),
-          calendar: nav("calendar"),
-          agenda: nav("agenda"),
-        }}
-        onChange={setView}
-        action={
-          <ExportToGoogleCalendarButton
-            schoolSlug={schoolSlug}
-            allGrades={ALL_GRADES}
-            eventTypes={eventTypesForFilter}
-            defaultGrades={params.grades}
-            defaultTypes={params.types}
-            loadPrintCalendar={loadPrintCalendar}
+    <>
+      <AppHeader title={schoolName} />
+      <main className="min-h-screen bg-[var(--sg-page)] pb-12">
+        <ViewTabs
+          view={view}
+          labels={{
+            gantt: nav("gantt"),
+            calendar: nav("calendar"),
+            agenda: nav("agenda"),
+          }}
+          onChange={setView}
+          action={
+            <ExportToGoogleCalendarButton
+              schoolSlug={schoolSlug}
+              allGrades={ALL_GRADES}
+              eventTypes={eventTypesForFilter}
+              defaultGrades={params.grades}
+              defaultTypes={params.types}
+              loadPrintCalendar={loadPrintCalendar}
+            />
+          }
+        />
+        <FilterBar
+          allGrades={ALL_GRADES}
+          eventTypes={eventTypesForFilter}
+          selectedGrades={params.grades}
+          selectedTypes={params.types}
+          searchQuery={params.q}
+          zoom={params.zoom}
+          zoomOptions={zoomOptionsForView(view)}
+          onChange={setParams}
+        />
+        {deferredView === "gantt" && (
+          <PublicGanttView
+            events={hydratedEvents}
+            serializedEvents={filteredEvents}
+            year={year}
+            params={params}
+            grades={visibleGrades}
+            emptyLabel={gantt("empty")}
+            onWeekChange={(weekStart) => setPrintMonthKey(monthKeyForDate(weekStart))}
           />
-        }
-      />
-      <FilterBar
-        allGrades={ALL_GRADES}
-        eventTypes={eventTypesForFilter}
-        selectedGrades={params.grades}
-        selectedTypes={params.types}
-        searchQuery={params.q}
-        zoom={params.zoom}
-        zoomOptions={zoomOptionsForView(view)}
-        onChange={setParams}
-      />
-      {deferredView === "gantt" && (
-        <PublicGanttView
-          events={hydratedEvents}
-          serializedEvents={filteredEvents}
-          year={year}
-          params={params}
-          grades={visibleGrades}
-          emptyLabel={gantt("empty")}
-          onWeekChange={(weekStart) => setPrintMonthKey(monthKeyForDate(weekStart))}
-        />
-      )}
-      {deferredView === "calendar" && (
-        <PublicCalendarView
-          months={calendarMonths ?? []}
-          year={year}
-          schoolName={schoolName}
-          onMonthChange={updatePrintMonth}
-        />
-      )}
-      {deferredView === "agenda" && (
-        <PublicAgendaView
-          events={hydratedEvents}
-          emptyLabel={agenda("empty")}
-          mode={params.zoom === "month" ? "month" : "week"}
-        />
-      )}
-    </main>
+        )}
+        {deferredView === "calendar" && (
+          <PublicCalendarView
+            months={calendarMonths ?? []}
+            year={year}
+            schoolName={schoolName}
+            onMonthChange={updatePrintMonth}
+          />
+        )}
+        {deferredView === "agenda" && (
+          <PublicAgendaView
+            events={hydratedEvents}
+            emptyLabel={agenda("empty")}
+            mode={params.zoom === "month" ? "month" : "week"}
+          />
+        )}
+      </main>
+    </>
   );
 }
 
