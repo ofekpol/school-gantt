@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getStaffUserByAuthId, getStaffUserRecordByEmail, type StaffUserRecord } from "@/lib/db/staff";
@@ -22,7 +23,7 @@ export type { StaffUserRecord };
  * Delegates the DB lookup to `lib/db/staff.ts` so this file does not import the service-role
  * client directly (CLAUDE.md: the service-role client must only be imported inside `lib/db/`).
  */
-export async function getStaffUser(): Promise<StaffUserRecord | null> {
+async function resolveStaffUser(): Promise<StaffUserRecord | null> {
   const authUser = await getSession();
   if (!authUser) return null;
   const byId = await getStaffUserByAuthId(authUser.id);
@@ -32,3 +33,9 @@ export async function getStaffUser(): Promise<StaffUserRecord | null> {
   // staff_users row was created (e.g. via Google OAuth with a different UUID).
   return authUser.email ? getStaffUserRecordByEmail(authUser.email) : null;
 }
+
+/**
+ * Shares the validated auth and staff lookup across a single server render.
+ * React clears this cache between requests, so no staff data crosses sessions.
+ */
+export const getStaffUser = cache(resolveStaffUser);
