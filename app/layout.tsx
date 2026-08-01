@@ -7,7 +7,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { cn } from "@/lib/utils";
 import { dirFor, isLocale, DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { RouteProgressProvider } from "@/components/RouteProgress";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { VercelSpeedInsights } from "@/components/VercelSpeedInsights";
 
 // Only Heebo (UI) is preloaded — it's the body font for every Hebrew
 // page above the fold. Display / mono / sans-latin fonts load on demand
@@ -85,7 +85,7 @@ export default async function RootLayout({
             <div id="main">{children}</div>
           </RouteProgressProvider>
         </NextIntlClientProvider>
-        <SpeedInsights />
+        <VercelSpeedInsights />
       </body>
     </html>
   );
