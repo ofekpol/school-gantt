@@ -23,6 +23,10 @@
     "confirm": "אישור",
     "cancel": "ביטול"
   },
+  "publicViewerLoading": {
+    "title": "מכינים את לוח השנה של בית הספר",
+    "detail": "טוענים את האירועים הקרובים…"
+  },
   "nav": {
     "dashboard": "לוח שנה",
     "staff": "ניהול צוות",

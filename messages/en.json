@@ -23,6 +23,10 @@
     "confirm": "Confirm",
     "cancel": "Cancel"
   },
+  "publicViewerLoading": {
+    "title": "Preparing your school calendar",
+    "detail": "Loading upcoming events…"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "staff": "Staff",
