@@ -3,8 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { getStaffUser } from "@/lib/auth/session";
 import { AppHeader } from "@/components/AppHeader";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { StaffEntryLoading } from "@/components/staff/StaffEntryLoading";
 import { buildNavLinks, getCurrentPath } from "@/lib/nav";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 /**
  * Staff route group layout.
@@ -12,7 +13,15 @@ import type { ReactNode } from "react";
  * STATUS guard: pending users → /auth/pending; deactivated → /auth/deactivated.
  * All routes under (staff)/ are protected by this layout.
  */
-export default async function StaffLayout({ children }: { children: ReactNode }) {
+export default function StaffLayout({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<StaffEntryLoading />}>
+      <StaffLayoutContent>{children}</StaffLayoutContent>
+    </Suspense>
+  );
+}
+
+async function StaffLayoutContent({ children }: { children: ReactNode }) {
   const user = await getStaffUser();
   if (!user) redirect("/auth/login");
   if (user.status === "pending") redirect("/auth/pending");

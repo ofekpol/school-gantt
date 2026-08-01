@@ -27,6 +27,12 @@
     "title": "Preparing your school calendar",
     "detail": "Loading upcoming events…"
   },
+  "staffLoading": {
+    "entryTitle": "Preparing your workspace",
+    "entryDetail": "Verifying your access…",
+    "dashboardTitle": "Loading your calendar",
+    "dashboardDetail": "Organizing upcoming events…"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "staff": "Staff",

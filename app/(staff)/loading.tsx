@@ -1,5 +1,5 @@
-import { LoadingPanel } from "@/components/LoadingPanel";
+import { DashboardLoadingSkeleton } from "@/components/staff/DashboardLoadingSkeleton";
 
 export default function Loading() {
-  return <LoadingPanel />;
+  return <DashboardLoadingSkeleton />;
 }
