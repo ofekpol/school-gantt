@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { generateTempPassword } from "@/lib/auth/password";
 
-const ALLOWED_CHARS = /^[ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789]+$/;
+const ALLOWED_CHARS = /^[ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789]+$/;
 
 describe("generateTempPassword", () => {
   it("defaults to length 10", () => {

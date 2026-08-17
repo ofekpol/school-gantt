@@ -2,7 +2,7 @@ import "server-only";
 import { randomInt } from "node:crypto";
 
 const UPPER = "ABCDEFGHJKMNPQRSTUVWXYZ";
-const LOWER = "abcdefghijkmnpqrstuvwxyz";
+const LOWER = "abcdefghijkmnopqrstuvwxyz";
 const DIGITS = "23456789";
 const CHARSET = UPPER + LOWER + DIGITS;
 
