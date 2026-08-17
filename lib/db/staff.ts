@@ -94,6 +94,94 @@ export async function createStaffUserFromInvite(params: {
   return { id: params.authUserId };
 }
 
+/** Builds editor_scopes insert rows for a staff user. Shared by direct creation. */
+function buildScopeRows(
+  staffUserId: string,
+  schoolId: string,
+  gradeScopes?: number[],
+  eventTypeScopes?: string[],
+): Array<{
+  staffUserId: string;
+  schoolId: string;
+  scopeKind: "grade" | "event_type";
+  scopeValue: string;
+}> {
+  return [
+    ...(gradeScopes ?? []).map((g) => ({
+      staffUserId,
+      schoolId,
+      scopeKind: "grade" as const,
+      scopeValue: String(g),
+    })),
+    ...(eventTypeScopes ?? []).map((k) => ({
+      staffUserId,
+      schoolId,
+      scopeKind: "event_type" as const,
+      scopeValue: k,
+    })),
+  ];
+}
+
+/**
+ * Creates an active staff user directly (admin-add-by-email flow), skipping the
+ * invite-link step. Creates the Supabase Auth user with `params.password` first
+ * (email_confirm: true so no confirmation email is required), then the staff_users
+ * + editor_scopes rows. mustChangePassword is always true — the caller-supplied
+ * password is a temporary one the admin relays to the user out of band.
+ * Rolls back the auth user if the DB write fails, to avoid an orphaned login.
+ */
+export async function createStaffUserDirect(params: {
+  schoolId: string;
+  email: string;
+  fullName: string;
+  role: "editor" | "admin" | "viewer";
+  password: string;
+  gradeScopes?: number[];
+  eventTypeScopes?: string[];
+}): Promise<{ id: string }> {
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    email: params.email,
+    password: params.password,
+    email_confirm: true,
+  });
+  if (error || !data.user) {
+    throw new Error(`createUser ${params.email}: ${error?.message ?? "unknown"}`);
+  }
+  const authUserId = data.user.id;
+
+  try {
+    await withSchool(params.schoolId, async (tx) => {
+      await tx.insert(staffUsers).values({
+        id: authUserId,
+        schoolId: params.schoolId,
+        email: params.email,
+        fullName: params.fullName,
+        role: params.role,
+        status: "active",
+        mustChangePassword: true,
+      });
+
+      const scopeRows = buildScopeRows(
+        authUserId,
+        params.schoolId,
+        params.gradeScopes,
+        params.eventTypeScopes,
+      );
+      if (scopeRows.length > 0) {
+        await tx.insert(editorScopes).values(scopeRows);
+      }
+    });
+  } catch (dbError) {
+    await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => {
+      // best effort — DB write failed so nothing references this auth user, but
+      // if the delete also fails there's nothing more we can safely do here
+    });
+    throw dbError;
+  }
+
+  return { id: authUserId };
+}
+
 /**
  * Creates a staff_users row for a user who registered via email/password.
  * schoolId is null — an admin assigns the school later.
