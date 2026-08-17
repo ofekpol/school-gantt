@@ -65,15 +65,21 @@ export function AddStaffForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
     const data = (await res.json()) as { email: string; temporaryPassword: string };
     setCreated({ email: data.email, temporaryPassword: data.temporaryPassword });
     setFormKey((k) => k + 1);
+    setRole("editor");
     startRouteProgress(2500);
     router.refresh();
   }
 
   function copyPassword(password: string) {
-    void navigator.clipboard.writeText(password).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    void navigator.clipboard
+      .writeText(password)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        setError(t("copyPasswordError"));
+      });
   }
 
   return (
@@ -133,7 +139,10 @@ export function AddStaffForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
       )}
 
       {created && (
-        <div className="space-y-1 rounded border border-green-200 bg-green-50 p-3">
+        <div
+          data-testid="temp-password-panel"
+          className="space-y-1 rounded border border-green-200 bg-green-50 p-3"
+        >
           <p className="text-sm font-medium text-green-800">
             {t("staffCreated")}: {created.email}
           </p>

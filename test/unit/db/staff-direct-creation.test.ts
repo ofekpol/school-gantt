@@ -5,8 +5,22 @@ const withSchoolMock = vi.fn();
 const createUserMock = vi.fn();
 const deleteUserMock = vi.fn();
 
+// getStaffUserByEmail (used by createStaffUserDirect's pre-check) queries the raw
+// `db` export directly via a select().from().where().limit() chain, not withSchool.
+// Default to "no existing user" ([]) so the pre-check passes through in every test
+// that isn't specifically exercising the duplicate-email path below.
+let selectLimitResult: unknown[] = [];
+
 vi.mock("@/lib/db/client", () => ({
-  db: {},
+  db: {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve(selectLimitResult),
+        }),
+      }),
+    }),
+  },
   withSchool: (...args: unknown[]) => withSchoolMock(...args),
 }));
 
@@ -49,6 +63,7 @@ beforeEach(() => {
   createUserMock.mockReset();
   deleteUserMock.mockReset();
   insertCalls = [];
+  selectLimitResult = [];
   withSchoolMock.mockImplementation(async (_schoolId: unknown, fn: (tx: unknown) => Promise<unknown>) =>
     fn(makeTx(insertCalls)),
   );
@@ -109,7 +124,7 @@ describe("createStaffUserDirect", () => {
     expect(insertCalls[0].table).toBe(schema.staffUsers);
   });
 
-  it("throws without touching the DB when the email is already registered", async () => {
+  it("throws without touching the DB when the email is already registered in Supabase Auth", async () => {
     createUserMock.mockResolvedValue({
       data: { user: null },
       error: { message: "Email already registered" },
@@ -126,6 +141,28 @@ describe("createStaffUserDirect", () => {
     ).rejects.toThrow(/already registered/i);
 
     expect(withSchoolMock).not.toHaveBeenCalled();
+  });
+
+  it("throws and never calls Supabase Auth createUser when a staff_users row already exists for the email (pre-check)", async () => {
+    // Simulate getStaffUserByEmail finding an existing row — e.g. one belonging to
+    // a different school, since staff_users.email is a global unique constraint.
+    selectLimitResult = [
+      { id: "existing-id", status: "active", loginAttempts: 0, lockedUntil: null },
+    ];
+
+    await expect(
+      createStaffUserDirect({
+        schoolId: SCHOOL,
+        email: "already-taken@school.test",
+        fullName: "Someone",
+        role: "editor",
+        password: "Temp1234xy",
+      }),
+    ).rejects.toThrow(/already registered/i);
+
+    expect(createUserMock).not.toHaveBeenCalled();
+    expect(withSchoolMock).not.toHaveBeenCalled();
+    expect(deleteUserMock).not.toHaveBeenCalled();
   });
 
   it("rolls back the auth user and rethrows when the DB write fails", async () => {

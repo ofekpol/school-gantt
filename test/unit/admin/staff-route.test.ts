@@ -105,6 +105,32 @@ describe("POST /api/v1/admin/staff", () => {
     });
   });
 
+  it("strips gradeScopes/eventTypeScopes before reaching the DB layer when role is not editor", async () => {
+    getStaffUserMock.mockResolvedValue(ACTIVE_ADMIN);
+    createStaffUserDirectMock.mockResolvedValue({ id: "new-staff-id" });
+
+    const res = await POST(
+      makeRequest({
+        email: "new-admin@school.test",
+        fullName: "New Admin",
+        role: "admin",
+        gradeScopes: [7, 8],
+        eventTypeScopes: ["trip"],
+      }),
+    );
+
+    expect(res.status).toBe(201);
+    expect(createStaffUserDirectMock).toHaveBeenCalledWith({
+      schoolId: ACTIVE_ADMIN.schoolId,
+      email: "new-admin@school.test",
+      fullName: "New Admin",
+      role: "admin",
+      password: "Temp1234xy",
+      gradeScopes: [],
+      eventTypeScopes: [],
+    });
+  });
+
   it("returns 409 duplicate_email when createStaffUserDirect reports an already-registered email", async () => {
     getStaffUserMock.mockResolvedValue(ACTIVE_ADMIN);
     createStaffUserDirectMock.mockRejectedValue(

@@ -156,6 +156,7 @@
       "tempPasswordWarning": "This password is shown only once. Copy it now and share it with {email} directly — it will not be shown again.",
       "copyPassword": "Copy password",
       "passwordCopied": "Password copied",
+      "copyPasswordError": "Couldn't copy the password. Please copy it manually.",
       "multiUse": "Reusable link",
       "multiUseBadge": "Reusable",
       "revokeInvite": "Revoke",

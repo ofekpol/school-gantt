@@ -35,6 +35,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const temporaryPassword = generateTempPassword();
+  // editor_scopes rows only make sense for editors — mirrors the rule updateStaffUser
+  // already enforces (lib/db/staff.ts). Strip scopes server-side so a direct API call
+  // can't attach stray grade/event-type scopes to an admin or viewer account.
+  const gradeScopes = parsed.data.role === "editor" ? (parsed.data.gradeScopes ?? []) : [];
+  const eventTypeScopes = parsed.data.role === "editor" ? (parsed.data.eventTypeScopes ?? []) : [];
   try {
     const result = await createStaffUserDirect({
       schoolId: user.schoolId,
@@ -42,8 +47,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       fullName: parsed.data.fullName,
       role: parsed.data.role,
       password: temporaryPassword,
-      gradeScopes: parsed.data.gradeScopes ?? [],
-      eventTypeScopes: parsed.data.eventTypeScopes ?? [],
+      gradeScopes,
+      eventTypeScopes,
     });
     return NextResponse.json(
       { id: result.id, email: parsed.data.email, temporaryPassword },

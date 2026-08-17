@@ -156,6 +156,7 @@
       "tempPasswordWarning": "הסיסמה מוצגת פעם אחת בלבד. יש להעתיק אותה עכשיו ולמסור אותה ל-{email} ישירות — היא לא תוצג שוב.",
       "copyPassword": "העתק סיסמה",
       "passwordCopied": "הסיסמה הועתקה",
+      "copyPasswordError": "העתקת הסיסמה נכשלה. יש להעתיק אותה ידנית.",
       "multiUse": "קישור רב-פעמי",
       "multiUseBadge": "רב-פעמי",
       "revokeInvite": "בטל",

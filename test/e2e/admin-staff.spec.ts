@@ -50,6 +50,8 @@ test("ADMIN-04 e2e: admin creates a staff user directly and sees the one-time te
   await form.locator('input[name="fullName"]').fill("E2E Direct Viewer");
   await form.locator('button[type="submit"]').click();
 
-  await expect(form.getByText(email, { exact: false })).toBeVisible({ timeout: 10_000 });
+  const revealPanel = form.getByTestId("temp-password-panel");
+  await expect(revealPanel).toBeVisible({ timeout: 10_000 });
+  await expect(revealPanel).toContainText(email);
   await expect(form.locator("code")).toBeVisible();
 });

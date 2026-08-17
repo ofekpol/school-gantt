@@ -124,10 +124,12 @@ function buildScopeRows(
 
 /**
  * Creates an active staff user directly (admin-add-by-email flow), skipping the
- * invite-link step. Creates the Supabase Auth user with `params.password` first
- * (email_confirm: true so no confirmation email is required), then the staff_users
- * + editor_scopes rows. mustChangePassword is always true — the caller-supplied
- * password is a temporary one the admin relays to the user out of band.
+ * invite-link step. Checks for an existing `staff_users` row by email first (email
+ * is a global unique constraint, not scoped per-school), then creates the Supabase
+ * Auth user with `params.password` (email_confirm: true so no confirmation email is
+ * required), then the staff_users + editor_scopes rows. mustChangePassword is always
+ * true — the caller-supplied password is a temporary one the admin relays to the
+ * user out of band.
  * Rolls back the auth user if the DB write fails, to avoid an orphaned login.
  */
 export async function createStaffUserDirect(params: {
@@ -139,6 +141,18 @@ export async function createStaffUserDirect(params: {
   gradeScopes?: number[];
   eventTypeScopes?: string[];
 }): Promise<{ id: string }> {
+  // Pre-check BEFORE creating the Supabase Auth user: staff_users.email is a global
+  // unique constraint (not scoped per-school), so without this check a duplicate
+  // email would create an orphaned auth user carrying a temp password the admin
+  // now knows — and that email could later resolve (via the signin fallback lookup
+  // in lib/auth/session.ts / app/api/v1/auth/signin/route.ts) to a DIFFERENT
+  // school's pre-existing staff row, granting a cross-tenant session. Closing the
+  // window at the root is safer than relying on the rollback below.
+  const existing = await getStaffUserByEmail(params.email);
+  if (existing) {
+    throw new Error(`email already registered: ${params.email}`);
+  }
+
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email: params.email,
     password: params.password,
@@ -168,7 +182,12 @@ export async function createStaffUserDirect(params: {
     });
   } catch (dbError) {
     // best effort rollback — DB write failed, so nothing else references this auth user
-    await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => {});
+    await supabaseAdmin.auth.admin.deleteUser(authUserId).catch((rollbackError) => {
+      console.error(
+        `createStaffUserDirect rollback failed for auth user ${authUserId} (${params.email}):`,
+        rollbackError,
+      );
+    });
     throw dbError;
   }
 

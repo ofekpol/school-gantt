@@ -84,6 +84,39 @@ describe.skipIf(skipIfNoTestDb)("ADMIN-04: admin creates a staff user directly",
     expect(schoolAStaff.map((u) => u.id)).toContain(authUserId);
   });
 
+  it("pre-check rejects a duplicate email before creating a Supabase Auth user, even across schools", async () => {
+    const authUserId = randomUUID();
+    createUserMock.mockResolvedValueOnce({ data: { user: { id: authUserId } }, error: null });
+
+    const email = `admin04-precheck-${authUserId.slice(0, 8)}@test`;
+    await createStaffUserDirect({
+      schoolId: testSchoolA,
+      email,
+      fullName: "Original Owner",
+      role: "viewer",
+      password: "Temp1234xy",
+    });
+
+    // staff_users.email is a global unique constraint (not scoped per-school), so a
+    // second admin — even from a different school — must be rejected by the
+    // getStaffUserByEmail pre-check BEFORE any Supabase Auth user is created. This
+    // is what closes the orphaned-auth-user / cross-tenant-signin window described
+    // in the design spec's rollback section.
+    createUserMock.mockClear();
+
+    await expect(
+      createStaffUserDirect({
+        schoolId: testSchoolB,
+        email,
+        fullName: "Attempted Duplicate",
+        role: "viewer",
+        password: "Temp1234xy",
+      }),
+    ).rejects.toThrow(/already registered/i);
+
+    expect(createUserMock).not.toHaveBeenCalled();
+  });
+
   it("rolls back the auth user when the DB insert fails (duplicate id)", async () => {
     const authUserId = randomUUID();
     // First call succeeds and creates the row...
