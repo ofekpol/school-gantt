@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStaffUser } from "@/lib/auth/session";
 import { assertAdmin } from "@/lib/auth/admin";
-import { listStaffUsers } from "@/lib/db/staff";
+import { createStaffUserDirect, listStaffUsers } from "@/lib/db/staff";
+import { generateTempPassword } from "@/lib/auth/password";
+import { StaffUserCreateSchema } from "@/lib/validations/admin";
 
 export async function GET(): Promise<NextResponse> {
   const user = await getStaffUser();
@@ -16,7 +18,6 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  await request.text().catch(() => "");
   const user = await getStaffUser();
   try {
     assertAdmin(user);
@@ -24,5 +25,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (e instanceof Response) return NextResponse.json({ error: "Forbidden" }, { status: e.status });
     throw e;
   }
-  return NextResponse.json({ error: "direct_staff_creation_removed" }, { status: 405 });
+  if (user.mustChangePassword) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const parsed = StaffUserCreateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const temporaryPassword = generateTempPassword();
+  try {
+    const result = await createStaffUserDirect({
+      schoolId: user.schoolId,
+      email: parsed.data.email,
+      fullName: parsed.data.fullName,
+      role: parsed.data.role,
+      password: temporaryPassword,
+      gradeScopes: parsed.data.gradeScopes ?? [],
+      eventTypeScopes: parsed.data.eventTypeScopes ?? [],
+    });
+    return NextResponse.json(
+      { id: result.id, email: parsed.data.email, temporaryPassword },
+      { status: 201 },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "create_failed";
+    if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("duplicate")) {
+      return NextResponse.json({ error: "duplicate_email" }, { status: 409 });
+    }
+    return NextResponse.json({ error: "create_failed", message: msg }, { status: 500 });
+  }
 }
