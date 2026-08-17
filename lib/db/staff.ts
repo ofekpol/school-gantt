@@ -161,21 +161,14 @@ export async function createStaffUserDirect(params: {
         mustChangePassword: true,
       });
 
-      const scopeRows = buildScopeRows(
-        authUserId,
-        params.schoolId,
-        params.gradeScopes,
-        params.eventTypeScopes,
-      );
+      const scopeRows = buildScopeRows(authUserId, params.schoolId, params.gradeScopes, params.eventTypeScopes);
       if (scopeRows.length > 0) {
         await tx.insert(editorScopes).values(scopeRows);
       }
     });
   } catch (dbError) {
-    await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => {
-      // best effort — DB write failed so nothing references this auth user, but
-      // if the delete also fails there's nothing more we can safely do here
-    });
+    // best effort rollback — DB write failed, so nothing else references this auth user
+    await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => {});
     throw dbError;
   }
 
