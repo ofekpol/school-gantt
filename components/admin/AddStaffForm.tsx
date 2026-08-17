@@ -13,62 +13,64 @@ interface EventTypeRow {
   labelHe: string;
 }
 
-export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
+interface CreatedStaff {
+  email: string;
+  temporaryPassword: string;
+}
+
+export function AddStaffForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
   const t = useTranslations("admin.staff");
   const tc = useTranslations("common");
   const router = useRouter();
   const startRouteProgress = useRouteProgress();
   const [role, setRole] = useState<string>("editor");
-  const [url, setUrl] = useState<string | null>(null);
+  const [created, setCreated] = useState<CreatedStaff | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const [formKey, setFormKey] = useState(0);
 
   async function create(form: FormData) {
     setError(null);
-    setUrl(null);
-    setEmailSent(false);
+    setCreated(null);
     setCopied(false);
     const selectedRole = String(form.get("role") ?? "editor");
     const gradeScopes =
       selectedRole === "editor"
-        ? ALL_GRADES.filter((g) => form.get(`invite-grade-${g}`) === "on")
+        ? ALL_GRADES.filter((g) => form.get(`add-staff-grade-${g}`) === "on")
         : [];
     const eventTypeScopes =
       selectedRole === "editor"
         ? eventTypes
-            .filter((et) => form.get(`invite-type-${et.key}`) === "on")
+            .filter((et) => form.get(`add-staff-type-${et.key}`) === "on")
             .map((et) => et.key)
         : [];
-    const emailRaw = String(form.get("email") ?? "").trim();
-    const body: Record<string, unknown> = {
+    const body = {
+      email: String(form.get("email") ?? "").trim(),
+      fullName: String(form.get("fullName") ?? "").trim(),
       role: selectedRole,
-      expiresInHours: Number(form.get("expiresInHours") ?? 72),
       gradeScopes,
       eventTypeScopes,
-      multiUse: form.get("multiUse") === "on",
     };
-    if (emailRaw) body.email = emailRaw;
-    const res = await fetch("/api/v1/admin/staff/invites", {
+
+    const res = await fetch("/api/v1/admin/staff", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
-      setError(t("createError"));
+      const data = await res.json().catch(() => null);
+      setError(data?.error === "duplicate_email" ? t("duplicateEmail") : t("createError"));
       return;
     }
-    const data = (await res.json()) as { url: string; emailSent: boolean };
-    setUrl(data.url);
-    setEmailSent(data.emailSent);
+    const data = (await res.json()) as { email: string; temporaryPassword: string };
+    setCreated({ email: data.email, temporaryPassword: data.temporaryPassword });
     setFormKey((k) => k + 1);
     startRouteProgress(2500);
     router.refresh();
   }
 
-  function copyUrl(inviteUrl: string) {
-    void navigator.clipboard.writeText(inviteUrl).then(() => {
+  function copyPassword(password: string) {
+    void navigator.clipboard.writeText(password).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -78,7 +80,7 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
     <form
       key={formKey}
       action={create}
-      data-testid="invite-form"
+      data-testid="add-staff-form"
       className="space-y-3 rounded border p-3"
     >
       <div className="flex flex-wrap items-center gap-3">
@@ -95,33 +97,27 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
         <input
           name="email"
           type="email"
+          required
           placeholder={t("email")}
           className="w-56 rounded border px-2 py-1"
           aria-label={t("email")}
         />
-        <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
-          <span>{t("expiresInHours")}</span>
-          <input
-            name="expiresInHours"
-            type="number"
-            defaultValue={72}
-            min={1}
-            max={720}
-            className="w-24 rounded border px-2 py-1 text-base font-normal text-neutral-900"
-          />
-        </label>
-        <label className="flex items-center gap-2 text-sm text-neutral-700">
-          <input type="checkbox" name="multiUse" />
-          {t("multiUse")}
-        </label>
-        <InviteSubmitButton label={t("createInvite")} loadingLabel={tc("saving")} />
+        <input
+          name="fullName"
+          type="text"
+          required
+          placeholder={t("fullName")}
+          className="w-56 rounded border px-2 py-1"
+          aria-label={t("fullName")}
+        />
+        <AddStaffSubmitButton label={t("create")} loadingLabel={tc("saving")} />
       </div>
 
       {role === "editor" && (
         <ScopeFields
           eventTypes={eventTypes}
-          gradeName={(grade) => `invite-grade-${grade}`}
-          typeName={(key) => `invite-type-${key}`}
+          gradeName={(grade) => `add-staff-grade-${grade}`}
+          typeName={(key) => `add-staff-type-${key}`}
           labels={{
             gradeScopes: t("gradeScopes"),
             eventTypeScopes: t("eventTypeScopes"),
@@ -136,20 +132,30 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
         />
       )}
 
-      {url && (
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="break-all text-sm text-green-700">
-            {t("inviteCreated")}: {url}
-            {emailSent && <span className="ml-2">· {t("emailSent")}</span>}
+      {created && (
+        <div className="space-y-1 rounded border border-green-200 bg-green-50 p-3">
+          <p className="text-sm font-medium text-green-800">
+            {t("staffCreated")}: {created.email}
           </p>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => copyUrl(url)}
-          >
-            {copied ? t("inviteCopied") : t("copyInvite")}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-neutral-700">
+              {t("temporaryPassword")}:{" "}
+              <code className="rounded bg-white px-2 py-0.5 font-mono">
+                {created.temporaryPassword}
+              </code>
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => copyPassword(created.temporaryPassword)}
+            >
+              {copied ? t("passwordCopied") : t("copyPassword")}
+            </Button>
+          </div>
+          <p className="text-xs text-neutral-600">
+            {t("tempPasswordWarning", { email: created.email })}
+          </p>
         </div>
       )}
       {error && <p className="text-sm text-red-500">{error}</p>}
@@ -157,7 +163,7 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
   );
 }
 
-function InviteSubmitButton({
+function AddStaffSubmitButton({
   label,
   loadingLabel,
 }: {

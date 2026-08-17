@@ -10,6 +10,7 @@ import { listEventTypes } from "@/lib/admin/event-types";
 import { StaffTable } from "@/components/admin/StaffTable";
 import { PendingRequestsTable } from "@/components/admin/PendingRequestsTable";
 import { InviteForm } from "@/components/admin/InviteForm";
+import { AddStaffForm } from "@/components/admin/AddStaffForm";
 import { InviteTable } from "@/components/admin/InviteTable";
 
 /**
@@ -74,6 +75,11 @@ export default async function AdminStaffPage() {
       <section className="space-y-3">
         <SectionHeader title={t("pendingRequests")} count={pendingRegs.length} />
         <PendingRequestsTable pending={pendingRegs} eventTypes={eventTypes} />
+      </section>
+
+      <section className="sg-staff-card space-y-3 rounded-xl border bg-white p-4">
+        <h2 className="text-lg font-semibold">{t("create")}</h2>
+        <AddStaffForm eventTypes={eventTypes} />
       </section>
 
       <section className="sg-staff-card space-y-4 rounded-xl border bg-white p-4">
