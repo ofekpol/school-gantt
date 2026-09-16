@@ -80,35 +80,13 @@ export function ReadOnlyViewerShell({
 
   return (
     <>
-      <AppHeader
-        title={schoolName}
-        rightSlot={
-          <Link
-            href="/auth/login"
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
-          >
-            {t("login")}
-          </Link>
-        }
-      />
+      <AppHeader title={schoolName} rightSlot={<LoginLink label={t("login")} />} />
       <main className="min-h-screen bg-[var(--sg-page)] pb-12">
-        <div className="relative flex flex-wrap items-center gap-2 overflow-hidden border-b border-[var(--sg-hairline)] bg-[var(--sg-surface-raised)] px-3 py-2 sm:px-6">
-          <div className="inline-flex rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] p-0.5 shadow-sm">
-            {TABS.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setTab(item)}
-                aria-pressed={tab === item}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  tab === item ? "bg-blue-600 text-white" : "text-neutral-700 hover:bg-white"
-                }`}
-              >
-                {t(item)}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ReadOnlyViewerTabs
+          tab={tab}
+          labels={{ weekly: t("weekly"), monthly: t("monthly") }}
+          onChange={setTab}
+        />
         <FilterBar
           allGrades={ALL_GRADES}
           eventTypes={eventTypesForFilter}
@@ -140,5 +118,46 @@ export function ReadOnlyViewerShell({
         )}
       </main>
     </>
+  );
+}
+
+function LoginLink({ label }: { label: string }) {
+  return (
+    <Link
+      href="/auth/login"
+      className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+    >
+      {label}
+    </Link>
+  );
+}
+
+function ReadOnlyViewerTabs({
+  tab,
+  labels,
+  onChange,
+}: {
+  tab: ReadOnlyTab;
+  labels: Record<ReadOnlyTab, string>;
+  onChange: (tab: ReadOnlyTab) => void;
+}) {
+  return (
+    <div className="relative flex flex-wrap items-center gap-2 overflow-hidden border-b border-[var(--sg-hairline)] bg-[var(--sg-surface-raised)] px-3 py-2 sm:px-6">
+      <div className="inline-flex rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface-2)] p-0.5 shadow-sm">
+        {TABS.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onChange(item)}
+            aria-pressed={tab === item}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              tab === item ? "bg-blue-600 text-white" : "text-neutral-700 hover:bg-white"
+            }`}
+          >
+            {labels[item]}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
