@@ -8,6 +8,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { PublicGanttView } from "@/components/public/PublicGanttView";
 import { PublicCalendarView } from "@/components/public/PublicCalendarView";
 import type { CalendarMonth } from "@/lib/views/calendar";
+import type { AgendaItem } from "@/lib/views/agenda-model";
 import {
   filterPublicEvents,
   hydratePublicEvents,
@@ -20,6 +21,19 @@ import { usePublicViewerEvents } from "@/lib/views/use-public-viewer-events";
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 const TABS = ["weekly", "monthly"] as const;
 type ReadOnlyTab = (typeof TABS)[number];
+
+interface UseReadOnlyViewerStateResult {
+  tab: ReadOnlyTab;
+  setTab: (tab: ReadOnlyTab) => void;
+  params: PublicViewerParams;
+  setParams: (params: PublicViewerParams) => void;
+  eventTypesForFilter: Array<{ key: string; labelHe: string; colorHex: string }>;
+  filteredEvents: PublicViewerEvent[];
+  hydratedEvents: AgendaItem[];
+  visibleGrades: number[];
+  weeklyParams: PublicViewerParams;
+  calendarMonths: CalendarMonth[] | null;
+}
 
 interface Props {
   schoolSlug: string;
@@ -49,6 +63,58 @@ export function ReadOnlyViewerShell({
 }: Props) {
   const t = useTranslations("schedule");
   const gantt = useTranslations("gantt");
+  const state = useReadOnlyViewerState({
+    schoolSlug,
+    initialParams,
+    year,
+    eventTypes,
+    initialEvents,
+    initialEventsSignature,
+  });
+
+  return (
+    <>
+      <AppHeader title={schoolName} rightSlot={<LoginLink label={t("login")} />} />
+      <main className="min-h-screen bg-[var(--sg-page)] pb-12">
+        <ReadOnlyViewerTabs
+          tab={state.tab}
+          labels={{ weekly: t("weekly"), monthly: t("monthly") }}
+          onChange={state.setTab}
+        />
+        <FilterBar
+          allGrades={ALL_GRADES}
+          eventTypes={state.eventTypesForFilter}
+          selectedGrades={state.params.grades}
+          selectedTypes={state.params.types}
+          searchQuery={state.params.q}
+          zoom={state.params.zoom}
+          zoomOptions={[]}
+          onChange={state.setParams}
+        />
+        <ReadOnlyViewerContent
+          tab={state.tab}
+          year={year}
+          schoolName={schoolName}
+          hydratedEvents={state.hydratedEvents}
+          filteredEvents={state.filteredEvents}
+          weeklyParams={state.weeklyParams}
+          visibleGrades={state.visibleGrades}
+          calendarMonths={state.calendarMonths}
+          emptyLabel={gantt("empty")}
+        />
+      </main>
+    </>
+  );
+}
+
+function useReadOnlyViewerState({
+  schoolSlug,
+  initialParams,
+  year,
+  eventTypes,
+  initialEvents,
+  initialEventsSignature,
+}: Omit<Props, "schoolName">): UseReadOnlyViewerStateResult {
   const [tab, setTab] = useState<ReadOnlyTab>("weekly");
   const [params, setParams] = useState(initialParams);
   const events = usePublicViewerEvents({ schoolSlug, initialEvents, initialEventsSignature });
@@ -78,46 +144,63 @@ export function ReadOnlyViewerShell({
     };
   }, [tab, year, hydratedEvents]);
 
+  return {
+    tab,
+    setTab,
+    params,
+    setParams,
+    eventTypesForFilter,
+    filteredEvents,
+    hydratedEvents,
+    visibleGrades,
+    weeklyParams,
+    calendarMonths,
+  };
+}
+
+interface ReadOnlyViewerContentProps {
+  tab: ReadOnlyTab;
+  year: PublicViewerYear;
+  schoolName: string;
+  hydratedEvents: AgendaItem[];
+  filteredEvents: PublicViewerEvent[];
+  weeklyParams: PublicViewerParams;
+  visibleGrades: number[];
+  calendarMonths: CalendarMonth[] | null;
+  emptyLabel: string;
+}
+
+function ReadOnlyViewerContent({
+  tab,
+  year,
+  schoolName,
+  hydratedEvents,
+  filteredEvents,
+  weeklyParams,
+  visibleGrades,
+  calendarMonths,
+  emptyLabel,
+}: ReadOnlyViewerContentProps) {
+  if (tab === "weekly") {
+    return (
+      <PublicGanttView
+        events={hydratedEvents}
+        serializedEvents={filteredEvents}
+        year={year}
+        params={weeklyParams}
+        grades={visibleGrades}
+        emptyLabel={emptyLabel}
+        onWeekChange={() => {}}
+      />
+    );
+  }
   return (
-    <>
-      <AppHeader title={schoolName} rightSlot={<LoginLink label={t("login")} />} />
-      <main className="min-h-screen bg-[var(--sg-page)] pb-12">
-        <ReadOnlyViewerTabs
-          tab={tab}
-          labels={{ weekly: t("weekly"), monthly: t("monthly") }}
-          onChange={setTab}
-        />
-        <FilterBar
-          allGrades={ALL_GRADES}
-          eventTypes={eventTypesForFilter}
-          selectedGrades={params.grades}
-          selectedTypes={params.types}
-          searchQuery={params.q}
-          zoom={params.zoom}
-          zoomOptions={[]}
-          onChange={setParams}
-        />
-        {tab === "weekly" && (
-          <PublicGanttView
-            events={hydratedEvents}
-            serializedEvents={filteredEvents}
-            year={year}
-            params={weeklyParams}
-            grades={visibleGrades}
-            emptyLabel={gantt("empty")}
-            onWeekChange={() => {}}
-          />
-        )}
-        {tab === "monthly" && (
-          <PublicCalendarView
-            months={calendarMonths ?? []}
-            year={year}
-            schoolName={schoolName}
-            onMonthChange={() => {}}
-          />
-        )}
-      </main>
-    </>
+    <PublicCalendarView
+      months={calendarMonths ?? []}
+      year={year}
+      schoolName={schoolName}
+      onMonthChange={() => {}}
+    />
   );
 }
 
