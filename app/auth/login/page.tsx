@@ -57,6 +57,12 @@ export default async function LoginPage({
             הרשמה
           </Link>
         </p>
+
+        <p className="text-center text-sm text-muted-foreground">
+          <Link href="/schedule" className="underline hover:text-foreground">
+            צפייה בלוח בלי להתחבר
+          </Link>
+        </p>
       </div>
     </div>
   );
