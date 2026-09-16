@@ -338,6 +338,11 @@
     "canceled": "Canceled",
     "updated": "Updated"
   },
+  "schedule": {
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "login": "Log in"
+  },
   "profile": {
     "title": "My profile",
     "icalTitle": "iCal subscriptions",

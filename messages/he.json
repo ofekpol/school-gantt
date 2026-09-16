@@ -338,6 +338,11 @@
     "canceled": "מבוטל",
     "updated": "עודכן"
   },
+  "schedule": {
+    "weekly": "שבועי",
+    "monthly": "חודשי",
+    "login": "התחברות"
+  },
   "profile": {
     "title": "הפרופיל שלי",
     "icalTitle": "מנויי יומן (iCal)",
