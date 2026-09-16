@@ -6,6 +6,11 @@ import { test, expect } from "@playwright/test";
  * uses the demo seed's single school, same as the other unauthenticated
  * public-viewer specs.
  */
+test.skip(
+  !process.env.DATABASE_URL,
+  "DATABASE_URL required — skipping DB-dependent e2e",
+);
+
 test("READONLY: login screen links to a 2-tab read-only schedule with working filters", async ({ page }) => {
   await page.goto("/auth/login");
 
@@ -30,9 +35,15 @@ test("READONLY: login screen links to a 2-tab read-only schedule with working fi
     await expect(tenBtn).toHaveAttribute("aria-pressed", "false");
   }).toPass({ timeout: 20_000 });
 
-  // Monthly tab switches without leaving /schedule.
-  await monthlyTab.click();
-  await expect(page).toHaveURL(/\/schedule$/);
+  // Monthly tab switches without leaving /schedule. Wait for hydration and
+  // assert the calendar view actually rendered (not just a no-op click).
+  await expect(async () => {
+    await monthlyTab.waitFor({ state: "visible" });
+    await monthlyTab.click();
+    await expect(page).toHaveURL(/\/schedule$/, { timeout: 5_000 });
+    // YearCalendarGrid renders navigation buttons with these Hebrew labels.
+    await expect(page.getByRole("button", { name: "חודש קודם" })).toBeVisible();
+  }).toPass({ timeout: 20_000 });
 
   // Login button returns to the real login page.
   await page.getByRole("link", { name: "התחברות" }).click();
