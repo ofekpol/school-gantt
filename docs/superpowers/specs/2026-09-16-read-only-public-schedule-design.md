@@ -61,11 +61,11 @@ Consumes the same `usePublicViewerData` hook. Renders:
   ```tsx
   <p className="text-center text-sm text-muted-foreground">
     <Link href="/schedule" className="underline hover:text-foreground">
-      {t("auth.viewReadOnly")}
+      צפייה בלוח בלי להתחבר
     </Link>
   </p>
   ```
-  (Exact placement/styling to match the existing card; this is illustrative, not final markup.)
+  **Amended post-implementation:** the rest of `app/auth/login/page.tsx` hardcodes its Hebrew strings directly in JSX rather than using `next-intl` (predates this feature). To avoid introducing a partial, inconsistent i18n usage into an otherwise fully-hardcoded file, this link's text is a plain hardcoded string matching the file's existing local convention — there is no `auth.viewReadOnly` i18n key. (Exact placement/styling to match the existing card; this is illustrative, not final markup.)
 - No middleware changes beyond the two `public-request.ts` list entries above.
 - The "Log in" button inside `ReadOnlyViewerShell` links to plain `/auth/login` — no `next` param. `getPostLoginRedirect` always sends an authenticated staff member to `/dashboard` (or `/auth/pending`, `/auth/change-password`, etc. per their status), so a `next` back to `/schedule` wouldn't be honored anyway.
 - Nothing about `/[school]`, `/[school]/calendar`, `/[school]/agenda`, or the staff/admin routes changes.
@@ -78,12 +78,11 @@ New keys, `he.json` first (primary), mirrored in `en.json`:
 
 | Key | he | en |
 |---|---|---|
-| `auth.viewReadOnly` | "צפייה בלוח בלי להתחבר" | "View the schedule without logging in" |
 | `schedule.weekly` | "שבועי" | "Weekly" |
 | `schedule.monthly` | "חודשי" | "Monthly" |
 | `schedule.login` | "התחברות" | "Log in" |
 
-(`auth` namespace exists in both files today but is empty `{}` — safe to populate. `schedule` is a new namespace.) Copy is easy to adjust at implementation/review time; the keys and structure are what matter for the spec.
+`schedule` is a new namespace, used by `ReadOnlyViewerShell`. The login-page link's own text is **not** an i18n key — see the amendment in "Auth / Login Wiring" above. (Neither `he.json` nor `en.json` actually had an `auth` namespace before this feature — it does not exist, so there's nothing to populate there.) Copy is easy to adjust at implementation/review time; the keys and structure are what matter for the spec.
 
 ---
 
