@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { AppHeader } from "@/components/AppHeader";
@@ -14,17 +14,12 @@ import {
   hydratePublicEvents,
   parsePublicViewerParams,
   serializePublicViewerParams,
-  shouldPollPublicViewer,
-  shouldRefreshPublicEvents,
   type PublicViewerEvent,
   type PublicViewerParams,
   type PublicViewerView,
 } from "@/lib/views/public-viewer";
 import type { PublicViewerEventType, PublicViewerYear } from "@/lib/views/public-viewer-data";
-import {
-  PublicViewerEventSignatureResponseSchema,
-  PublicViewerEventsResponseSchema,
-} from "@/lib/validations/public-viewer";
+import { usePublicViewerEvents } from "@/lib/views/use-public-viewer-events";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
@@ -67,16 +62,10 @@ export function PublicViewerShell({
   const agenda = useTranslations("agenda");
   const [view, setViewState] = useState(initialView);
   const [params, setParamsState] = useState(initialParams);
-  const [events, setEvents] = useState(initialEvents);
-  const [eventsSignature, setEventsSignature] = useState(initialEventsSignature);
-  const [isDocumentVisible, setIsDocumentVisible] = useState(
-    () => typeof document === "undefined" || !document.hidden,
-  );
-  const wasDocumentHidden = useRef(false);
+  const events = usePublicViewerEvents({ schoolSlug, initialEvents, initialEventsSignature });
   const [printMonthKey, setPrintMonthKey] = useState(() =>
     monthKeyForDate(parseWeekParam(initialParams.week ?? undefined)),
   );
-  const [, startTransition] = useTransition();
   const deferredView = useDeferredValue(view);
   const deferredParams = useDeferredValue(params);
   const deferredQuery = useDeferredValue(params.q);
@@ -112,36 +101,6 @@ export function PublicViewerShell({
     window.addEventListener("popstate", syncFromLocation);
     return () => window.removeEventListener("popstate", syncFromLocation);
   }, [schoolSlug]);
-
-  const refreshEvents = useCallback(() => {
-    void refreshEventsIfChanged(schoolSlug, eventsSignature).then((result) => {
-      if (!result) return;
-      startTransition(() => {
-        setEventsSignature(result.signature);
-        if (result.events) setEvents(result.events);
-      });
-    });
-  }, [eventsSignature, schoolSlug, startTransition]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      const visible = shouldPollPublicViewer(!document.hidden);
-      if (!visible) wasDocumentHidden.current = true;
-      setIsDocumentVisible(visible);
-      if (visible && wasDocumentHidden.current) {
-        wasDocumentHidden.current = false;
-        refreshEvents();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [refreshEvents]);
-
-  useEffect(() => {
-    if (!shouldPollPublicViewer(isDocumentVisible)) return;
-    const interval = window.setInterval(refreshEvents, 5_000);
-    return () => window.clearInterval(interval);
-  }, [isDocumentVisible, refreshEvents]);
 
   const updateUrl = useCallback(
     (nextView: PublicViewerView, nextParams: PublicViewerParams, mode: "push" | "replace") => {
@@ -320,36 +279,6 @@ function inactiveViewLoaders(view: PublicViewerView): Array<() => Promise<unknow
 type IdleCallbackWindow = Window & {
   requestIdleCallback?: (callback: IdleRequestCallback) => number;
 };
-
-async function refreshEvents(schoolSlug: string): Promise<PublicViewerEvent[] | null> {
-  const response = await fetch(`/api/v1/public/${schoolSlug}/events`);
-  if (!response.ok) return null;
-  const json = await response.json().catch(() => null);
-  const parsed = PublicViewerEventsResponseSchema.safeParse(json);
-  return parsed.success ? parsed.data.events : null;
-}
-
-async function refreshEventsIfChanged(
-  schoolSlug: string,
-  currentSignature: string,
-): Promise<{ signature: string; events: PublicViewerEvent[] | null } | null> {
-  const nextSignature = await refreshEventsSignature(schoolSlug);
-  if (!nextSignature) return null;
-  if (!shouldRefreshPublicEvents(currentSignature, nextSignature)) {
-    return { signature: nextSignature, events: null };
-  }
-
-  const events = await refreshEvents(schoolSlug);
-  return events ? { signature: nextSignature, events } : null;
-}
-
-async function refreshEventsSignature(schoolSlug: string): Promise<string | null> {
-  const response = await fetch(`/api/v1/public/${schoolSlug}/events/signature`);
-  if (!response.ok) return null;
-  const json = await response.json().catch(() => null);
-  const parsed = PublicViewerEventSignatureResponseSchema.safeParse(json);
-  return parsed.success ? parsed.data.signature : null;
-}
 
 function pathForView(schoolSlug: string, view: PublicViewerView): string {
   if (view === "calendar") return `/${schoolSlug}/calendar`;
