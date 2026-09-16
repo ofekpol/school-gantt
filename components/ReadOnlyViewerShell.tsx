@@ -50,7 +50,12 @@ interface Props {
  * changes the URL when switching tabs — unlike PublicViewerShell, whose tab
  * switch navigates to /[school]/calendar etc. Reusing that navigation here
  * would let a visitor tab their way out into the full 3-tab public viewer,
- * defeating the "only weekly and monthly" requirement.
+ * defeating the "only weekly and monthly" requirement. Note that `GanttWeekly`
+ * itself (reused unmodified here) still writes its own `?week=` query param
+ * via `replaceState` when a visitor pages between weeks inside the Weekly
+ * tab — that's pre-existing `GanttWeekly` behavior, harmless since it keeps
+ * the same pathname and doesn't violate the "no URL change on tab switch"
+ * requirement above.
  */
 export function ReadOnlyViewerShell({
   schoolSlug,

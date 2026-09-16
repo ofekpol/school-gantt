@@ -13,6 +13,7 @@ describe("shouldBypassAuthRefresh", () => {
 
   it("bypasses middleware auth refresh for the read-only public schedule", () => {
     expect(shouldBypassAuthRefresh("/schedule")).toBe(true);
+    expect(shouldBypassAuthRefresh("/schedule/")).toBe(true);
     expect(shouldBypassAuthRefresh("/schedule/anything")).toBe(false);
   });
 });

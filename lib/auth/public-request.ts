@@ -28,7 +28,7 @@ export function shouldBypassAuthRefresh(pathname: string): boolean {
   // Letting middleware redirect unauthenticated requests here keeps it instant.
 
   // Exact match for read-only public schedule
-  if (pathname === "/schedule") return true;
+  if (pathname === "/schedule" || pathname === "/schedule/") return true;
 
   // Prefix match for auth and API public routes
   if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;

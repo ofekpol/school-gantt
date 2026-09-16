@@ -70,8 +70,9 @@ export async function getSchoolById(
 }
 
 /**
- * Lists all schools, alphabetical by name. Used by the root landing page (`/`)
- * so unauthenticated visitors can pick a school.
+ * Lists all schools, alphabetical by name. Used by the unauthenticated
+ * /schedule page to resolve the single school in this deployment (no
+ * picker UI — this app is single-tenant in practice today).
  */
 export async function listSchools(): Promise<PublicSchoolRecord[]> {
   try {

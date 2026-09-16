@@ -1,8 +1,11 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReadOnlyViewerShell } from "@/components/ReadOnlyViewerShell";
 import type { PublicViewerEvent } from "@/lib/views/public-viewer";
+import he from "@/messages/he.json";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/schedule",
@@ -131,5 +134,21 @@ describe("ReadOnlyViewerShell", () => {
     await waitFor(() => {
       expect(screen.getByTestId("year-calendar-grid")).toBeInTheDocument();
     });
+  });
+});
+
+describe("ReadOnlyViewerShell i18n values", () => {
+  it("ships the expected Hebrew copy for the schedule namespace", () => {
+    expect(he.schedule.weekly).toBe("שבועי");
+    expect(he.schedule.monthly).toBe("חודשי");
+    expect(he.schedule.login).toBe("התחברות");
+  });
+
+  it("ships the expected Hebrew copy for the login page's no-auth schedule link", () => {
+    const loginPageSource = readFileSync(
+      join(process.cwd(), "app/auth/login/page.tsx"),
+      "utf-8",
+    );
+    expect(loginPageSource).toContain("צפייה בלוח בלי להתחבר");
   });
 });
