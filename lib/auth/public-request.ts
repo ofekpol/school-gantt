@@ -8,6 +8,7 @@ const PUBLIC_PREFIXES = [
   "/auth/change-password",
   "/invite/",
   "/ical/",
+  "/schedule",
   "/api/v1/auth/signin",
   "/api/v1/auth/register",
   "/api/v1/auth/login",
@@ -18,7 +19,7 @@ const PUBLIC_PREFIXES = [
 
 const RESERVED_PREFIXES = [
   "/auth", "/invite", "/ical", "/api", "/admin",
-  "/dashboard", "/events", "/profile", "/_next",
+  "/dashboard", "/events", "/profile", "/_next", "/schedule",
 ];
 
 export function shouldBypassAuthRefresh(pathname: string): boolean {
@@ -26,7 +27,12 @@ export function shouldBypassAuthRefresh(pathname: string): boolean {
   // already started streaming, so a redirect() there degrades to a client-side
   // <meta refresh> with a hardcoded ~1s delay instead of a real HTTP redirect.
   // Letting middleware redirect unauthenticated requests here keeps it instant.
-  if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
+  if (
+    PUBLIC_PREFIXES.some((prefix) =>
+      prefix.endsWith("/") ? pathname.startsWith(prefix) : pathname === prefix
+    )
+  )
+    return true;
   return (
     !RESERVED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
     /^\/[^/]+(\/calendar|\/agenda)?$/.test(pathname)
