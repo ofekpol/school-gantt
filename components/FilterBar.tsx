@@ -332,9 +332,9 @@ const chipBase: React.CSSProperties = {
 };
 
 const chipOn: React.CSSProperties = {
-  background: "var(--sg-ink)",
-  color: "var(--sg-bg)",
-  border: "1px solid var(--sg-ink)",
+  background: "var(--sg-studio-blue)",
+  color: "white",
+  border: "1px solid var(--sg-studio-blue)",
 };
 
 const chipOff: React.CSSProperties = {
