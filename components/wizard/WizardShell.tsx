@@ -334,7 +334,7 @@ export function WizardShell({
             </Field>
 
             <Field label={t5("title")}>
-              <div className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-2">
+              <div className="grid grid-cols-2 items-end gap-2">
                 <input
                   type="time"
                   value={startTime}
