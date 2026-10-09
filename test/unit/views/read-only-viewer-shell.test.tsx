@@ -149,6 +149,6 @@ describe("ReadOnlyViewerShell i18n values", () => {
       join(process.cwd(), "app/auth/login/page.tsx"),
       "utf-8",
     );
-    expect(loginPageSource).toContain("צפייה בלוח בלי להתחבר");
+    expect(loginPageSource).toContain("המשך כאורח (צפייה בלוח)");
   });
 });

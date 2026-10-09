@@ -14,7 +14,7 @@ test.skip(
 test("READONLY: login screen links to a 2-tab read-only schedule with working filters", async ({ page }) => {
   await page.goto("/auth/login");
 
-  await page.getByRole("link", { name: "צפייה בלוח בלי להתחבר" }).click();
+  await page.getByRole("link", { name: "המשך כאורח (צפייה בלוח)" }).click();
   await expect(page).toHaveURL(/\/schedule$/);
 
   // Exactly weekly + monthly tabs, no agenda.

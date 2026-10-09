@@ -1,5 +1,6 @@
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import Link from "next/link";
+import { GuestViewButton } from "@/components/auth/GuestViewButton";
 
 interface PageProps {
   searchParams: Promise<{ token?: string }>;
@@ -25,6 +26,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
             כניסה
           </Link>
         </p>
+        <GuestViewButton label="המשך כאורח (צפייה בלוח)" />
       </div>
     </div>
   );
