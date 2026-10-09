@@ -9,9 +9,11 @@ import { ExportToGoogleCalendarButton } from "@/components/ExportToGoogleCalenda
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
 import { CalendarViewToggle } from "./CalendarViewToggle";
 import { QuickEventDialog } from "./QuickEventDialog";
+import { ViewSwitchStatus } from "./ViewSwitchStatus";
 import { buildWeeklyModel, type WeeklyModel } from "@/lib/views/gantt-weekly";
 import { buildCalendarModel } from "@/lib/views/calendar";
 import type { CalendarMonth } from "@/lib/views/calendar";
+import type { CalendarPrintOptions } from "@/components/ExportToGoogleCalendarButton";
 import { toCalendarInputEvents } from "@/lib/views/calendar-event-input";
 import type { CalendarRange } from "@/lib/views/date-range";
 import type { EventType } from "@/components/wizard/WizardShell";
@@ -41,7 +43,6 @@ interface SerializedEvent {
 interface Props {
   view: "weekly" | "monthly";
   weeklyModel?: WeeklyModel;
-  months?: CalendarMonth[];
   events: SerializedEvent[];
   calendarRange: CalendarRange;
   schoolName: string;
@@ -59,7 +60,6 @@ interface Props {
 export function DashboardCalendar({
   view,
   weeklyModel,
-  months,
   events,
   calendarRange,
   schoolName,
@@ -71,6 +71,7 @@ export function DashboardCalendar({
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
+  const [isSwitchingView, startViewTransition] = useTransition();
   const t = useTranslations("dashboard");
   const [currentView, setCurrentView] = useState(view);
   const [visibleEvents, setVisibleEvents] = useState(events);
@@ -111,14 +112,7 @@ export function DashboardCalendar({
       new Date(),
     );
   }, [currentView, deferredSelectedGrades, hydratedEvents, weeklyModel]);
-  const displayMonths = useMemo(() => {
-    if (currentView !== "monthly") return months;
-    return buildCalendarModel({
-      year: calendarRange,
-      events: toCalendarInputEvents(hydratedEvents),
-    }).months;
-  }, [calendarRange, currentView, hydratedEvents, months]);
-  const printMonths = useMemo(
+  const buildMonths = useCallback(
     () =>
       buildCalendarModel({
         year: calendarRange,
@@ -126,7 +120,21 @@ export function DashboardCalendar({
       }).months,
     [calendarRange, hydratedEvents],
   );
-  const defaultPrintMonthIndex = monthIndexForKey(printMonths, printMonthKey);
+  // Months are only needed for the monthly grid and the print dialog, so build
+  // them on demand instead of on every render of the weekly view.
+  const displayMonths = useMemo(
+    () => (currentView === "monthly" ? buildMonths() : undefined),
+    [buildMonths, currentView],
+  );
+  const loadPrintCalendar = useCallback(async (): Promise<CalendarPrintOptions> => {
+    const printMonths = displayMonths ?? buildMonths();
+    return {
+      months: printMonths,
+      schoolName,
+      yearLabel: calendarRange.label,
+      defaultMonthIndex: monthIndexForKey(printMonths, printMonthKey),
+    };
+  }, [buildMonths, calendarRange.label, displayMonths, printMonthKey, schoolName]);
   const updatePrintMonth = useCallback((month: CalendarMonth) => {
     setPrintMonthKey(monthKey(month.year, month.monthIndex));
   }, []);
@@ -153,7 +161,7 @@ export function DashboardCalendar({
     if (next === currentView) return;
     const params = new URLSearchParams(window.location.search);
     params.set("view", next);
-    startTransition(() => setCurrentView(next));
+    startViewTransition(() => setCurrentView(next));
     window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
   }
 
@@ -270,7 +278,7 @@ export function DashboardCalendar({
   }
 
   return (
-    <div>
+    <div aria-busy={isSwitchingView}>
       <div className="flex flex-wrap items-center gap-3 px-6 pt-4">
         <div className="flex items-center gap-2">
           <CalendarViewToggle active={currentView === "weekly"} onClick={() => setView("weekly")}>
@@ -279,15 +287,11 @@ export function DashboardCalendar({
           <CalendarViewToggle active={currentView === "monthly"} onClick={() => setView("monthly")}>
             {t("viewMonthly")}
           </CalendarViewToggle>
+          <ViewSwitchStatus pending={isSwitchingView} />
         </div>
         <ExportToGoogleCalendarButton
           labelKey="shortButton"
-          printCalendar={{
-            months: printMonths,
-            schoolName,
-            yearLabel: calendarRange.label,
-            defaultMonthIndex: defaultPrintMonthIndex,
-          }}
+          loadPrintCalendar={loadPrintCalendar}
           buttonClassName="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--sg-hairline)] bg-[var(--sg-surface)] px-3.5 text-[13px] font-medium text-[var(--sg-ink-mute)] transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         />
       </div>

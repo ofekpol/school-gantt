@@ -9,9 +9,7 @@ import {
 } from "@/lib/events/queries";
 import { getSchoolById } from "@/lib/db/schools";
 import { getAgendaForSchool } from "@/lib/views/agenda";
-import type { AgendaItem } from "@/lib/views/agenda-model";
 import { buildWeeklyModel, parseWeekParam } from "@/lib/views/gantt-weekly";
-import { buildCalendarModel } from "@/lib/views/calendar";
 import { buildCalendarRangeFromEvents } from "@/lib/views/date-range";
 import { getDashboardGradeSelection } from "@/lib/dashboard/grade-filter";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
@@ -86,10 +84,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   );
 
   const calendarRange = buildCalendarRangeFromEvents(agendaItems);
-  const months = buildCalendarModel({
-    year: calendarRange,
-    events: agendaItems.map(toCalendarInput),
-  }).months;
 
   return (
     <main className="pb-12">
@@ -101,7 +95,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         <DashboardCalendar
           view={view}
           weeklyModel={weeklyModel}
-          months={months}
           events={serializedEvents}
           calendarRange={calendarRange}
           schoolName={school.name}
@@ -158,24 +151,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       </section>
     </main>
   );
-}
-
-function toCalendarInput(e: AgendaItem) {
-  return {
-    id: e.id,
-    title: e.title,
-    startAt: e.startAt,
-    endAt: e.endAt,
-    allDay: e.allDay,
-    grades: e.grades,
-    eventTypeKey: e.eventTypeKey,
-    eventTypeLabelHe: e.eventTypeLabelHe,
-    eventTypeColor: e.eventTypeColor,
-    eventTypeGlyph: e.eventTypeGlyph,
-    status: e.status ?? "approved",
-    isCanceled: e.isCanceled === true,
-    isUpdated: e.isUpdated === true,
-  };
 }
 
 function StatusBadge({ status, label }: { status: string; label: string }) {
