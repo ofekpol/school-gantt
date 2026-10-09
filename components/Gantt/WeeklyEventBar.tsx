@@ -140,5 +140,10 @@ const GLYPH_EMOJI: Record<string, string> = {
 function EventTypeGlyph({ glyph, color }: { glyph: string; color: string }) {
   const emoji = GLYPH_EMOJI[glyph];
   if (emoji) return <span style={{ fontSize: 11 }}>{emoji}</span>;
+  // Short text glyphs (e.g. "E", "T") render as text, matching the monthly chips,
+  // so they are not mistaken for grade dots on multi-grade bars.
+  if (glyph && glyph.length <= 2) {
+    return <span style={{ fontSize: 10, fontWeight: 700, color }}>{glyph}</span>;
+  }
   return <span style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />;
 }
