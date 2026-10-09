@@ -12,9 +12,10 @@
  */
 
 import {
-  getCalendarDateStatusDetail,
-  jerusalemDateKey,
+  createCalendarDateStatusResolver,
+  eventJerusalemDateRange,
   type CalendarDateStatus,
+  type CalendarDateStatusResolver,
 } from "@/lib/views/date-status";
 
 export interface CalendarInputEvent {
@@ -100,6 +101,19 @@ interface EventDateRange {
   endDate: string;
 }
 
+/** An event paired with its Jerusalem-local date span, computed once per build. */
+interface PlacedEvent {
+  event: CalendarInputEvent;
+  range: EventDateRange;
+}
+
+/** Everything per-build that month/week/day builders share. */
+interface BuildContext {
+  multiDay: PlacedEvent[];
+  eventsByDate: Map<string, CalendarChip[]>;
+  resolveStatus: CalendarDateStatusResolver;
+}
+
 interface SegmentCandidate {
   event: CalendarInputEvent;
   startColumn: number;
@@ -112,12 +126,17 @@ export function buildCalendarModel(input: BuildCalendarInput): CalendarModel {
   const start = parseIsoDate(input.year.startDate);
   const end = parseIsoDate(input.year.endDate);
   const visibleRange = getVisibleDateRange(start, end);
-  const eventsByDate = bucketEvents(input.events, visibleRange);
+  const placed = placeEvents(input.events);
+  const context: BuildContext = {
+    multiDay: placed.filter(({ range }) => range.startDate !== range.endDate),
+    eventsByDate: bucketSingleDayEvents(placed, visibleRange),
+    resolveStatus: createCalendarDateStatusResolver(input.events),
+  };
   const months: CalendarMonth[] = [];
   let cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
 
   while (cursor <= end) {
-    months.push(buildMonth(cursor, input.events, eventsByDate));
+    months.push(buildMonth(cursor, context));
     cursor = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1));
   }
 
@@ -136,53 +155,57 @@ function getVisibleDateRange(start: Date, end: Date): VisibleDateRange {
   };
 }
 
-function bucketEvents(
-  events: CalendarInputEvent[],
+function placeEvents(events: CalendarInputEvent[]): PlacedEvent[] {
+  const placed: PlacedEvent[] = [];
+  for (const event of events) {
+    const range = eventJerusalemDateRange(event);
+    if (range) placed.push({ event, range });
+  }
+  return placed;
+}
+
+function bucketSingleDayEvents(
+  placed: PlacedEvent[],
   visibleRange: VisibleDateRange,
 ): Map<string, CalendarChip[]> {
   const eventsByDate = new Map<string, CalendarChip[]>();
 
-  for (const evt of events) {
-    const range = getEventDateRange(evt);
-    if (!range || range.startDate !== range.endDate) continue;
+  for (const { event, range } of placed) {
+    if (range.startDate !== range.endDate) continue;
     if (range.startDate < visibleRange.startDate || range.startDate > visibleRange.endDate)
       continue;
 
     const list = eventsByDate.get(range.startDate) ?? [];
-    list.push(toCalendarChip(evt));
+    list.push(toCalendarChip(event));
     eventsByDate.set(range.startDate, list);
   }
 
   return eventsByDate;
 }
 
-function buildMonth(
-  monthStart: Date,
-  events: CalendarInputEvent[],
-  eventsByDate: Map<string, CalendarChip[]>,
-): CalendarMonth {
+function buildMonth(monthStart: Date, context: BuildContext): CalendarMonth {
   const year = monthStart.getUTCFullYear();
   const month = monthStart.getUTCMonth();
   const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   const cellCount = Math.ceil((monthStart.getUTCDay() + daysInMonth) / 7) * 7;
   const gridStart = monthStart.getTime() - monthStart.getUTCDay() * DAY_MS;
   const cells = Array.from({ length: cellCount }, (_, index) =>
-    buildDay(new Date(gridStart + index * DAY_MS), month, events, eventsByDate),
+    buildDay(new Date(gridStart + index * DAY_MS), month, context),
   );
   const weeks: CalendarWeek[] = [];
 
   for (let index = 0; index < cells.length; index += 7) {
-    weeks.push(buildWeek(cells.slice(index, index + 7), events));
+    weeks.push(buildWeek(cells.slice(index, index + 7), context.multiDay));
   }
 
   return { year, monthIndex: month + 1, weeks };
 }
 
-function buildWeek(days: CalendarDay[], events: CalendarInputEvent[]): CalendarWeek {
+function buildWeek(days: CalendarDay[], multiDay: PlacedEvent[]): CalendarWeek {
   const weekStart = days[0].date;
   const weekEnd = days[6].date;
-  const candidates = events
-    .flatMap((event) => toWeekSegmentCandidate(event, weekStart, weekEnd))
+  const candidates = multiDay
+    .flatMap((placed) => toWeekSegmentCandidate(placed, weekStart, weekEnd))
     .sort(
       (a, b) =>
         a.startColumn - b.startColumn ||
@@ -202,12 +225,10 @@ function buildWeek(days: CalendarDay[], events: CalendarInputEvent[]): CalendarW
 }
 
 function toWeekSegmentCandidate(
-  event: CalendarInputEvent,
+  { event, range }: PlacedEvent,
   weekStart: string,
   weekEnd: string,
 ): SegmentCandidate[] {
-  const range = getEventDateRange(event);
-  if (!range || range.startDate === range.endDate) return [];
   if (range.endDate < weekStart || range.startDate > weekEnd) return [];
 
   const startDate = maxDate(range.startDate, weekStart);
@@ -221,14 +242,6 @@ function toWeekSegmentCandidate(
       continuesAfter: range.endDate > weekEnd,
     },
   ];
-}
-
-function getEventDateRange(event: CalendarInputEvent): EventDateRange | null {
-  if (event.endAt <= event.startAt) return null;
-  return {
-    startDate: jerusalemDateKey(event.startAt),
-    endDate: jerusalemDateKey(new Date(event.endAt.getTime() - 1)),
-  };
 }
 
 function toCalendarChip(event: CalendarInputEvent): CalendarChip {
@@ -247,14 +260,9 @@ function toCalendarChip(event: CalendarInputEvent): CalendarChip {
   };
 }
 
-function buildDay(
-  value: Date,
-  month: number,
-  events: CalendarInputEvent[],
-  eventsByDate: Map<string, CalendarChip[]>,
-): CalendarDay {
+function buildDay(value: Date, month: number, context: BuildContext): CalendarDay {
   const date = isoDate(value);
-  const status = getCalendarDateStatusDetail(new Date(`${date}T12:00:00Z`), events);
+  const status = context.resolveStatus(new Date(`${date}T12:00:00Z`));
 
   return {
     date,
@@ -263,7 +271,7 @@ function buildDay(
     inMonth: value.getUTCMonth() === month,
     dateStatus: status.status,
     closureColor: status.closureColor,
-    events: eventsByDate.get(date) ?? [],
+    events: context.eventsByDate.get(date) ?? [],
   };
 }
 

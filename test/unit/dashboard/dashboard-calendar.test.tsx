@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
+import { buildCalendarModel } from "@/lib/views/calendar";
 import { buildWeeklyModel } from "@/lib/views/gantt-weekly";
 
 vi.mock("next/navigation", () => ({
@@ -36,6 +37,11 @@ vi.mock("@/components/Gantt/GanttWeekly", () => ({
     </div>
   ),
 }));
+
+vi.mock("@/lib/views/calendar", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/views/calendar")>();
+  return { ...actual, buildCalendarModel: vi.fn(actual.buildCalendarModel) };
+});
 
 vi.mock("@/components/YearCalendarGrid", () => ({
   YearCalendarGrid: () => <div />,
@@ -86,7 +92,6 @@ describe("DashboardCalendar grade filter", () => {
       <DashboardCalendar
         view="weekly"
         weeklyModel={weeklyModel}
-        months={[]}
         events={[]}
         calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
         schoolName="Demo School"
@@ -116,7 +121,6 @@ describe("DashboardCalendar grade filter", () => {
       <DashboardCalendar
         view="weekly"
         weeklyModel={weeklyModel}
-        months={[]}
         events={[]}
         calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
         schoolName="Demo School"
@@ -147,7 +151,6 @@ describe("DashboardCalendar read-only mode", () => {
       <DashboardCalendar
         view="weekly"
         weeklyModel={weeklyModel}
-        months={[]}
         events={[]}
         calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
         schoolName="Demo School"
@@ -188,7 +191,6 @@ describe("DashboardCalendar read-only mode", () => {
       <DashboardCalendar
         view="weekly"
         weeklyModel={weeklyModel}
-        months={[]}
         events={[]}
         calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
         schoolName="Demo School"
@@ -220,7 +222,6 @@ describe("DashboardCalendar canceled event dismissal", () => {
       <DashboardCalendar
         view="weekly"
         weeklyModel={weeklyModel}
-        months={[]}
         events={[
           {
             id: "evt-1",
@@ -255,5 +256,37 @@ describe("DashboardCalendar canceled event dismissal", () => {
 
     expect(globalThis.fetch).toHaveBeenCalledWith("/api/v1/events/evt-1", { method: "DELETE" });
     expect(screen.queryByText("Canceled event")).not.toBeInTheDocument();
+  });
+});
+
+describe("DashboardCalendar month grid cost", () => {
+  it("builds the month grid only once the monthly view is shown", async () => {
+    const user = userEvent.setup();
+    vi.mocked(buildCalendarModel).mockClear();
+    const weeklyModel = buildWeeklyModel(
+      new Date(Date.UTC(2026, 4, 24)),
+      [],
+      allGrades,
+      new Date(Date.UTC(2026, 4, 25)),
+    );
+
+    render(
+      <DashboardCalendar
+        view="weekly"
+        weeklyModel={weeklyModel}
+        events={[]}
+        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
+        schoolName="Demo School"
+        eventTypes={[]}
+        allowedGrades={allGrades}
+        selectedGrades={allGrades}
+      />,
+    );
+
+    expect(buildCalendarModel).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "viewMonthly" }));
+
+    expect(buildCalendarModel).toHaveBeenCalledTimes(1);
   });
 });

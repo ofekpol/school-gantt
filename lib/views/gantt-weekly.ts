@@ -9,7 +9,7 @@
 
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import {
-  getCalendarDateStatusDetail,
+  createCalendarDateStatusResolver,
   type CalendarDateStatus,
 } from "@/lib/views/date-status";
 
@@ -154,13 +154,14 @@ export function buildWeeklyModel(
 ): WeeklyModel {
   const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
   const todayStart = getWeekStart(today);
+  const resolveDayStatus = createCalendarDateStatusResolver(events);
 
   const days: WeeklyDay[] = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000);
     const isSameWeek = todayStart.getTime() === weekStart.getTime();
     const todayDow =
       (today.getUTCDay() - weekStart.getUTCDay() + 7) % 7;
-    const status = getCalendarDateStatusDetail(date, events);
+    const status = resolveDayStatus(date);
     return {
       date,
       dayIndex: i,
@@ -217,7 +218,8 @@ export function buildWeeklyModel(
     const scopedEvents = events.filter(
       (event) => event.eventTypeKey === "holiday" || event.grades.includes(grade),
     );
-    const statuses = days.map((day) => getCalendarDateStatusDetail(day.date, scopedEvents));
+    const resolveRowStatus = createCalendarDateStatusResolver(scopedEvents);
+    const statuses = days.map((day) => resolveRowStatus(day.date));
 
     return {
       grade,
