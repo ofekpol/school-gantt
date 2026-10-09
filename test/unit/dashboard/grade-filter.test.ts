@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   getDashboardGradeSelection,
   shouldShowDashboardGradeFilter,
+  visibleWeeklyGrades,
 } from "@/lib/dashboard/grade-filter";
 
 describe("dashboard grade filtering", () => {
-  it("defaults to every allowed grade when the URL has no grade filter", () => {
+  it("defaults to an empty focus when the URL has no grade selection", () => {
     const selection = getDashboardGradeSelection([9, 10, 11], undefined);
 
-    expect(selection.selectedGrades).toEqual([9, 10, 11]);
+    expect(selection.selectedGrades).toEqual([]);
     expect(selection.dataGrades).toEqual([9, 10, 11]);
   });
 
@@ -19,18 +20,24 @@ describe("dashboard grade filtering", () => {
     expect(selection.dataGrades).toEqual([9, 10, 11]);
   });
 
-  it("falls back to every allowed grade when requested grades are outside permission", () => {
+  it("drops requested grades outside the user's permission", () => {
     const selection = getDashboardGradeSelection([10], ["11"]);
 
-    expect(selection.selectedGrades).toEqual([10]);
+    expect(selection.selectedGrades).toEqual([]);
     expect(selection.dataGrades).toEqual([10]);
   });
 
-  it("preserves an explicit empty grade selection", () => {
+  it("treats the legacy 'none' value as an empty focus", () => {
     const selection = getDashboardGradeSelection([9, 10, 11], "none");
 
     expect(selection.selectedGrades).toEqual([]);
     expect(selection.dataGrades).toEqual([9, 10, 11]);
+  });
+
+  it("shows focused weekly rows, or every allowed grade when nothing is focused", () => {
+    expect(visibleWeeklyGrades([9, 10, 11], [])).toEqual([9, 10, 11]);
+    expect(visibleWeeklyGrades([9, 10, 11], [11, 9])).toEqual([11, 9]);
+    expect(visibleWeeklyGrades([9, 10], [12])).toEqual([9, 10]);
   });
 
   it("shows the picker only when more than one grade is allowed", () => {

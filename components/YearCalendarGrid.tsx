@@ -4,13 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CalendarClock, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarMonth } from "@/lib/views/calendar";
-import { readableTextColor } from "@/lib/colors";
+import {
+  DEFAULT_GRADE_COLORS,
+  sortBySelection,
+  type GradeColorMap,
+} from "@/lib/grade-colors";
+import { CalendarEventBody, calendarEventVisual } from "@/components/CalendarEventChip";
 import { findCurrentMonthStart, jerusalemDateKey } from "@/lib/views/current-period";
 
 interface Props {
   months: CalendarMonth[];
   yearLabel: string;
   schoolName: string;
+  gradeColors?: GradeColorMap;
+  /** Grades in focus; events outside them render dimmed. Empty = no focus. */
+  selectedGrades?: readonly number[];
   onDayClick?: (isoDate: string) => void;
   onEventClick?: (eventId: string) => void;
   onMonthChange?: (month: CalendarMonth) => void;
@@ -18,13 +26,16 @@ interface Props {
 
 /**
  * Renders one month at a time. Day cells show truncated event chips colored by
- * event type. Monochrome fallback uses the event-type glyph + dashed border so
- * chips remain distinguishable when printed in black-and-white.
+ * grade (multi-grade events get grade dots, whole-school events a dark fill).
+ * The event-type glyph stays on every chip so chips remain distinguishable when
+ * printed in black-and-white.
  */
 export function YearCalendarGrid({
   months,
   yearLabel,
   schoolName,
+  gradeColors = DEFAULT_GRADE_COLORS,
+  selectedGrades = NO_SELECTION,
   onDayClick,
   onEventClick,
   onMonthChange,
@@ -212,40 +223,37 @@ export function YearCalendarGrid({
                         className="relative z-10 space-y-0.5"
                         style={segmentSpace ? { marginTop: `${segmentSpace}px` } : undefined}
                       >
-                        {day.events.slice(0, 4).map((chip) => (
-                          <li
-                            key={chip.id}
-                            title={eventTitle(chip.title, chip.isCanceled, chip.isUpdated, tv)}
-                          >
-                            <button
-                              type="button"
-                              data-event-type={chip.eventTypeKey}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onEventClick?.(chip.eventId);
-                              }}
-                              disabled={!onEventClick}
-                              className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
-                              style={{
-                                backgroundColor: chip.isCanceled ? "#fee2e2" : chip.eventTypeColor,
-                                color: chip.isCanceled
-                                  ? "#991b1b"
-                                  : readableTextColor(chip.eventTypeColor),
-                                textDecoration: chip.isCanceled ? "line-through" : "none",
-                              }}
-                            >
-                              <span aria-hidden="true" className="event-chip-glyph">
-                                {chip.eventTypeGlyph}
-                              </span>
-                              <span className="truncate">{chip.title}</span>
-                              {(chip.isCanceled || chip.isUpdated) && (
-                                <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
-                                  {chip.isCanceled ? tv("canceled") : tv("updated")}
-                                </span>
-                              )}
-                            </button>
-                          </li>
-                        ))}
+                        {sortBySelection(day.events, selectedGrades)
+                          .slice(0, 4)
+                          .map((chip) => {
+                            const visual = calendarEventVisual(chip, gradeColors, selectedGrades);
+                            return (
+                              <li
+                                key={chip.id}
+                                title={eventTitle(chip.title, chip.isCanceled, chip.isUpdated, tv)}
+                              >
+                                <button
+                                  type="button"
+                                  data-event-type={chip.eventTypeKey}
+                                  data-dimmed={visual.highlighted ? undefined : "true"}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onEventClick?.(chip.eventId);
+                                  }}
+                                  disabled={!onEventClick}
+                                  className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
+                                  style={visual.style}
+                                >
+                                  <CalendarEventBody
+                                    glyph={chip.eventTypeGlyph}
+                                    title={chip.title}
+                                    dots={visual.dots}
+                                    badge={statusBadge(chip.isCanceled, chip.isUpdated, tv)}
+                                  />
+                                </button>
+                              </li>
+                            );
+                          })}
                         {day.events.length > 4 && (
                           <li className="text-[9px] text-neutral-500">
                             {tc("more", { count: day.events.length - 4 })}
@@ -256,50 +264,43 @@ export function YearCalendarGrid({
                   );
                 })}
                 <div className="pointer-events-none absolute inset-x-0 top-7 z-20 grid grid-cols-7 gap-y-0.5 px-1">
-                  {week.segments.map((segment) => (
-                    <button
-                      key={`${segment.id}-${segment.lane}`}
-                      type="button"
-                      data-calendar-segment="true"
-                      data-event-type={segment.eventTypeKey}
-                      data-continues-before={segment.continuesBefore || undefined}
-                      data-continues-after={segment.continuesAfter || undefined}
-                      title={eventTitle(segment.title, segment.isCanceled, segment.isUpdated, tv)}
-                      aria-label={eventTitle(
-                        segment.title,
-                        segment.isCanceled,
-                        segment.isUpdated,
-                        tv,
-                      )}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onEventClick?.(segment.eventId);
-                      }}
-                      disabled={!onEventClick}
-                      className={`calendar-event-segment pointer-events-auto flex min-w-0 items-center gap-1 truncate border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default ${
-                        segment.continuesBefore ? "rounded-s-none" : "rounded-s-sm"
-                      } ${segment.continuesAfter ? "rounded-e-none" : "rounded-e-sm"}`}
-                      style={{
-                        gridColumn: `${segment.startColumn + 1} / ${segment.endColumn + 2}`,
-                        gridRow: segment.lane + 1,
-                        backgroundColor: segment.isCanceled ? "#fee2e2" : segment.eventTypeColor,
-                        color: segment.isCanceled
-                          ? "#991b1b"
-                          : readableTextColor(segment.eventTypeColor),
-                        textDecoration: segment.isCanceled ? "line-through" : "none",
-                      }}
-                    >
-                      <span aria-hidden="true" className="event-chip-glyph">
-                        {segment.eventTypeGlyph}
-                      </span>
-                      <span className="truncate">{segment.title}</span>
-                      {(segment.isCanceled || segment.isUpdated) && (
-                        <span className="shrink-0 rounded-full bg-white/70 px-1 text-[8px] font-bold">
-                          {segment.isCanceled ? tv("canceled") : tv("updated")}
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                  {week.segments.map((segment) => {
+                    const visual = calendarEventVisual(segment, gradeColors, selectedGrades);
+                    const label = eventTitle(segment.title, segment.isCanceled, segment.isUpdated, tv);
+                    return (
+                      <button
+                        key={`${segment.id}-${segment.lane}`}
+                        type="button"
+                        data-calendar-segment="true"
+                        data-event-type={segment.eventTypeKey}
+                        data-dimmed={visual.highlighted ? undefined : "true"}
+                        data-continues-before={segment.continuesBefore || undefined}
+                        data-continues-after={segment.continuesAfter || undefined}
+                        title={label}
+                        aria-label={label}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onEventClick?.(segment.eventId);
+                        }}
+                        disabled={!onEventClick}
+                        className={`calendar-event-segment pointer-events-auto flex min-w-0 items-center gap-1 truncate border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default ${
+                          segment.continuesBefore ? "rounded-s-none" : "rounded-s-sm"
+                        } ${segment.continuesAfter ? "rounded-e-none" : "rounded-e-sm"}`}
+                        style={{
+                          gridColumn: `${segment.startColumn + 1} / ${segment.endColumn + 2}`,
+                          gridRow: segment.lane + 1,
+                          ...visual.style,
+                        }}
+                      >
+                        <CalendarEventBody
+                          glyph={segment.eventTypeGlyph}
+                          title={segment.title}
+                          dots={visual.dots}
+                          badge={statusBadge(segment.isCanceled, segment.isUpdated, tv)}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -364,6 +365,18 @@ function initialMonthIndex(months: CalendarMonth[], currentMonthStart: string | 
       `${month.year}-${String(month.monthIndex).padStart(2, "0")}-01` === currentMonthStart,
   );
   return index >= 0 ? index : 0;
+}
+
+const NO_SELECTION: readonly number[] = [];
+
+function statusBadge(
+  isCanceled: boolean | undefined,
+  isUpdated: boolean | undefined,
+  t: ReturnType<typeof useTranslations<"calendar">>,
+): string | null {
+  if (isCanceled) return t("canceled");
+  if (isUpdated) return t("updated");
+  return null;
 }
 
 function eventTitle(

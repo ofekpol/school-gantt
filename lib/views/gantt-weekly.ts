@@ -52,6 +52,8 @@ export interface WeeklyEventBar {
   eventTypeColor: string;
   eventTypeGlyph: string;
   eventTypeLabelHe: string;
+  /** All grades of the underlying event (a bar is repeated per grade row). */
+  grades: number[];
   status: "approved" | "pending" | "draft" | "rejected" | "canceled";
   isCanceled?: boolean;
   isUpdated?: boolean;
@@ -205,6 +207,7 @@ export function buildWeeklyModel(
         eventTypeColor: e.eventTypeColor,
         eventTypeGlyph: e.eventTypeGlyph,
         eventTypeLabelHe: e.eventTypeLabelHe,
+        grades: e.grades,
         status: e.isCanceled ? "canceled" as const : "approved" as const,
         isCanceled: e.isCanceled,
         isUpdated: e.isUpdated,

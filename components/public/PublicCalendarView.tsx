@@ -5,11 +5,13 @@ import { LoadingPanel } from "@/components/LoadingPanel";
 import { YearCalendarGrid } from "@/components/YearCalendarGrid";
 import type { buildCalendarModel } from "@/lib/views/calendar";
 import type { PublicViewerYear } from "@/lib/views/public-viewer-data";
+import type { GradeColorMap } from "@/lib/grade-colors";
 
 interface Props {
   months: ReturnType<typeof buildCalendarModel>["months"];
   year: PublicViewerYear;
   schoolName: string;
+  gradeColors?: GradeColorMap;
   onMonthChange: (month: { year: number; monthIndex: number }) => void;
 }
 
@@ -17,6 +19,7 @@ export const PublicCalendarView = memo(function PublicCalendarView({
   months,
   year,
   schoolName,
+  gradeColors,
   onMonthChange,
 }: Props) {
   if (months.length === 0) return <LoadingPanel compact />;
@@ -26,6 +29,7 @@ export const PublicCalendarView = memo(function PublicCalendarView({
       months={months}
       yearLabel={year.label}
       schoolName={schoolName}
+      gradeColors={gradeColors}
       onMonthChange={onMonthChange}
     />
   );

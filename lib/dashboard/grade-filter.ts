@@ -11,17 +11,19 @@ export function getDashboardGradeSelection(
 ): DashboardGradeSelection {
   const allowed = normalizeAllowedGrades(allowedGrades);
   const requested = parseGradeParams(rawGrades);
-  const selected = requested.filter((grade) => allowed.includes(grade));
-  const selectedGrades = hasExplicitEmptySelection(rawGrades)
-    ? []
-    : selected.length > 0
-      ? selected
-      : allowed;
 
   return {
-    selectedGrades,
+    // Focus selection: empty means "no focus" (every allowed grade shown).
+    selectedGrades: requested.filter((grade) => allowed.includes(grade)),
     dataGrades: allowed,
   };
+}
+
+/** Weekly rows: the focused grades, or every allowed grade when nothing is focused. */
+export function visibleWeeklyGrades(allowedGrades: number[], selectedGrades: number[]): number[] {
+  const allowed = normalizeAllowedGrades(allowedGrades);
+  const selected = selectedGrades.filter((grade) => allowed.includes(grade));
+  return selected.length > 0 ? selected : allowed;
 }
 
 export function shouldShowDashboardGradeFilter(allowedGrades: number[]): boolean {
@@ -41,9 +43,4 @@ function parseGradeParams(rawGrades: string | string[] | undefined): number[] {
     .filter((grade) => Number.isInteger(grade) && VALID_GRADES.has(grade));
 
   return Array.from(new Set(parsed)).sort((a, b) => a - b);
-}
-
-function hasExplicitEmptySelection(rawGrades: string | string[] | undefined): boolean {
-  const values = Array.isArray(rawGrades) ? rawGrades : rawGrades ? [rawGrades] : [];
-  return values.includes("none");
 }

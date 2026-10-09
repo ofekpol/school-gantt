@@ -20,6 +20,7 @@ import {
 } from "@/lib/views/public-viewer";
 import type { PublicViewerEventType, PublicViewerYear } from "@/lib/views/public-viewer-data";
 import { usePublicViewerEvents } from "@/lib/views/use-public-viewer-events";
+import type { GradeColorMap } from "@/lib/grade-colors";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
@@ -43,6 +44,7 @@ interface Props {
   initialParams: PublicViewerParams;
   year: PublicViewerYear;
   eventTypes: PublicViewerEventType[];
+  gradeColors?: GradeColorMap;
   initialEvents: PublicViewerEvent[];
   initialEventsSignature: string;
 }
@@ -54,6 +56,7 @@ export function PublicViewerShell({
   initialParams,
   year,
   eventTypes,
+  gradeColors,
   initialEvents,
   initialEventsSignature,
 }: Props) {
@@ -141,9 +144,10 @@ export function PublicViewerShell({
       months,
       schoolName,
       yearLabel: year.label,
+      gradeColors,
       defaultMonthIndex: monthIndexForKey(months, printMonthKey),
     };
-  }, [loadCalendarMonths, printMonthKey, schoolName, year.label]);
+  }, [gradeColors, loadCalendarMonths, printMonthKey, schoolName, year.label]);
 
   useEffect(() => {
     if (view === "gantt" && params.zoom === "week") {
@@ -208,6 +212,7 @@ export function PublicViewerShell({
             year={year}
             params={params}
             grades={visibleGrades}
+            gradeColors={gradeColors}
             emptyLabel={gantt("empty")}
             onWeekChange={(weekStart) => setPrintMonthKey(monthKeyForDate(weekStart))}
           />
@@ -217,6 +222,7 @@ export function PublicViewerShell({
             months={calendarMonths ?? []}
             year={year}
             schoolName={schoolName}
+            gradeColors={gradeColors}
             onMonthChange={updatePrintMonth}
           />
         )}

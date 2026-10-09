@@ -17,6 +17,7 @@ import {
 } from "@/lib/views/public-viewer";
 import type { PublicViewerEventType, PublicViewerYear } from "@/lib/views/public-viewer-data";
 import { usePublicViewerEvents } from "@/lib/views/use-public-viewer-events";
+import type { GradeColorMap } from "@/lib/grade-colors";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 const TABS = ["weekly", "monthly"] as const;
@@ -41,6 +42,7 @@ interface Props {
   initialParams: PublicViewerParams;
   year: PublicViewerYear;
   eventTypes: PublicViewerEventType[];
+  gradeColors?: GradeColorMap;
   initialEvents: PublicViewerEvent[];
   initialEventsSignature: string;
 }
@@ -63,6 +65,7 @@ export function ReadOnlyViewerShell({
   initialParams,
   year,
   eventTypes,
+  gradeColors,
   initialEvents,
   initialEventsSignature,
 }: Props) {
@@ -105,6 +108,7 @@ export function ReadOnlyViewerShell({
           weeklyParams={state.weeklyParams}
           visibleGrades={state.visibleGrades}
           calendarMonths={state.calendarMonths}
+          gradeColors={gradeColors}
           emptyLabel={gantt("empty")}
         />
       </main>
@@ -172,6 +176,7 @@ interface ReadOnlyViewerContentProps {
   weeklyParams: PublicViewerParams;
   visibleGrades: number[];
   calendarMonths: CalendarMonth[] | null;
+  gradeColors?: GradeColorMap;
   emptyLabel: string;
 }
 
@@ -184,6 +189,7 @@ function ReadOnlyViewerContent({
   weeklyParams,
   visibleGrades,
   calendarMonths,
+  gradeColors,
   emptyLabel,
 }: ReadOnlyViewerContentProps) {
   if (tab === "weekly") {
@@ -194,6 +200,7 @@ function ReadOnlyViewerContent({
         year={year}
         params={weeklyParams}
         grades={visibleGrades}
+        gradeColors={gradeColors}
         emptyLabel={emptyLabel}
         onWeekChange={() => {}}
       />
@@ -204,6 +211,7 @@ function ReadOnlyViewerContent({
       months={calendarMonths ?? []}
       year={year}
       schoolName={schoolName}
+      gradeColors={gradeColors}
       onMonthChange={() => {}}
     />
   );

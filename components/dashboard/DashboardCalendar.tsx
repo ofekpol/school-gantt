@@ -17,8 +17,12 @@ import type { CalendarPrintOptions } from "@/components/ExportToGoogleCalendarBu
 import { toCalendarInputEvents } from "@/lib/views/calendar-event-input";
 import type { CalendarRange } from "@/lib/views/date-range";
 import type { EventType } from "@/components/wizard/WizardShell";
-import { formatGradeLabel } from "@/lib/grades";
-import { shouldShowDashboardGradeFilter } from "@/lib/dashboard/grade-filter";
+import {
+  shouldShowDashboardGradeFilter,
+  visibleWeeklyGrades,
+} from "@/lib/dashboard/grade-filter";
+import type { GradeColorMap } from "@/lib/grade-colors";
+import { GradeSelector } from "./GradeSelector";
 
 interface SerializedEvent {
   id: string;
@@ -48,14 +52,17 @@ interface Props {
   schoolName: string;
   eventTypes: EventType[];
   allowedGrades: number[];
+  /** Grades in focus. Empty = no focus (every grade shown normally). */
   selectedGrades: number[];
+  gradeColors: GradeColorMap;
   canCreateEvents?: boolean;
 }
 
 /**
  * Dashboard calendar wrapper — segmented toggle (weekly/monthly) + day-clicks
  * open a compact event dialog with `date` pre-filled.
- * Toggle state is URL-driven via `?view=`.
+ * Toggle state is URL-driven via `?view=`. The grade selection is a focus, not a
+ * filter: weekly shows only the selected grade rows, monthly dims other grades.
  */
 export function DashboardCalendar({
   view,
@@ -66,6 +73,7 @@ export function DashboardCalendar({
   eventTypes,
   allowedGrades,
   selectedGrades,
+  gradeColors,
   canCreateEvents = true,
 }: Props) {
   const router = useRouter();
@@ -85,10 +93,7 @@ export function DashboardCalendar({
     [allowedGrades],
   );
   const showGradeFilter = shouldShowDashboardGradeFilter(allowedGradeOptions);
-  const displayEvents = useMemo(
-    () => visibleEvents.filter((event) => eventMatchesGrades(event, deferredSelectedGrades)),
-    [deferredSelectedGrades, visibleEvents],
-  );
+  const displayEvents = visibleEvents;
   const eventMap = useMemo(
     () => new Map(displayEvents.map((event) => [event.id, event])),
     [displayEvents],
@@ -108,10 +113,10 @@ export function DashboardCalendar({
     return buildWeeklyModel(
       weeklyModel.weekStart,
       hydratedEvents,
-      deferredSelectedGrades,
+      visibleWeeklyGrades(allowedGradeOptions, deferredSelectedGrades),
       new Date(),
     );
-  }, [currentView, deferredSelectedGrades, hydratedEvents, weeklyModel]);
+  }, [allowedGradeOptions, currentView, deferredSelectedGrades, hydratedEvents, weeklyModel]);
   const buildMonths = useCallback(
     () =>
       buildCalendarModel({
@@ -132,9 +137,10 @@ export function DashboardCalendar({
       months: printMonths,
       schoolName,
       yearLabel: calendarRange.label,
+      gradeColors,
       defaultMonthIndex: monthIndexForKey(printMonths, printMonthKey),
     };
-  }, [buildMonths, calendarRange.label, displayMonths, printMonthKey, schoolName]);
+  }, [buildMonths, calendarRange.label, displayMonths, gradeColors, printMonthKey, schoolName]);
   const updatePrintMonth = useCallback((month: CalendarMonth) => {
     setPrintMonthKey(monthKey(month.year, month.monthIndex));
   }, []);
@@ -165,28 +171,11 @@ export function DashboardCalendar({
     window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
   }
 
-  function setGradeFilter(grade: number) {
-    const current = new Set(selectedGradeState);
-    if (current.has(grade)) current.delete(grade);
-    else current.add(grade);
-    updateGradeSelection(Array.from(current).sort((a, b) => a - b));
-  }
-
-  function selectAllGrades() {
-    updateGradeSelection(
-      selectedGradeState.length === allowedGradeOptions.length ? [] : allowedGradeOptions,
-    );
-  }
-
   function updateGradeSelection(nextGrades: number[]) {
     const params = new URLSearchParams(window.location.search);
     params.delete("grades");
-    if (nextGrades.length === 0) params.set("grades", "none");
-    else if (nextGrades.length < allowedGradeOptions.length) {
-      for (const grade of nextGrades) params.append("grades", String(grade));
-    }
+    for (const grade of nextGrades) params.append("grades", String(grade));
     setSelectedGradeState(nextGrades);
-    if (selectedEventId) setSelectedEventId(null);
     const query = params.toString();
     window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
   }
@@ -227,11 +216,8 @@ export function DashboardCalendar({
       isUpdated: true,
     };
     setVisibleEvents((current) =>
-      eventMatchesGrades(updatedEvent, selectedGradeState)
-        ? current.map((event) => (event.id === selectedEvent.id ? updatedEvent : event))
-        : current.filter((event) => event.id !== selectedEvent.id),
+      current.map((event) => (event.id === selectedEvent.id ? updatedEvent : event)),
     );
-    if (!eventMatchesGrades(updatedEvent, selectedGradeState)) setSelectedEventId(null);
     refreshInBackground();
     return true;
   }
@@ -269,10 +255,6 @@ export function DashboardCalendar({
   }
 
   function addPublishedEvent(event: SerializedEvent) {
-    if (!eventMatchesGrades(event, selectedGradeState)) {
-      refreshInBackground();
-      return;
-    }
     setVisibleEvents((current) => [event, ...current.filter((item) => item.id !== event.id)]);
     refreshInBackground();
   }
@@ -297,41 +279,12 @@ export function DashboardCalendar({
       </div>
 
       {showGradeFilter && (
-        <div className="flex flex-wrap items-center gap-2 px-6 pt-4">
-          <span className="text-sm font-medium text-neutral-600">{t("gradeFilterLabel")}</span>
-          <button
-            type="button"
-            onClick={selectAllGrades}
-            className="h-8 rounded-md border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-600 transition-colors hover:bg-neutral-50"
-          >
-            {t(
-              selectedGradeState.length === allowedGradeOptions.length
-                ? "clearAllGrades"
-                : "selectAllGrades",
-            )}
-          </button>
-          <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
-            {allowedGradeOptions.map((grade) => {
-              const active = selectedGradeState.includes(grade);
-              return (
-                <button
-                  key={grade}
-                  type="button"
-                  onClick={() => setGradeFilter(grade)}
-                  aria-pressed={active}
-                  aria-label={t("gradeFilterOption", { grade: formatGradeLabel(grade) })}
-                  className={`h-8 min-w-11 rounded-md border px-3 text-sm font-semibold transition-colors ${
-                    active
-                      ? "border-blue-600 bg-blue-600 text-white"
-                      : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
-                  }`}
-                >
-                  {formatGradeLabel(grade)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <GradeSelector
+          grades={allowedGradeOptions}
+          selected={selectedGradeState}
+          gradeColors={gradeColors}
+          onChange={updateGradeSelection}
+        />
       )}
 
       {canCreateEvents && (
@@ -350,6 +303,7 @@ export function DashboardCalendar({
         <GanttWeekly
           model={displayWeeklyModel}
           events={displayEvents}
+          gradeColors={gradeColors}
           onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
           onWeekChange={(weekStart) =>
@@ -363,6 +317,8 @@ export function DashboardCalendar({
           months={displayMonths}
           yearLabel={calendarRange.label}
           schoolName={schoolName}
+          gradeColors={gradeColors}
+          selectedGrades={deferredSelectedGrades}
           onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
           onMonthChange={updatePrintMonth}
@@ -398,15 +354,6 @@ export function DashboardCalendar({
         onClose={() => setSelectedEventId(null)}
       />
     </div>
-  );
-}
-
-function eventMatchesGrades(
-  event: Pick<SerializedEvent, "grades" | "eventTypeKey">,
-  selectedGrades: number[],
-) {
-  return (
-    event.eventTypeKey === "holiday" || event.grades.some((grade) => selectedGrades.includes(grade))
   );
 }
 

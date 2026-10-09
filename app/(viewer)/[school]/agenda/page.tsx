@@ -23,6 +23,7 @@ export default async function AgendaPage({ params, searchParams }: PageProps) {
       initialParams={parsePublicViewerParams(toUrlSearchParams(sp))}
       year={data.year}
       eventTypes={data.eventTypes}
+      gradeColors={data.gradeColors}
       initialEvents={data.events}
       initialEventsSignature={data.eventSignature}
     />

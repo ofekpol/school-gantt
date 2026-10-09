@@ -11,6 +11,7 @@ import {
   type PublicViewerParams,
 } from "@/lib/views/public-viewer";
 import type { PublicViewerYear } from "@/lib/views/public-viewer-data";
+import type { GradeColorMap } from "@/lib/grade-colors";
 
 interface Props {
   events: ReturnType<typeof hydratePublicEvents>;
@@ -18,6 +19,7 @@ interface Props {
   year: PublicViewerYear;
   params: PublicViewerParams;
   grades: number[];
+  gradeColors?: GradeColorMap;
   emptyLabel: string;
   onWeekChange: (weekStart: Date) => void;
 }
@@ -28,6 +30,7 @@ export const PublicGanttView = memo(function PublicGanttView({
   year,
   params,
   grades,
+  gradeColors,
   emptyLabel,
   onWeekChange,
 }: Props) {
@@ -42,6 +45,7 @@ export const PublicGanttView = memo(function PublicGanttView({
       <GanttWeekly
         model={model}
         events={serializedEvents}
+        gradeColors={gradeColors}
         navigationMode="local"
         onWeekChange={onWeekChange}
       />

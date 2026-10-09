@@ -1,6 +1,8 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { getSchoolBySlug, type PublicSchoolRecord } from "@/lib/db/schools";
+import { getGradeColors } from "@/lib/db/grade-colors";
+import type { GradeColorMap } from "@/lib/grade-colors";
 import { listEventTypes } from "@/lib/events/queries";
 import { getAgendaForSchool, getAgendaSignatureForSchool } from "@/lib/views/agenda";
 import { toPublicEventPayload, type PublicViewerEvent } from "@/lib/views/public-viewer";
@@ -26,6 +28,7 @@ export interface PublicViewerData {
   school: PublicSchoolRecord;
   year: PublicViewerYear;
   eventTypes: PublicViewerEventType[];
+  gradeColors: GradeColorMap;
   events: PublicViewerEvent[];
   eventSignature: string;
 }
@@ -51,8 +54,9 @@ async function loadPublicViewerDataUncached(slug: string): Promise<PublicViewerD
   const school = await getSchoolBySlug(slug);
   if (!school) return null;
 
-  const [eventTypes, events, eventSignature] = await Promise.all([
+  const [eventTypes, gradeColors, events, eventSignature] = await Promise.all([
     listEventTypes(school.id),
+    getGradeColors(school.id),
     getAgendaForSchool(school.id, {}),
     getAgendaSignatureForSchool(school.id, {}),
   ]);
@@ -62,6 +66,7 @@ async function loadPublicViewerDataUncached(slug: string): Promise<PublicViewerD
     school,
     year,
     eventTypes,
+    gradeColors,
     events: events.map(toPublicEventPayload),
     eventSignature,
   };
