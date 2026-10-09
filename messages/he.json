@@ -200,6 +200,17 @@
       "errorRequired": "נא להזין סיבת דחייה",
       "errorGeneric": "אירעה שגיאה",
       "isRevision": "עדכון של אירוע מאושר"
+    },
+    "gradeColors": {
+      "title": "צבעי שכבות",
+      "description": "כל אירוע בלוח השנה נצבע לפי השכבה שלו. אירוע של כמה שכבות מוצג עם נקודות צבע, ואירוע של כל בית הספר בצבע כהה.",
+      "gradeLabel": "שכבה {grade}",
+      "colorOption": "צבע {color} לשכבה {grade}",
+      "duplicate": "זהה לצבע של שכבה {grade}",
+      "save": "שמירה",
+      "reset": "שחזור ברירת מחדל",
+      "saved": "נשמר",
+      "error": "השמירה נכשלה"
     }
   },
   "invite": {
@@ -232,10 +243,8 @@
     "updated": "עודכן",
     "viewWeekly": "תצוגה שבועית",
     "viewMonthly": "תצוגה חודשית",
-    "gradeFilterLabel": "שכבות",
-    "gradeFilterOption": "הצג שכבה {grade}",
-    "selectAllGrades": "בחר הכל",
-    "clearAllGrades": "נקה הכל",
+    "gradeFilterLabel": "השכבות שלי",
+    "gradeFilterOption": "סמן שכבה {grade}",
     "confirmNewEventTitle": "אירוע חדש",
     "confirmNewEvent": "ליצור אירוע חדש בתאריך {date}?",
     "myDrafts": "האירועים שלי",
@@ -243,7 +252,9 @@
       "draft": "טיוטה",
       "approved": "פורסם",
       "canceled": "מבוטל"
-    }
+    },
+    "gradeSelectionHint": "אפשר לבחור שכבה אחת או יותר",
+    "clearGradeSelection": "נקה בחירה"
   },
   "agenda": {
     "subtitle": "סדר יום בית-ספרי",

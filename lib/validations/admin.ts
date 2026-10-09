@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GRADE_COLOR_OPTIONS } from "@/lib/grade-colors";
 
 /**
  * Zod validation schemas for /api/v1/admin/* routes.
@@ -77,3 +78,25 @@ export const AcademicYearSchema = z.object({
 });
 
 export type AcademicYearInput = z.infer<typeof AcademicYearSchema>;
+
+const GradeColorEntrySchema = z.object({
+  grade: z.number().int().min(7).max(12),
+  colorHex: z.enum(GRADE_COLOR_OPTIONS),
+});
+
+/** PUT /api/v1/admin/grade-colors — colors must come from the curated palette. */
+export const GradeColorsUpdateSchema = z.object({
+  colors: z
+    .array(GradeColorEntrySchema)
+    .min(1)
+    .max(6)
+    .refine((rows) => new Set(rows.map((row) => row.grade)).size === rows.length, {
+      message: "Duplicate grade",
+    }),
+});
+
+export type GradeColorsUpdateInput = z.infer<typeof GradeColorsUpdateSchema>;
+
+export const GradeColorsResponseSchema = z.object({
+  colors: z.record(z.string(), z.string().regex(/^#[0-9A-Fa-f]{6}$/)),
+});
