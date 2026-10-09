@@ -208,6 +208,7 @@
     "register": "Create a new account",
     "loginGoogle": "Sign in with Google",
     "login": "Sign in with an existing account",
+    "guest": "Continue as guest (view the calendar)",
     "unavailableTitle": "Invite unavailable",
     "unavailableBody": "This invite link is expired, already used, or no longer exists."
   },

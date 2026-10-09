@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getInviteByToken } from "@/lib/db/invites";
+import { GuestViewButton } from "@/components/auth/GuestViewButton";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 interface PageProps {
@@ -27,6 +28,7 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
         <div className="w-full max-w-sm space-y-3 rounded-lg border p-8 text-center shadow-sm">
           <h1 className="text-2xl font-bold">{t("unavailableTitle")}</h1>
           <p className="text-sm text-muted-foreground">{t("unavailableBody")}</p>
+          <GuestViewButton label={t("guest")} />
         </div>
       </main>
     );
@@ -60,6 +62,7 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
           >
             {t("login")}
           </Link>
+          <GuestViewButton label={t("guest")} />
         </div>
       </div>
     </main>

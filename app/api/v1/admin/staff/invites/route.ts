@@ -35,11 +35,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
   }
 
+  // Scopes only narrow what an editor may edit; viewers/admins always see every class.
+  const isEditor = parsed.data.role === "editor";
   const result = await createInvite({
     schoolId: user.schoolId,
     role: parsed.data.role,
-    gradeScopes: parsed.data.gradeScopes ?? [],
-    eventTypeScopes: parsed.data.eventTypeScopes ?? [],
+    gradeScopes: isEditor ? (parsed.data.gradeScopes ?? []) : [],
+    eventTypeScopes: isEditor ? (parsed.data.eventTypeScopes ?? []) : [],
     expiresInHours: parsed.data.expiresInHours,
     multiUse: parsed.data.multiUse,
     createdBy: user.id,
