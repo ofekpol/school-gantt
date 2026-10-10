@@ -13,6 +13,7 @@
 import { and, eq } from "drizzle-orm";
 import { withSchool } from "@/lib/db/client";
 import * as schema from "@/lib/db/schema";
+import { addCalendarDays, jerusalemWallClockToIso } from "@/lib/datetime";
 import { seedDb } from "../db/seed";
 
 export const PREVIEW_USER_IDS: Record<string, string> = {
@@ -83,8 +84,9 @@ async function insertDemoEvents(schoolId: string, createdBy: string, startYear: 
     const typeId = new Map(types.map((type) => [type.key, type.id]));
     await tx.delete(schema.events).where(and(eq(schema.events.schoolId, schoolId), eq(schema.events.createdBy, createdBy)));
     for (const demo of buildDemoEvents(startYear)) {
-      const start = new Date(`${demo.date}T00:00:00+03:00`);
-      const end = new Date(start.getTime() + demo.days * 24 * 60 * 60 * 1000 - 60 * 1000);
+      const start = new Date(jerusalemWallClockToIso(demo.date, "00:00"));
+      const lastDay = addCalendarDays(demo.date, demo.days - 1);
+      const end = new Date(jerusalemWallClockToIso(lastDay, "23:59"));
       const [row] = await tx
         .insert(schema.events)
         .values({ schoolId, eventTypeId: typeId.get(demo.typeKey)!, title: demo.title, startAt: start, endAt: end, allDay: true, status: "approved", createdBy })
