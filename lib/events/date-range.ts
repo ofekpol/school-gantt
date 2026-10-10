@@ -1,3 +1,5 @@
+import { jerusalemWallClockToIso } from "@/lib/datetime";
+
 export interface EventTimeRangeInput {
   startDate: string;
   endDate?: string;
@@ -19,13 +21,13 @@ export function buildEventTimeRange(input: EventTimeRangeInput): EventTimeRange 
 
   if (input.allDay) {
     return {
-      startAt: `${input.startDate}T00:00:00+02:00`,
-      endAt: `${endDate}T23:59:59+02:00`,
+      startAt: jerusalemWallClockToIso(input.startDate, "00:00:00"),
+      endAt: jerusalemWallClockToIso(endDate, "23:59:59"),
     };
   }
 
   return {
-    startAt: `${input.startDate}T${input.startTime}:00+02:00`,
-    endAt: `${endDate}T${input.endTime}:00+02:00`,
+    startAt: jerusalemWallClockToIso(input.startDate, input.startTime),
+    endAt: jerusalemWallClockToIso(endDate, input.endTime),
   };
 }

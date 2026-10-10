@@ -3,6 +3,7 @@ import { EmailPasswordSignInForm } from "@/components/auth/EmailPasswordSignInFo
 import { getPostLoginRedirect } from "@/lib/auth/redirects";
 import { getStaffUser } from "@/lib/auth/session";
 import Link from "next/link";
+import { GuestViewButton } from "@/components/auth/GuestViewButton";
 import { redirect } from "next/navigation";
 
 export default async function LoginPage({
@@ -58,11 +59,7 @@ export default async function LoginPage({
           </Link>
         </p>
 
-        <p className="text-center text-sm text-muted-foreground">
-          <Link href="/schedule" className="underline hover:text-foreground">
-            צפייה בלוח בלי להתחבר
-          </Link>
-        </p>
+        <GuestViewButton label="המשך כאורח (צפייה בלוח)" />
       </div>
     </div>
   );

@@ -10,12 +10,16 @@
  *
  * Field mapping (PRD §6.4):
  *   SUMMARY     ← title
- *   DTSTART     ← startAt (UTC; VALUE=DATE for all-day)
- *   DTEND       ← endAt   (UTC; VALUE=DATE for all-day)
+ *   DTSTART     ← startAt (UTC; all-day: VALUE=DATE of the Jerusalem-local day)
+ *   DTEND       ← endAt   (UTC; all-day: VALUE=DATE of the day *after* the
+ *                          last Jerusalem-local day — RFC 5545 end is exclusive)
  *   LOCATION    ← location (caller resolves "first line of requirements")
  *   DESCRIPTION ← description
  *   CATEGORIES  ← event type label
  */
+
+import { addCalendarDays } from "@/lib/datetime";
+import { eventJerusalemDateRange } from "@/lib/views/date-status";
 
 export interface ICalEvent {
   id: string;
@@ -61,9 +65,10 @@ export function serializeCalendar(input: SerializeInput): string {
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${evt.id}@${input.schoolSlug}.school-gantt`);
     lines.push(`DTSTAMP:${formatUtc(evt.updatedAt)}`);
-    if (evt.allDay) {
-      lines.push(`DTSTART;VALUE=DATE:${formatDateOnly(evt.startAt)}`);
-      lines.push(`DTEND;VALUE=DATE:${formatDateOnly(evt.endAt)}`);
+    const days = evt.allDay ? allDayDates(evt) : null;
+    if (days) {
+      lines.push(`DTSTART;VALUE=DATE:${days.start}`);
+      lines.push(`DTEND;VALUE=DATE:${days.end}`);
     } else {
       lines.push(`DTSTART:${formatUtc(evt.startAt)}`);
       lines.push(`DTEND:${formatUtc(evt.endAt)}`);
@@ -96,8 +101,19 @@ function formatUtc(d: Date): string {
   );
 }
 
-function formatDateOnly(d: Date): string {
-  return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}`;
+/**
+ * All-day DTSTART/DTEND as YYYYMMDD. The days are resolved in Asia/Jerusalem
+ * (the same span the Gantt/calendar views use) — the UTC date of a local
+ * midnight is the previous day. DTEND is exclusive, so it is the day after the
+ * last covered day. Null for an empty span (caller falls back to UTC instants).
+ */
+function allDayDates(evt: ICalEvent): { start: string; end: string } | null {
+  const range = eventJerusalemDateRange(evt);
+  if (!range) return null;
+  return {
+    start: range.startDate.replace(/-/g, ""),
+    end: addCalendarDays(range.endDate, 1).replace(/-/g, ""),
+  };
 }
 
 /** RFC 5545 §3.3.11 — TEXT escaping: \\, comma, semicolon, newline. */

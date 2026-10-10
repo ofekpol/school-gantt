@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, between, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
 import { withSchool } from "@/lib/db/client";
+import { jerusalemWallClockToIso } from "@/lib/datetime";
 import {
   eventGrades,
   events,
@@ -47,7 +48,11 @@ export async function getAgendaForSchool(
     if (filters.dateBounds) {
       const { startDate, endDate } = filters.dateBounds;
       conditions.push(
-        between(events.startAt, new Date(startDate), new Date(`${endDate}T23:59:59Z`)),
+        between(
+          events.startAt,
+          new Date(jerusalemWallClockToIso(startDate, "00:00:00")),
+          new Date(jerusalemWallClockToIso(endDate, "23:59:59")),
+        ),
       );
     }
 
@@ -144,7 +149,11 @@ export async function getAgendaSignatureForSchool(
     if (filters.dateBounds) {
       const { startDate, endDate } = filters.dateBounds;
       conditions.push(
-        between(events.startAt, new Date(startDate), new Date(`${endDate}T23:59:59Z`)),
+        between(
+          events.startAt,
+          new Date(jerusalemWallClockToIso(startDate, "00:00:00")),
+          new Date(jerusalemWallClockToIso(endDate, "23:59:59")),
+        ),
       );
     }
 

@@ -6,6 +6,7 @@ import {
   listEventTypes,
 } from "@/lib/events/queries";
 import { WizardShell } from "@/components/wizard/WizardShell";
+import { jerusalemOffset } from "@/lib/datetime";
 
 interface PageProps {
   searchParams: Promise<{ resumeId?: string; date?: string }>;
@@ -77,7 +78,7 @@ const JERUSALEM_FMT = new Intl.DateTimeFormat("sv-SE", {
 });
 
 function toJerusalemIso(d: Date): string {
-  // sv-SE produces "YYYY-MM-DD HH:MM:SS" — replace space, append fixed +02:00.
-  // The editor uses a fixed +02:00 offset throughout (v1 approximation).
-  return JERUSALEM_FMT.format(d).replace(" ", "T") + "+02:00";
+  // sv-SE produces "YYYY-MM-DD HH:MM:SS" — replace space, append the
+  // Jerusalem offset in effect at that instant (+02:00 or +03:00).
+  return JERUSALEM_FMT.format(d).replace(" ", "T") + jerusalemOffset(d);
 }

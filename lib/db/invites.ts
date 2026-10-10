@@ -18,6 +18,8 @@ export interface InviteRecord {
   createdAt: Date;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function rowToRecord(row: Record<string, unknown>): InviteRecord {
   return {
     ...(row as Omit<InviteRecord, "gradeScopes" | "eventTypeScopes">),
@@ -60,6 +62,8 @@ export async function createInvite(params: {
  * needed — callers don't know the school until after the invite is validated).
  */
 export async function getInviteByToken(token: string): Promise<InviteRecord | null> {
+  // staff_invites.token is a uuid column; a malformed token would make Postgres throw.
+  if (!UUID_RE.test(token)) return null;
   const [row] = await db
     .select()
     .from(staffInvites)

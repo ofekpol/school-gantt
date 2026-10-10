@@ -96,8 +96,15 @@
     {
       "idx": 13,
       "version": "7",
-      "when": 1780207380000,
-      "tag": "0013_school_grade_colors",
+      "when": 1791590400000,
+      "tag": "0013_reanchor_events_to_jerusalem_time",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791590460000,
+      "tag": "0014_school_grade_colors",
       "breakpoints": true
     }
   ]

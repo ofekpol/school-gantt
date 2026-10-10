@@ -246,7 +246,7 @@ export function QuickEventDialog({
             />
           </Field>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3">
             <Field label={t1("title")}>
               <div className="grid gap-2 sm:grid-cols-2">
                 <input
@@ -275,7 +275,7 @@ export function QuickEventDialog({
               </div>
             </Field>
             <Field label={t5("title")}>
-              <div className="grid grid-cols-[1fr_1fr_auto_auto] items-end gap-2">
+              <div className="grid grid-cols-2 items-end gap-2 sm:grid-cols-[minmax(5rem,1fr)_minmax(5rem,1fr)_auto_auto]">
                 <label className="min-w-0">
                   <span className="mb-1 block text-[11px] font-semibold text-[var(--sg-ink-soft)]">
                     {t5("startLabel")}
@@ -478,6 +478,7 @@ function TimeWheelInput({
     >
       <input
         type="text"
+        dir="ltr"
         inputMode="numeric"
         value={draft}
         disabled={disabled}

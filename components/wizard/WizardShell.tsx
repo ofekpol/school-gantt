@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { buildEventTimeRange } from "@/lib/events/date-range";
+import { jerusalemWallClockToIso } from "@/lib/datetime";
 
 export interface EventType {
   id: string;
@@ -84,7 +85,7 @@ export function WizardShell({
   const [eventId, setEventId] = useState<string | null>(resumeId);
   const [data, setData] = useState<WizardData>(() => {
     if (!resumeDraft) return initialDate ? { date: initialDate } : {};
-    // startAt is serialized as "YYYY-MM-DDTHH:MM:SS+02:00" by the page,
+    // startAt is serialized as Jerusalem wall clock "YYYY-MM-DDTHH:MM:SS±HH:MM" by the page,
     // so slicing [0:10] gives the local date in Jerusalem time.
     const startAtStr = typeof resumeDraft.startAt === "string" ? resumeDraft.startAt : undefined;
     const endAtStr = typeof resumeDraft.endAt === "string" ? resumeDraft.endAt : undefined;
@@ -341,7 +342,7 @@ export function WizardShell({
                   disabled={data.allDay}
                   onChange={(e) =>
                     patchData({
-                      startAt: `${data.date ?? ""}T${e.target.value}:00+02:00`,
+                      startAt: jerusalemWallClockToIso(data.date ?? "", e.target.value),
                     })
                   }
                   aria-label={t5("startLabel")}
@@ -353,7 +354,7 @@ export function WizardShell({
                   disabled={data.allDay}
                   onChange={(e) =>
                     patchData({
-                      endAt: `${data.date ?? ""}T${e.target.value}:00+02:00`,
+                      endAt: jerusalemWallClockToIso(data.date ?? "", e.target.value),
                     })
                   }
                   aria-label={t5("endLabel")}

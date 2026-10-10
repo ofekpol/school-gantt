@@ -12,8 +12,8 @@ describe("buildEventTimeRange", () => {
         endTime: "09:00",
       }),
     ).toEqual({
-      startAt: "2026-07-14T00:00:00+02:00",
-      endAt: "2026-07-16T23:59:59+02:00",
+      startAt: "2026-07-14T00:00:00+03:00",
+      endAt: "2026-07-16T23:59:59+03:00",
     });
   });
 
@@ -38,8 +38,22 @@ describe("buildEventTimeRange", () => {
         endTime: "09:00",
       }),
     ).toEqual({
-      startAt: "2026-07-14T08:00:00+02:00",
-      endAt: "2026-07-14T09:00:00+02:00",
+      startAt: "2026-07-14T08:00:00+03:00",
+      endAt: "2026-07-14T09:00:00+03:00",
+    });
+  });
+
+  it("uses winter offset for an all-day event after the DST switch", () => {
+    expect(
+      buildEventTimeRange({
+        startDate: "2026-10-27",
+        allDay: true,
+        startTime: "08:00",
+        endTime: "09:00",
+      }),
+    ).toEqual({
+      startAt: "2026-10-27T00:00:00+02:00",
+      endAt: "2026-10-27T23:59:59+02:00",
     });
   });
 });
