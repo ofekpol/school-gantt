@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 import { buildCalendarModel } from "@/lib/views/calendar";
 import { buildWeeklyModel } from "@/lib/views/gantt-weekly";
+import { DEFAULT_GRADE_COLORS } from "@/lib/grade-colors";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
@@ -72,6 +73,29 @@ vi.mock("@/components/dashboard/QuickEventDialog", () => ({
 
 const allGrades = [7, 8, 9, 10, 11, 12];
 
+function renderWeekly(overrides: { canCreateEvents?: boolean } = {}) {
+  const weeklyModel = buildWeeklyModel(
+    new Date(Date.UTC(2026, 4, 24)),
+    [],
+    allGrades,
+    new Date(Date.UTC(2026, 4, 25)),
+  );
+  return render(
+    <DashboardCalendar
+      view="weekly"
+      weeklyModel={weeklyModel}
+      events={[]}
+      calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
+      schoolName="Demo School"
+      eventTypes={[]}
+      allowedGrades={allGrades}
+      selectedGrades={[]}
+      gradeColors={DEFAULT_GRADE_COLORS}
+      {...overrides}
+    />,
+  );
+}
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -97,7 +121,8 @@ describe("DashboardCalendar grade filter", () => {
         schoolName="Demo School"
         eventTypes={[]}
         allowedGrades={allGrades}
-        selectedGrades={allGrades}
+        selectedGrades={[]}
+        gradeColors={DEFAULT_GRADE_COLORS}
       />,
     );
 
@@ -108,74 +133,52 @@ describe("DashboardCalendar grade filter", () => {
     expect(screen.getByRole("button", { name: "shortButton" })).toBeInTheDocument();
   });
 
-  it("removes deselected grades from the weekly rows immediately", async () => {
+  it("adds and removes grades from the weekly focus without deselecting others", async () => {
     const user = userEvent.setup();
-    const weeklyModel = buildWeeklyModel(
-      new Date(Date.UTC(2026, 4, 24)),
-      [],
-      allGrades,
-      new Date(Date.UTC(2026, 4, 25)),
-    );
-
-    render(
-      <DashboardCalendar
-        view="weekly"
-        weeklyModel={weeklyModel}
-        events={[]}
-        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
-        schoolName="Demo School"
-        eventTypes={[]}
-        allowedGrades={allGrades}
-        selectedGrades={allGrades}
-      />,
-    );
+    renderWeekly();
 
     await user.click(screen.getByRole("button", { name: "gradeFilterOption ז" }));
+    expect(screen.getByText("grade-7")).toBeInTheDocument();
+    expect(screen.queryByText("grade-8")).not.toBeInTheDocument();
 
+    await user.click(screen.getByRole("button", { name: "gradeFilterOption ח" }));
+    expect(screen.getByText("grade-7")).toBeInTheDocument();
+    expect(screen.getByText("grade-8")).toBeInTheDocument();
+    expect(window.location.search).toBe("?grades=7&grades=8");
+
+    await user.click(screen.getByRole("button", { name: "gradeFilterOption ז" }));
     expect(screen.queryByText("grade-7")).not.toBeInTheDocument();
     expect(screen.getByText("grade-8")).toBeInTheDocument();
+  });
+
+  it("shows every grade row when nothing is selected", () => {
+    renderWeekly();
+
+    for (const grade of allGrades) expect(screen.getByText(`grade-${grade}`)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "selectAllGrades" })).not.toBeInTheDocument();
+    expect(screen.getByText("gradeSelectionHint")).toBeInTheDocument();
   });
 });
 
 describe("DashboardCalendar read-only mode", () => {
-  it("lets viewers restore every grade with the choose-all control", async () => {
+  it("clears the grade focus back to every grade", async () => {
     const user = userEvent.setup();
-    const weeklyModel = buildWeeklyModel(
-      new Date(Date.UTC(2026, 4, 24)),
-      [],
-      allGrades,
-      new Date(Date.UTC(2026, 4, 25)),
-    );
-
-    render(
-      <DashboardCalendar
-        view="weekly"
-        weeklyModel={weeklyModel}
-        events={[]}
-        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
-        schoolName="Demo School"
-        eventTypes={[]}
-        allowedGrades={allGrades}
-        selectedGrades={allGrades}
-        canCreateEvents={false}
-      />,
-    );
+    renderWeekly({ canCreateEvents: false });
 
     await user.click(screen.getByRole("button", { name: "gradeFilterOption ז" }));
-    await user.click(screen.getByRole("button", { name: "selectAllGrades" }));
-
     expect(screen.getByRole("button", { name: "gradeFilterOption ז" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
 
-    await user.click(screen.getByRole("button", { name: "clearAllGrades" }));
+    await user.click(screen.getByRole("button", { name: "clearGradeSelection" }));
 
     expect(screen.getByRole("button", { name: "gradeFilterOption ז" })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
-    expect(window.location.search).toBe("?grades=none");
+    expect(screen.getByText("grade-12")).toBeInTheDocument();
+    expect(window.location.search).toBe("");
     expect(screen.queryByRole("button", { name: "newEvent" })).not.toBeInTheDocument();
   });
 
@@ -196,7 +199,8 @@ describe("DashboardCalendar read-only mode", () => {
         schoolName="Demo School"
         eventTypes={[]}
         allowedGrades={allGrades}
-        selectedGrades={allGrades}
+        selectedGrades={[]}
+        gradeColors={DEFAULT_GRADE_COLORS}
         canCreateEvents={false}
       />,
     );
@@ -247,7 +251,8 @@ describe("DashboardCalendar canceled event dismissal", () => {
         schoolName="Demo School"
         eventTypes={[]}
         allowedGrades={allGrades}
-        selectedGrades={allGrades}
+        selectedGrades={[]}
+        gradeColors={DEFAULT_GRADE_COLORS}
       />,
     );
 
@@ -279,7 +284,8 @@ describe("DashboardCalendar month grid cost", () => {
         schoolName="Demo School"
         eventTypes={[]}
         allowedGrades={allGrades}
-        selectedGrades={allGrades}
+        selectedGrades={[]}
+        gradeColors={DEFAULT_GRADE_COLORS}
       />,
     );
 

@@ -11,7 +11,8 @@ import { getSchoolById } from "@/lib/db/schools";
 import { getAgendaForSchool } from "@/lib/views/agenda";
 import { buildWeeklyModel, parseWeekParam } from "@/lib/views/gantt-weekly";
 import { buildCalendarRangeFromEvents } from "@/lib/views/date-range";
-import { getDashboardGradeSelection } from "@/lib/dashboard/grade-filter";
+import { getDashboardGradeSelection, visibleWeeklyGrades } from "@/lib/dashboard/grade-filter";
+import { getGradeColors } from "@/lib/db/grade-colors";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
@@ -38,13 +39,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const view = sp.view === "monthly" ? "monthly" : "weekly";
 
-  const [school, myEvents, eventTypeList, allowedGrades] = await Promise.all([
+  const [school, myEvents, eventTypeList, allowedGrades, gradeColors] = await Promise.all([
     getSchoolById(user.schoolId),
     getEditorDashboardEvents(user.schoolId, user.id),
     listEventTypes(user.schoolId),
     user.role === "editor"
       ? getEditorAllowedGrades(user.schoolId, user.id)
       : Promise.resolve(ALL_GRADES),
+    getGradeColors(user.schoolId),
   ]);
   const gradeSelection = getDashboardGradeSelection(allowedGrades, sp.grades);
   const agendaItems = await getAgendaForSchool(user.schoolId, {
@@ -79,7 +81,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const weeklyModel = buildWeeklyModel(
     parseWeekParam(sp.week),
     agendaItems,
-    gradeSelection.selectedGrades,
+    visibleWeeklyGrades(allowedGrades, gradeSelection.selectedGrades),
     new Date(),
   );
 
@@ -101,6 +103,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           eventTypes={eventTypeList}
           allowedGrades={allowedGrades}
           selectedGrades={gradeSelection.selectedGrades}
+          gradeColors={gradeColors}
           canCreateEvents={user.role !== "viewer"}
         />
       )}

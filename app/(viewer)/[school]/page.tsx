@@ -25,6 +25,7 @@ export default async function GanttPage({ params, searchParams }: PageProps) {
       initialParams={withGanttDefaultZoom(parsePublicViewerParams(toUrlSearchParams(sp)), sp)}
       year={data.year}
       eventTypes={data.eventTypes}
+      gradeColors={data.gradeColors}
       initialEvents={data.events}
       initialEventsSignature={data.eventSignature}
     />

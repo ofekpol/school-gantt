@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import type { ZoomLevel } from "@/lib/views/gantt";
 import { formatGradeLabel } from "@/lib/grades";
 import { useRouteProgress } from "@/components/RouteProgress";
+import { gradeSwatch, type GradeColorMap } from "@/lib/grade-colors";
 
 export interface FilterBarEventType {
   key: string;
@@ -21,6 +22,11 @@ interface Props {
   searchQuery: string;
   zoom: ZoomLevel;
   zoomOptions?: readonly ZoomLevel[];
+  /**
+   * When set, the active view colors events by grade: grade chips show their
+   * color and event-type chips drop theirs (one color source at a time).
+   */
+  gradeColors?: GradeColorMap;
   onChange?: (next: {
     grades: number[];
     types: string[];
@@ -45,6 +51,7 @@ export function FilterBar({
   searchQuery,
   zoom,
   zoomOptions,
+  gradeColors,
   onChange,
 }: Props) {
   const t = useTranslations("agenda.filter");
@@ -156,6 +163,7 @@ export function FilterBar({
                   ...(on ? chipOn : chipOff),
                 }}
               >
+                {gradeColors && <ColorDot color={gradeSwatch(gradeColors, g).accent} />}
                 {formatGradeLabel(g)}
               </button>
             );
@@ -177,11 +185,7 @@ export function FilterBar({
                 aria-pressed={on}
                 style={{ ...chipBase, ...(on ? chipOn : chipOff) }}
               >
-                <span style={{
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: et.colorHex, flexShrink: 0,
-                  boxShadow: "0 0 0 1px rgba(255,255,255,0.9)",
-                }} />
+                {!gradeColors && <ColorDot color={et.colorHex} />}
                 <span>{et.labelHe}</span>
               </button>
             );
@@ -362,4 +366,17 @@ function normalizeZoom(
   options: { value: ZoomLevel; label: string }[],
 ): ZoomLevel {
   return options.some((option) => option.value === zoom) ? zoom : options[0]?.value ?? zoom;
+}
+
+function ColorDot({ color }: { color: string | undefined }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: 8, height: 8, borderRadius: "50%",
+        background: color, flexShrink: 0,
+        boxShadow: "0 0 0 1px rgba(255,255,255,0.9)",
+      }}
+    />
+  );
 }

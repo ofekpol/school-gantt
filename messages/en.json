@@ -200,6 +200,17 @@
       "errorRequired": "Please enter a rejection reason",
       "errorGeneric": "Something went wrong",
       "isRevision": "Revision of an approved event"
+    },
+    "gradeColors": {
+      "title": "Grade colors",
+      "description": "Every calendar event is colored by its grade. Multi-grade events show color dots; whole-school events use a dark fill.",
+      "gradeLabel": "Grade {grade}",
+      "colorOption": "Color {color} for grade {grade}",
+      "duplicate": "Same color as grade {grade}",
+      "save": "Save",
+      "reset": "Restore defaults",
+      "saved": "Saved",
+      "error": "Save failed"
     }
   },
   "invite": {
@@ -233,10 +244,8 @@
     "updated": "Updated",
     "viewWeekly": "Weekly",
     "viewMonthly": "Monthly",
-    "gradeFilterLabel": "Grades",
-    "gradeFilterOption": "Show grade {grade}",
-    "selectAllGrades": "Select all",
-    "clearAllGrades": "Clear all",
+    "gradeFilterLabel": "My grades",
+    "gradeFilterOption": "Highlight grade {grade}",
     "confirmNewEventTitle": "New event",
     "confirmNewEvent": "Create a new event on {date}?",
     "myDrafts": "My events",
@@ -244,7 +253,9 @@
       "draft": "Draft",
       "approved": "Published",
       "canceled": "Canceled"
-    }
+    },
+    "gradeSelectionHint": "Pick one or more grades",
+    "clearGradeSelection": "Clear selection"
   },
   "agenda": {
     "subtitle": "School agenda",
@@ -337,7 +348,13 @@
     "chooseMonth": "Choose month",
     "newEventOnDate": "New event on {date}",
     "canceled": "Canceled",
-    "updated": "Updated"
+    "updated": "Updated",
+    "wholeSchool": "All school",
+    "legendTitle": "Grade color key",
+    "legendGrade": "Grade {grade}",
+    "legendMulti": "Several grades",
+    "legendWholeSchool": "Whole school",
+    "legendDimmed": "Not selected"
   },
   "schedule": {
     "weekly": "Weekly",

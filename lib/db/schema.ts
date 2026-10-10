@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   date,
   index,
   integer,
@@ -236,6 +237,25 @@ export const eventRevisions = pgTable(
     schoolIsolation,
     index("event_revisions_event_created_idx").on(t.eventId, t.createdAt),
     index("event_revisions_event_decision_idx").on(t.eventId, t.decision),
+  ],
+);
+
+/** Per-school grade color overrides; grades without a row use DEFAULT_GRADE_COLORS. */
+export const schoolGradeColors = pgTable(
+  "school_grade_colors",
+  {
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id, { onDelete: "cascade" }),
+    grade: integer().notNull(),
+    colorHex: varchar("color_hex", { length: 7 }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({ name: "school_grade_colors_pk", columns: [t.schoolId, t.grade] }),
+    check("school_grade_colors_grade_check", sql`${t.grade} BETWEEN 7 AND 12`),
+    check("school_grade_colors_hex_check", sql`${t.colorHex} ~ '^#[0-9A-Fa-f]{6}$'`),
+    schoolIsolation,
   ],
 );
 

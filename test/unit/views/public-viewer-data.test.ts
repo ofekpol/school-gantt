@@ -16,6 +16,11 @@ vi.mock("@/lib/events/queries", () => ({
   listEventTypes: (...args: unknown[]) => listEventTypesMock(...args),
 }));
 
+const getGradeColorsMock = vi.fn();
+vi.mock("@/lib/db/grade-colors", () => ({
+  getGradeColors: (...args: unknown[]) => getGradeColorsMock(...args),
+}));
+
 const getAgendaForSchoolMock = vi.fn();
 const getAgendaSignatureForSchoolMock = vi.fn();
 vi.mock("@/lib/views/agenda", () => ({
@@ -37,6 +42,7 @@ describe("public viewer data cache", () => {
     listEventTypesMock.mockReset();
     getAgendaForSchoolMock.mockReset();
     getAgendaSignatureForSchoolMock.mockReset();
+    getGradeColorsMock.mockReset();
   });
 
   it("uses a tenant-specific cache tag for public viewer data", () => {
@@ -58,6 +64,7 @@ describe("public viewer data cache", () => {
       timezone: "Asia/Jerusalem",
     });
     listEventTypesMock.mockResolvedValue([]);
+    getGradeColorsMock.mockResolvedValue({ 9: "#CDEFD9" });
     getAgendaForSchoolMock.mockResolvedValue([{
       id: "event-1",
       title: "Summer event",
@@ -87,6 +94,8 @@ describe("public viewer data cache", () => {
     });
     expect(data?.events).toHaveLength(1);
     expect(data?.eventSignature).toBe("1:1:2035-08-15T07:00:00.000Z");
+    expect(data?.gradeColors).toEqual({ 9: "#CDEFD9" });
+    expect(getGradeColorsMock).toHaveBeenCalledWith("school-1");
     expect(getAgendaForSchoolMock).toHaveBeenCalledWith("school-1", {});
     expect(getAgendaSignatureForSchoolMock).toHaveBeenCalledWith("school-1", {});
   });

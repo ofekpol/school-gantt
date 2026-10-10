@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import type { WeeklyEventBar, WeeklyModel } from "@/lib/views/gantt-weekly";
+import { eventColorScheme, type GradeColorMap } from "@/lib/grade-colors";
+import { GradeDots } from "@/components/Gantt/WeeklyEventBar";
 
 interface MobileWeekEvent {
   eventId: string;
@@ -14,6 +16,7 @@ interface MobileWeekEvent {
   isCanceled?: boolean;
   isUpdated?: boolean;
   grades: string[];
+  eventGrades: number[];
 }
 
 interface MobileWeekDay {
@@ -23,10 +26,12 @@ interface MobileWeekDay {
 
 export function GanttWeeklyMobileList({
   model,
+  gradeColors,
   onDayClick,
   onEventClick,
 }: {
   model: WeeklyModel;
+  gradeColors: GradeColorMap;
   onDayClick?: (isoDate: string) => void;
   onEventClick: (eventId: string) => void;
 }) {
@@ -67,7 +72,12 @@ export function GanttWeeklyMobileList({
               </p>
             ) : (
               events.map((event) => (
-                <MobileEventButton key={event.eventId} event={event} onSelect={onEventClick} />
+                <MobileEventButton
+                  key={event.eventId}
+                  event={event}
+                  gradeColors={gradeColors}
+                  onSelect={onEventClick}
+                />
               ))
             )}
           </div>
@@ -98,6 +108,7 @@ function buildMobileWeekDays(model: WeeklyModel): MobileWeekDay[] {
           isCanceled: bar.isCanceled,
           isUpdated: bar.isUpdated,
           grades: [row.hebrewLabel],
+          eventGrades: bar.grades,
         });
       }
     }
@@ -107,14 +118,16 @@ function buildMobileWeekDays(model: WeeklyModel): MobileWeekDay[] {
 
 function MobileEventButton({
   event,
+  gradeColors,
   onSelect,
 }: {
   event: MobileWeekEvent;
+  gradeColors: GradeColorMap;
   onSelect: (id: string) => void;
 }) {
   const t = useTranslations("gantt");
   const isCanceled = event.status === "canceled" || event.isCanceled;
-  const isVacation = event.eventTypeKey === "vacation" || event.eventTypeKey === "bagrut";
+  const scheme = eventColorScheme(event.eventGrades, gradeColors);
   return (
     <button
       type="button"
@@ -123,14 +136,16 @@ function MobileEventButton({
       className="flex w-full items-start gap-3 rounded-lg border border-[var(--sg-hairline-2)] bg-white p-3 text-start shadow-xs"
     >
       <span
-        className="mt-1 size-8 shrink-0 rounded-full"
+        className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full"
         style={{
-          background: isVacation
-            ? event.eventTypeColor
-            : `color-mix(in oklch, ${event.eventTypeColor} 18%, white)`,
+          background: scheme.fill,
+          border: scheme.kind === "multi" ? "1px solid #CFCBC1" : undefined,
         }}
+        data-color-kind={scheme.kind}
         aria-hidden="true"
-      />
+      >
+        {scheme.dots.length > 0 && <GradeDots colors={scheme.dots.slice(0, 3)} />}
+      </span>
       <span className="min-w-0 flex-1">
         <span
           className={`block font-medium text-[var(--sg-ink)] ${isCanceled ? "line-through" : ""}`}

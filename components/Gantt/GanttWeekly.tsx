@@ -7,19 +7,16 @@ import {
   buildWeeklyModel,
   getWeekStart,
   type WeeklyModel,
-  type WeeklyEventBar,
 } from "@/lib/views/gantt-weekly";
-import { Ban, Pencil } from "lucide-react";
 import { EventDrawer } from "./EventDrawer";
 import { useRouteProgress } from "@/components/RouteProgress";
 import { GanttWeeklyMobileList } from "@/components/Gantt/GanttWeeklyMobileList";
+import { WeeklyEventBar } from "@/components/Gantt/WeeklyEventBar";
+import { DEFAULT_GRADE_COLORS, swatchFor, type GradeColorMap } from "@/lib/grade-colors";
 
 /* ---- Layout constants ---- */
 const AXIS_H = 72;
 const ROW_H = 116;
-const LANE_H = 26;
-const LANE_GAP = 4;
-const ROW_PAD = 12;
 const GRADE_COL_W = 88;
 
 interface SerializedEvent {
@@ -44,6 +41,7 @@ interface SerializedEvent {
 interface Props {
   model: WeeklyModel;
   events: SerializedEvent[];
+  gradeColors?: GradeColorMap;
   onDayClick?: (isoDate: string) => void;
   onEventClick?: (eventId: string) => void;
   onWeekChange?: (weekStart: Date) => void;
@@ -53,6 +51,7 @@ interface Props {
 export function GanttWeekly({
   model,
   events,
+  gradeColors = DEFAULT_GRADE_COLORS,
   onDayClick,
   onEventClick,
   onWeekChange,
@@ -149,6 +148,7 @@ export function GanttWeekly({
 
       <GanttWeeklyMobileList
         model={displayModel}
+        gradeColors={gradeColors}
         onDayClick={onDayClick}
         onEventClick={selectEvent}
       />
@@ -190,6 +190,7 @@ export function GanttWeekly({
               key={row.grade}
               row={row}
               days={displayModel.days}
+              gradeColors={gradeColors}
               onSelect={selectEvent}
               onDayClick={onDayClick}
             />
@@ -209,12 +210,7 @@ export function GanttWeekly({
               padding: "0 14px",
               borderBottom: "1px solid var(--sg-hairline-2)",
             }}>
-              <div style={{
-                fontFamily: "var(--sg-font-display)", fontSize: 24, fontWeight: 600, lineHeight: 1,
-                color: "var(--sg-ink)",
-              }}>
-                {row.hebrewLabel}
-              </div>
+              <GradeBadge label={row.hebrewLabel} color={gradeColors[row.grade]} />
               <div style={{ fontFamily: "var(--sg-font-mono)", fontSize: 10, color: "var(--sg-ink-soft)", marginTop: 4 }}>
                 {row.bars.length} אירועים
               </div>
@@ -323,11 +319,12 @@ function TodayLine({ dayIndex }: { dayIndex: number }) {
 interface GradeRowProps {
   row: WeeklyModel["rows"][number];
   days: WeeklyModel["days"];
+  gradeColors: GradeColorMap;
   onSelect: (id: string) => void;
   onDayClick?: (isoDate: string) => void;
 }
 
-function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
+function GradeRow({ row, days, gradeColors, onSelect, onDayClick }: GradeRowProps) {
   const t = useTranslations("gantt");
   return (
     <div style={{
@@ -369,9 +366,10 @@ function GradeRow({ row, days, onSelect, onDayClick }: GradeRowProps) {
       {/* Event bars */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         {row.bars.map((bar) => (
-          <EventBarChip
+          <WeeklyEventBar
             key={bar.id}
             bar={bar}
+            gradeColors={gradeColors}
             onSelect={onSelect}
           />
         ))}
@@ -390,79 +388,6 @@ function statusBackground(
   }
   if (isToday) return "var(--sg-accent-soft)";
   return status === "weekend" ? "var(--sg-weekend-bg)" : "transparent";
-}
-
-/* ---- Event bar chip ---- */
-function EventBarChip({ bar, onSelect }: { bar: WeeklyEventBar; onSelect: (id: string) => void }) {
-  const isVacation = bar.eventTypeKey === "vacation" || bar.eventTypeKey === "bagrut";
-  const isPending = bar.status === "pending";
-  const isDraft = bar.status === "draft";
-  const isCanceled = bar.status === "canceled" || bar.isCanceled;
-  const label = isCanceled ? `מבוטל · ${bar.title}` : bar.isUpdated ? `עודכן · ${bar.title}` : bar.title;
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(bar.eventId)}
-      title={label}
-      aria-label={label}
-      style={{
-        position: "absolute",
-        insetInlineStart: `${bar.startPct}%`,
-        width: `${bar.widthPct}%`,
-        minWidth: 76,
-        top: ROW_PAD + bar.lane * (LANE_H + LANE_GAP),
-        height: LANE_H,
-        background: isCanceled
-          ? "repeating-linear-gradient(135deg, #fee2e2 0 8px, #fecaca 8px 10px)"
-          : isDraft
-          ? "transparent"
-          : isVacation
-            ? bar.eventTypeColor
-            : `color-mix(in oklch, ${bar.eventTypeColor} 18%, white)`,
-        color: isCanceled ? "#991b1b" : isDraft ? bar.eventTypeColor : isVacation ? "white" : "var(--sg-ink)",
-        border: isCanceled
-          ? "1px solid #fca5a5"
-          : isDraft
-          ? `1.5px dashed ${bar.eventTypeColor}`
-          : isPending
-            ? `1px dashed ${bar.eventTypeColor}`
-            : `none`,
-        borderInlineEnd: isCanceled || isDraft || isPending ? undefined : `3px solid ${bar.eventTypeColor}`,
-        borderRadius: 5,
-        padding: "0 6px 0 8px",
-        fontSize: 12, fontWeight: 500,
-        display: "flex", alignItems: "center", gap: 4,
-        overflow: "hidden",
-        cursor: "pointer",
-        textAlign: "start",
-        zIndex: 2,
-        pointerEvents: "auto",
-      }}
-    >
-      <span style={{ width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <EventTypeGlyph glyph={bar.eventTypeGlyph} color={isVacation ? "rgba(255,255,255,0.85)" : bar.eventTypeColor} />
-      </span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1 1 auto", minWidth: 0, textDecoration: isCanceled ? "line-through" : "none" }}>
-        {bar.title}
-      </span>
-      {(isCanceled || bar.isUpdated) && (
-        <span style={{
-          flexShrink: 0,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 14,
-          height: 14,
-          borderRadius: 999,
-          background: isCanceled ? "#fecaca" : "#bfdbfe",
-          color: isCanceled ? "#7f1d1d" : "#1e3a8a",
-        }}>
-          {isCanceled ? <Ban size={9} /> : <Pencil size={9} />}
-        </span>
-      )}
-    </button>
-  );
 }
 
 /* ---- Week nav bar ---- */
@@ -531,14 +456,21 @@ function NavBtn({ onClick, children, ...rest }: React.ButtonHTMLAttributes<HTMLB
   );
 }
 
-/* ---- Glyph helper (emoji fallback) ---- */
-const GLYPH_EMOJI: Record<string, string> = {
-  book: "📚", party: "🎉", pencil: "✏️", mountain: "⛰️", compass: "🧭",
-  flag: "🚩", sun: "☀️", users: "👥", cap: "🎓", heart: "💙", tag: "🏷️",
-};
-
-function EventTypeGlyph({ glyph, color }: { glyph: string; color: string }) {
-  const emoji = GLYPH_EMOJI[glyph];
-  if (emoji) return <span style={{ fontSize: 11 }}>{emoji}</span>;
-  return <span style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />;
+/* ---- Grade label: pastel pill so each grade's color is learned in both views ---- */
+function GradeBadge({ label, color }: { label: string; color: string | undefined }) {
+  const swatch = swatchFor(color);
+  return (
+    <div style={{
+      alignSelf: "flex-start",
+      minWidth: 40,
+      padding: "4px 10px",
+      borderRadius: 999,
+      background: swatch.fill,
+      color: swatch.ink,
+      fontFamily: "var(--sg-font-display)", fontSize: 20, fontWeight: 700, lineHeight: 1.1,
+      textAlign: "center",
+    }}>
+      {label}
+    </div>
+  );
 }

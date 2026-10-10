@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link as LinkIcon, Printer } from "lucide-react";
 import type { CalendarMonth } from "@/lib/views/calendar";
+import type { GradeColorMap } from "@/lib/grade-colors";
 
 export interface CalendarPrintOptions {
   months: CalendarMonth[];
   schoolName: string;
   yearLabel: string;
+  gradeColors?: GradeColorMap;
   defaultMonthIndex?: number;
 }
 

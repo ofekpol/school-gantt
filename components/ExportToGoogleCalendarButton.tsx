@@ -117,6 +117,7 @@ export function ExportToGoogleCalendarButton({
               months={[printMonth]}
               yearLabel={activePrintCalendar.yearLabel}
               schoolName={activePrintCalendar.schoolName}
+              gradeColors={activePrintCalendar.gradeColors}
             />
           </div>,
           document.body,
