@@ -92,6 +92,13 @@
       "when": 1748779200000,
       "tag": "0012_invite_multi_use",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791590400000,
+      "tag": "0013_reanchor_events_to_jerusalem_time",
+      "breakpoints": true
     }
   ]
 }

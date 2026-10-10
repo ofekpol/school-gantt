@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import { formatGradeLabel } from "@/lib/grades";
 import { buildGoogleCalendarUrl } from "@/lib/google-calendar-url";
+import { jerusalemWallClockToIso } from "@/lib/datetime";
 import type { EventType } from "@/components/wizard/WizardShell";
 
 interface Props {
@@ -132,12 +133,8 @@ export function EventDrawer({
       return;
     }
 
-    const startAt = draft.allDay
-      ? `${draft.date}T00:00:00+02:00`
-      : `${draft.date}T${draft.startTime}:00+02:00`;
-    const endAt = draft.allDay
-      ? `${draft.date}T23:59:59+02:00`
-      : `${draft.date}T${draft.endTime}:00+02:00`;
+    const startAt = jerusalemWallClockToIso(draft.date, draft.allDay ? "00:00:00" : draft.startTime);
+    const endAt = jerusalemWallClockToIso(draft.date, draft.allDay ? "23:59:59" : draft.endTime);
 
     setSaving(true);
     const ok = await onSave({

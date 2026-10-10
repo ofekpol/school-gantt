@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { jerusalemWallClockToIso } from "@/lib/datetime";
 import type { StepProps } from "./WizardShell";
 
 /**
@@ -13,7 +14,7 @@ export function Step5Time({ data, saving, onNext, onBack }: StepProps) {
   const tc = useTranslations("common");
   const [allDay, setAllDay] = useState(data.allDay ?? false);
   const dateStr = data.date ?? new Date().toISOString().slice(0, 10);
-  // startAt/endAt are stored as "YYYY-MM-DDTHH:MM:SS+02:00" (Jerusalem local time),
+  // startAt/endAt are "YYYY-MM-DDTHH:MM:SS±HH:MM" in Jerusalem local time,
   // so slicing [11:16] recovers the HH:MM without needing a tz library.
   const [startTime, setStartTime] = useState(data.startAt?.slice(11, 16) ?? "08:00");
   const [endTime, setEndTime] = useState(data.endAt?.slice(11, 16) ?? "09:00");
@@ -25,16 +26,9 @@ export function Step5Time({ data, saving, onNext, onBack }: StepProps) {
       return;
     }
     setError("");
-    // Asia/Jerusalem offset is +02:00 / +03:00 with DST. v1 uses a fixed
-    // +02:00 (Standard Time) — the conservative approximation that doesn't
-    // require a tz library on the client. lib/views/agenda groups by local
-    // day on the server, so the small skew is invisible.
-    const startAt = allDay
-      ? `${dateStr}T00:00:00+02:00`
-      : `${dateStr}T${startTime}:00+02:00`;
-    const endAt = allDay
-      ? `${dateStr}T23:59:59+02:00`
-      : `${dateStr}T${endTime}:00+02:00`;
+    // DST-aware: Jerusalem is +02:00 in winter and +03:00 in summer.
+    const startAt = jerusalemWallClockToIso(dateStr, allDay ? "00:00:00" : startTime);
+    const endAt = jerusalemWallClockToIso(dateStr, allDay ? "23:59:59" : endTime);
     void onNext({ startAt, endAt, allDay });
   }
 

@@ -78,8 +78,8 @@ describe("serializeCalendar", () => {
       events: [
         evt({
           allDay: true,
-          startAt: new Date("2026-10-15T00:00:00.000Z"),
-          endAt: new Date("2026-10-16T00:00:00.000Z"),
+          startAt: new Date("2026-10-14T21:00:00.000Z"), // 15 Oct 00:00 IDT
+          endAt: new Date("2026-10-15T20:59:59.000Z"), // 15 Oct 23:59:59 IDT
         }),
       ],
     });
