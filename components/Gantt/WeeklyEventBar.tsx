@@ -13,41 +13,21 @@ const CANCELED_BAR: CSSProperties = {
   border: "1px solid #fca5a5",
 };
 
-/** Bar paint for one event. Color comes from the grade scheme only. */
-function barColors(
-  bar: WeeklyEventBarModel,
-  scheme: EventColorScheme,
-): { style: CSSProperties; glyphColor: string } {
-  const isVacation = bar.eventTypeKey === "vacation" || bar.eventTypeKey === "bagrut";
-  const accent = scheme.kind === "multi" ? "#8A8984" : scheme.fill;
-  if (bar.status === "canceled" || bar.isCanceled) return { style: CANCELED_BAR, glyphColor: "#991b1b" };
+/**
+ * Bar paint for one event (design "W2-C"): pastel grade fill with dark grade
+ * text; multi-grade bars are white with grade dots; whole-school bars use the
+ * neutral school swatch. Color comes from the grade scheme only.
+ */
+function barColors(bar: WeeklyEventBarModel, scheme: EventColorScheme): CSSProperties {
+  if (bar.status === "canceled" || bar.isCanceled) return CANCELED_BAR;
   if (bar.status === "draft") {
-    return {
-      style: { background: "transparent", color: "var(--sg-ink)", border: `1.5px dashed ${accent}` },
-      glyphColor: accent,
-    };
-  }
-  if (isVacation && scheme.kind !== "multi") {
-    return {
-      style: { background: scheme.fill, color: scheme.text, border: "none" },
-      glyphColor: scheme.text,
-    };
+    const edge = scheme.kind === "multi" ? "#8A8984" : scheme.text;
+    return { background: "transparent", color: "var(--sg-ink)", border: `1.5px dashed ${edge}` };
   }
   if (scheme.kind === "multi") {
-    return {
-      style: { background: "#ffffff", color: "var(--sg-ink)", border: "1px solid #CFCBC1" },
-      glyphColor: "var(--sg-ink-soft)",
-    };
+    return { background: "#ffffff", color: "#2A2926", border: "1px solid #E0DDD5" };
   }
-  return {
-    style: {
-      background: `color-mix(in oklch, ${scheme.fill} 18%, white)`,
-      color: "var(--sg-ink)",
-      border: "none",
-      borderInlineEnd: `3px solid ${scheme.fill}`,
-    },
-    glyphColor: scheme.fill,
-  };
+  return { background: scheme.fill, color: scheme.text, border: "none" };
 }
 
 interface Props {
@@ -59,7 +39,7 @@ interface Props {
 export function WeeklyEventBar({ bar, gradeColors, onSelect }: Props) {
   const isCanceled = bar.status === "canceled" || bar.isCanceled;
   const scheme = eventColorScheme(bar.grades, gradeColors);
-  const { style, glyphColor } = barColors(bar, scheme);
+  const style = barColors(bar, scheme);
   const label = isCanceled ? `מבוטל · ${bar.title}` : bar.isUpdated ? `עודכן · ${bar.title}` : bar.title;
 
   return (
@@ -76,8 +56,8 @@ export function WeeklyEventBar({ bar, gradeColors, onSelect }: Props) {
         minWidth: 76,
         top: ROW_PAD + bar.lane * (LANE_H + LANE_GAP),
         height: LANE_H,
-        borderRadius: 5,
-        padding: "0 6px 0 8px",
+        borderRadius: 6,
+        padding: "0 9px",
         fontSize: 12, fontWeight: 500,
         display: "flex", alignItems: "center", gap: 4,
         overflow: "hidden",
@@ -89,9 +69,6 @@ export function WeeklyEventBar({ bar, gradeColors, onSelect }: Props) {
       }}
     >
       {!isCanceled && scheme.dots.length > 0 && <GradeDots colors={scheme.dots} />}
-      <span style={{ width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <EventTypeGlyph glyph={bar.eventTypeGlyph} color={glyphColor} />
-      </span>
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1 1 auto", minWidth: 0, textDecoration: isCanceled ? "line-through" : "none" }}>
         {bar.title}
       </span>
@@ -129,21 +106,4 @@ function StatusIcon({ canceled }: { canceled: boolean }) {
       {canceled ? <Ban size={9} /> : <Pencil size={9} />}
     </span>
   );
-}
-
-/* ---- Glyph helper (emoji fallback) ---- */
-const GLYPH_EMOJI: Record<string, string> = {
-  book: "📚", party: "🎉", pencil: "✏️", mountain: "⛰️", compass: "🧭",
-  flag: "🚩", sun: "☀️", users: "👥", cap: "🎓", heart: "💙", tag: "🏷️",
-};
-
-function EventTypeGlyph({ glyph, color }: { glyph: string; color: string }) {
-  const emoji = GLYPH_EMOJI[glyph];
-  if (emoji) return <span style={{ fontSize: 11 }}>{emoji}</span>;
-  // Short text glyphs (e.g. "E", "T") render as text, matching the monthly chips,
-  // so they are not mistaken for grade dots on multi-grade bars.
-  if (glyph && glyph.length <= 2) {
-    return <span style={{ fontSize: 10, fontWeight: 700, color }}>{glyph}</span>;
-  }
-  return <span style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />;
 }

@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import type { ZoomLevel } from "@/lib/views/gantt";
 import { formatGradeLabel } from "@/lib/grades";
 import { useRouteProgress } from "@/components/RouteProgress";
-import type { GradeColorMap } from "@/lib/grade-colors";
+import { gradeSwatch, type GradeColorMap } from "@/lib/grade-colors";
 
 export interface FilterBarEventType {
   key: string;
@@ -163,7 +163,7 @@ export function FilterBar({
                   ...(on ? chipOn : chipOff),
                 }}
               >
-                {gradeColors && <ColorDot color={gradeColors[g]} />}
+                {gradeColors && <ColorDot color={gradeSwatch(gradeColors, g).accent} />}
                 {formatGradeLabel(g)}
               </button>
             );

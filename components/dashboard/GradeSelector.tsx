@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { formatGradeLabel } from "@/lib/grades";
-import { gradeTextColor, type GradeColorMap } from "@/lib/grade-colors";
+import { gradeSwatch, type GradeColorMap } from "@/lib/grade-colors";
 
 interface Props {
   grades: number[];
@@ -32,7 +32,7 @@ export function GradeSelector({ grades, selected, gradeColors, onChange }: Props
       <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden">
         {grades.map((grade) => {
           const active = selected.includes(grade);
-          const color = gradeColors[grade];
+          const swatch = gradeSwatch(gradeColors, grade);
           return (
             <button
               key={grade}
@@ -43,7 +43,7 @@ export function GradeSelector({ grades, selected, gradeColors, onChange }: Props
               className="inline-flex h-9 min-w-11 items-center justify-center gap-1.5 rounded-full border-2 px-3 text-sm font-semibold transition-colors"
               style={
                 active
-                  ? { backgroundColor: color, borderColor: color, color: gradeTextColor(color) }
+                  ? { backgroundColor: swatch.fill, borderColor: swatch.ink, color: swatch.ink }
                   : { backgroundColor: "#ffffff", borderColor: "#E2DFD7", color: "#1d1d1b" }
               }
             >
@@ -51,7 +51,7 @@ export function GradeSelector({ grades, selected, gradeColors, onChange }: Props
                 <span
                   aria-hidden="true"
                   className="inline-block size-2.5 rounded-full"
-                  style={{ backgroundColor: color }}
+                  style={{ backgroundColor: swatch.accent }}
                 />
               )}
               {formatGradeLabel(grade)}

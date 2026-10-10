@@ -7,41 +7,63 @@ import { formatGradeLabel } from "@/lib/grades";
  * Events are colored by ONE source at a time. Today that source is the grade;
  * a future "color by event type" mode adds a branch in `eventColorScheme`
  * (returning no grade dots) without touching callers. An event never carries
- * two color sources: the
- * grade label (text) and event-type glyph always stay, so swapping the fill
- * never loses information.
+ * two color sources, and the grade label (text) always stays, so swapping the
+ * fill never loses information.
  */
 
 export const SCHOOL_GRADES = [7, 8, 9, 10, 11, 12] as const;
 
-/** Color-blind-safe defaults (Okabe–Ito derived). No reds: red means "canceled". */
-export const DEFAULT_GRADE_COLORS: Readonly<Record<number, string>> = {
-  7: "#0F6FB0",
-  8: "#E69F00",
-  9: "#00805F",
-  10: "#CC79A7",
-  11: "#6B4C9A",
-  12: "#56B4E9",
-};
+/**
+ * A grade color is a light pastel fill plus two darker tones of the same hue:
+ * `ink` for text on the fill (WCAG AA) and `accent` for small marks (dots).
+ * Only `fill` is stored per school; the other tones come from this table.
+ */
+export interface GradeSwatch {
+  fill: string;
+  accent: string;
+  ink: string;
+}
 
-/** Curated palette admins pick from. Free-form hex is intentionally not allowed. */
+/** Curated palette admins pick from (by fill). No reds: red means "canceled". */
 export const GRADE_COLOR_OPTIONS = [
-  "#0F6FB0",
-  "#E69F00",
-  "#00805F",
-  "#CC79A7",
-  "#6B4C9A",
-  "#56B4E9",
-  "#7A7A2E",
-  "#3D7D8F",
-  "#8C6D46",
-  "#9DB83A",
+  "#CFE3FA",
+  "#FFE8B8",
+  "#CDEFD9",
+  "#FAD4E6",
+  "#E2D6FA",
+  "#C9EEF2",
+  "#DDF5D0",
+  "#FFF2C2",
+  "#DCE3EC",
 ] as const;
 
 export type GradeColorOption = (typeof GRADE_COLOR_OPTIONS)[number];
 
-/** Fill for events that include every grade in the school. */
-export const WHOLE_SCHOOL_COLOR = "#2F343B";
+const SWATCHES: Record<GradeColorOption, GradeSwatch> = {
+  "#CFE3FA": { fill: "#CFE3FA", accent: "#3D7CC9", ink: "#133A66" },
+  "#FFE8B8": { fill: "#FFE8B8", accent: "#C9921A", ink: "#5A3E00" },
+  "#CDEFD9": { fill: "#CDEFD9", accent: "#2F9E5E", ink: "#0F4227" },
+  "#FAD4E6": { fill: "#FAD4E6", accent: "#C95A8E", ink: "#5E1F3D" },
+  "#E2D6FA": { fill: "#E2D6FA", accent: "#7B5BC9", ink: "#33236B" },
+  "#C9EEF2": { fill: "#C9EEF2", accent: "#2A9BAA", ink: "#0D4A52" },
+  "#DDF5D0": { fill: "#DDF5D0", accent: "#5C9A2E", ink: "#24400F" },
+  "#FFF2C2": { fill: "#FFF2C2", accent: "#B8960F", ink: "#4D3D00" },
+  "#DCE3EC": { fill: "#DCE3EC", accent: "#5B6F8C", ink: "#1F2A3A" },
+};
+
+/** Light-pastel defaults, one distinct hue per grade. */
+export const DEFAULT_GRADE_COLORS: Readonly<Record<number, string>> = {
+  7: "#CFE3FA",
+  8: "#FFE8B8",
+  9: "#CDEFD9",
+  10: "#FAD4E6",
+  11: "#E2D6FA",
+  12: "#C9EEF2",
+};
+
+/** Swatch for events that include every grade in the school. */
+export const WHOLE_SCHOOL_SWATCH: GradeSwatch = { fill: "#E1E3E8", accent: "#4B5262", ink: "#20242D" };
+export const WHOLE_SCHOOL_COLOR = WHOLE_SCHOOL_SWATCH.fill;
 
 /** Fill/text for events outside the selected grades (monthly view). */
 export const DIMMED_EVENT_COLORS = { fill: "#EFEDE7", text: "#8A8984" } as const;
@@ -54,8 +76,10 @@ export interface EventColorScheme {
   kind: EventColorKind;
   fill: string;
   text: string;
-  /** Grade colors to render as dots — only for multi-grade events in grade mode. */
+  /** Accent colors to render as dots — only for multi-grade events in grade mode. */
   dots: string[];
+  /** One swatch per grade tag shown on the chip (whole school: the school swatch). */
+  swatches: GradeSwatch[];
 }
 
 /** Merges stored overrides on top of the defaults so every school grade has a color. */
@@ -69,12 +93,26 @@ export function resolveGradeColors(
   return map;
 }
 
+/** Full swatch for a stored fill; unknown (legacy) fills get a readable fallback. */
+export function swatchFor(fill: string | undefined): GradeSwatch {
+  if (!fill) return WHOLE_SCHOOL_SWATCH;
+  const known = SWATCHES[fill.toUpperCase() as GradeColorOption];
+  if (known) return known;
+  const ink = readableTextColor(fill);
+  return { fill, accent: fill, ink };
+}
+
+export function gradeSwatch(gradeColors: GradeColorMap, grade: number): GradeSwatch {
+  return swatchFor(gradeColors[grade] ?? DEFAULT_GRADE_COLORS[grade]);
+}
+
 export function isWholeSchoolEvent(grades: readonly number[]): boolean {
   return grades.length === 0 || SCHOOL_GRADES.every((grade) => grades.includes(grade));
 }
 
-export function gradeTextColor(colorHex: string): string {
-  return readableTextColor(colorHex);
+/** Text color to use on a grade fill. */
+export function gradeTextColor(fill: string): string {
+  return swatchFor(fill).ink;
 }
 
 export function eventColorScheme(
@@ -82,18 +120,20 @@ export function eventColorScheme(
   gradeColors: GradeColorMap,
 ): EventColorScheme {
   if (isWholeSchoolEvent(grades)) {
-    return { kind: "school", fill: WHOLE_SCHOOL_COLOR, text: "#ffffff", dots: [] };
-  }
-  if (grades.length === 1) {
-    const fill = gradeColors[grades[0]] ?? WHOLE_SCHOOL_COLOR;
-    return { kind: "single", fill, text: gradeTextColor(fill), dots: [] };
+    const school = WHOLE_SCHOOL_SWATCH;
+    return { kind: "school", fill: school.fill, text: school.ink, dots: [], swatches: [school] };
   }
   const sorted = [...grades].sort((a, b) => a - b);
+  const swatches = sorted.map((grade) => gradeSwatch(gradeColors, grade));
+  if (sorted.length === 1) {
+    return { kind: "single", fill: swatches[0].fill, text: swatches[0].ink, dots: [], swatches };
+  }
   return {
     kind: "multi",
     fill: "#ffffff",
-    text: "#1d1d1b",
-    dots: sorted.map((grade) => gradeColors[grade] ?? WHOLE_SCHOOL_COLOR),
+    text: "#2A2926",
+    dots: swatches.map((swatch) => swatch.accent),
+    swatches,
   };
 }
 

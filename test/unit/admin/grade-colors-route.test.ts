@@ -40,7 +40,7 @@ function putRequest(body: unknown): NextRequest {
 beforeEach(() => {
   vi.clearAllMocks();
   getGradeColorsMock.mockResolvedValue({ ...DEFAULT_GRADE_COLORS });
-  setGradeColorsMock.mockResolvedValue({ ...DEFAULT_GRADE_COLORS, 7: "#7A7A2E" });
+  setGradeColorsMock.mockResolvedValue({ ...DEFAULT_GRADE_COLORS, 7: "#DDF5D0" });
 });
 
 describe("/api/v1/admin/grade-colors", () => {
@@ -55,15 +55,15 @@ describe("/api/v1/admin/grade-colors", () => {
   it("rejects editors", async () => {
     getStaffUserMock.mockResolvedValue({ ...ADMIN, role: "editor" });
     expect((await GET()).status).toBe(403);
-    expect((await PUT(putRequest({ colors: [{ grade: 7, colorHex: "#7A7A2E" }] }))).status).toBe(403);
+    expect((await PUT(putRequest({ colors: [{ grade: 7, colorHex: "#DDF5D0" }] }))).status).toBe(403);
     expect(setGradeColorsMock).not.toHaveBeenCalled();
   });
 
   it("saves palette colors and invalidates the public cache", async () => {
     getStaffUserMock.mockResolvedValue(ADMIN);
-    const res = await PUT(putRequest({ colors: [{ grade: 7, colorHex: "#7A7A2E" }] }));
+    const res = await PUT(putRequest({ colors: [{ grade: 7, colorHex: "#DDF5D0" }] }));
     expect(res.status).toBe(200);
-    expect(setGradeColorsMock).toHaveBeenCalledWith(ADMIN.schoolId, [{ grade: 7, colorHex: "#7A7A2E" }]);
+    expect(setGradeColorsMock).toHaveBeenCalledWith(ADMIN.schoolId, [{ grade: 7, colorHex: "#DDF5D0" }]);
     expect(invalidateMock).toHaveBeenCalledWith("demo");
   });
 
@@ -76,8 +76,8 @@ describe("/api/v1/admin/grade-colors", () => {
 
   it("rejects duplicate and out-of-range grades", async () => {
     getStaffUserMock.mockResolvedValue(ADMIN);
-    const dup = [{ grade: 7, colorHex: "#7A7A2E" }, { grade: 7, colorHex: "#0F6FB0" }];
+    const dup = [{ grade: 7, colorHex: "#DDF5D0" }, { grade: 7, colorHex: "#CFE3FA" }];
     expect((await PUT(putRequest({ colors: dup }))).status).toBe(400);
-    expect((await PUT(putRequest({ colors: [{ grade: 3, colorHex: "#0F6FB0" }] }))).status).toBe(400);
+    expect((await PUT(putRequest({ colors: [{ grade: 3, colorHex: "#CFE3FA" }] }))).status).toBe(400);
   });
 });

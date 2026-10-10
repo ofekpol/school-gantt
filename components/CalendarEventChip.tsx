@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { formatGradeLabel } from "@/lib/grades";
 import {
   DIMMED_EVENT_COLORS,
   eventColorScheme,
@@ -13,19 +14,27 @@ const CANCELED_STYLE: CSSProperties = {
   textDecoration: "line-through",
 };
 
+const MUTED_TAB: CSSProperties = { background: "#D9D6CE", color: "#6B6A65" };
+
+export interface GradeTab {
+  label: string;
+  style: CSSProperties;
+}
+
 export interface CalendarEventVisual {
   style: CSSProperties;
-  /** Grade dot colors (multi-grade events only). */
-  dots: string[];
+  /** Grade tabs at the start of the chip: dark grade tone on the pastel fill. */
+  tabs: GradeTab[];
   /** False when the event is outside the current grade selection. */
   highlighted: boolean;
-  /** Grade label shown on the chip ("ז", "ז–ח", whole-school label). */
+  /** Plain-text grade label ("ז", "ז–ח", whole-school label) for titles/a11y. */
   tag: string;
 }
 
 /**
- * Resolves how one calendar chip/segment is painted. Color comes from a single
- * source (grade); canceled events keep their strikethrough + label treatment.
+ * Resolves how one calendar chip/segment is painted (design "M1-B"): a pastel
+ * chip in the grade color with a dark grade tab; multi-grade events are white
+ * with one tab per grade; whole-school events use the neutral school swatch.
  */
 export function calendarEventVisual(
   item: { grades: number[]; isCanceled?: boolean },
@@ -35,54 +44,59 @@ export function calendarEventVisual(
 ): CalendarEventVisual {
   const highlighted = isEventInGradeSelection(item.grades, selectedGrades);
   const tag = gradeTagLabel(item.grades, wholeSchoolLabel);
-  if (item.isCanceled) return { style: CANCELED_STYLE, dots: [], highlighted, tag };
+  const scheme = eventColorScheme(item.grades, gradeColors);
+  const labels =
+    scheme.kind === "school"
+      ? [wholeSchoolLabel]
+      : [...item.grades].sort((a, b) => a - b).map(formatGradeLabel);
+  const muted = item.isCanceled === true || !highlighted;
+  const tabs = labels.map((label, index) => ({
+    label,
+    style: muted
+      ? MUTED_TAB
+      : { background: scheme.swatches[index].ink, color: scheme.swatches[index].fill },
+  }));
+  if (item.isCanceled) return { style: CANCELED_STYLE, tabs, highlighted, tag };
   if (!highlighted) {
     return {
       style: { backgroundColor: DIMMED_EVENT_COLORS.fill, color: DIMMED_EVENT_COLORS.text },
-      dots: [],
+      tabs,
       highlighted,
       tag,
     };
   }
-  const scheme = eventColorScheme(item.grades, gradeColors);
   return {
     style: {
       backgroundColor: scheme.fill,
       color: scheme.text,
-      ...(scheme.kind === "multi" ? { borderColor: "#CFCBC1" } : {}),
+      ...(scheme.kind === "multi" ? { borderColor: "#E0DDD5" } : {}),
     },
-    dots: scheme.dots,
+    tabs,
     highlighted,
     tag,
   };
 }
 
 interface BodyProps {
-  tag: string;
-  glyph: string;
+  tabs: GradeTab[];
   title: string;
-  dots: string[];
   badge: string | null;
 }
 
 /** Inner content shared by single-day chips and multi-day segments. */
-export function CalendarEventBody({ tag, glyph, title, dots, badge }: BodyProps) {
+export function CalendarEventBody({ tabs, title, badge }: BodyProps) {
   return (
     <>
-      {dots.length > 0 && (
-        <span aria-hidden="true" className="flex shrink-0 items-center gap-px">
-          {dots.map((color, index) => (
-            <span
-              key={`${color}-${index}`}
-              className="inline-block size-2 rounded-full"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </span>
-      )}
-      <span aria-hidden="true" className="shrink-0 font-bold">{tag}</span>
-      <span aria-hidden="true" className="event-chip-glyph hidden opacity-70 sm:inline">
-        {glyph}
+      <span aria-hidden="true" className="inline-flex shrink-0 gap-0.5">
+        {tabs.map((tab, index) => (
+          <span
+            key={`${tab.label}-${index}`}
+            className="inline-flex h-4 min-w-4 items-center justify-center rounded-[4px] px-1 text-[10px] font-bold"
+            style={tab.style}
+          >
+            {tab.label}
+          </span>
+        ))}
       </span>
       <span className="truncate">{title}</span>
       {badge && (

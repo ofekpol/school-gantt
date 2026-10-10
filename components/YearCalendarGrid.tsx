@@ -242,14 +242,12 @@ export function YearCalendarGrid({
                                     onEventClick?.(chip.eventId);
                                   }}
                                   disabled={!onEventClick}
-                                  className="event-chip flex w-full items-center gap-1 truncate rounded border border-black/10 px-1.5 py-0.5 text-start text-[11px] leading-4 font-medium disabled:cursor-default"
+                                  className="event-chip flex w-full items-center gap-1 truncate rounded-md border border-black/5 py-0.5 ps-0.5 pe-1.5 text-start text-[11px] leading-4 font-medium disabled:cursor-default"
                                   style={visual.style}
                                 >
                                   <CalendarEventBody
-                                    tag={visual.tag}
-                                    glyph={chip.eventTypeGlyph}
+                                    tabs={visual.tabs}
                                     title={chip.title}
-                                    dots={visual.dots}
                                     badge={statusBadge(chip.isCanceled, chip.isUpdated, tv)}
                                   />
                                 </button>
@@ -285,7 +283,7 @@ export function YearCalendarGrid({
                           onEventClick?.(segment.eventId);
                         }}
                         disabled={!onEventClick}
-                        className={`calendar-event-segment pointer-events-auto flex min-w-0 items-center gap-1 truncate border border-black/10 px-1.5 py-0.5 text-start text-[11px] leading-4 font-medium disabled:cursor-default ${
+                        className={`calendar-event-segment pointer-events-auto flex min-w-0 items-center gap-1 truncate border border-black/5 py-0.5 ps-0.5 pe-1.5 text-start text-[11px] leading-4 font-medium disabled:cursor-default ${
                           segment.continuesBefore ? "rounded-s-none" : "rounded-s-sm"
                         } ${segment.continuesAfter ? "rounded-e-none" : "rounded-e-sm"}`}
                         style={{
@@ -295,10 +293,8 @@ export function YearCalendarGrid({
                         }}
                       >
                         <CalendarEventBody
-                          tag={visual.tag}
-                          glyph={segment.eventTypeGlyph}
+                          tabs={visual.tabs}
                           title={segment.title}
-                          dots={visual.dots}
                           badge={statusBadge(segment.isCanceled, segment.isUpdated, tv)}
                         />
                       </button>

@@ -19,16 +19,16 @@ describe.skipIf(skipIfNoTestDb)("school_grade_colors RLS", () => {
   });
 
   it("stores and reads a school's own grade colors", async () => {
-    const colors = await setGradeColors(testSchoolA, [{ grade: 7, colorHex: "#7A7A2E" }]);
-    expect(colors[7]).toBe("#7A7A2E");
+    const colors = await setGradeColors(testSchoolA, [{ grade: 7, colorHex: "#DDF5D0" }]);
+    expect(colors[7]).toBe("#DDF5D0");
     expect(colors[8]).toBe(DEFAULT_GRADE_COLORS[8]);
 
-    const updated = await setGradeColors(testSchoolA, [{ grade: 7, colorHex: "#3D7D8F" }]);
-    expect(updated[7]).toBe("#3D7D8F");
+    const updated = await setGradeColors(testSchoolA, [{ grade: 7, colorHex: "#FFF2C2" }]);
+    expect(updated[7]).toBe("#FFF2C2");
   });
 
   it("does not leak another school's colors", async () => {
-    await setGradeColors(testSchoolA, [{ grade: 9, colorHex: "#8C6D46" }]);
+    await setGradeColors(testSchoolA, [{ grade: 9, colorHex: "#DCE3EC" }]);
     const rows = await withSchool(testSchoolB, (tx) =>
       tx
         .select()
@@ -45,7 +45,7 @@ describe.skipIf(skipIfNoTestDb)("school_grade_colors RLS", () => {
         tx.insert(schema.schoolGradeColors).values({
           schoolId: testSchoolA,
           grade: 10,
-          colorHex: "#0F6FB0",
+          colorHex: "#CFE3FA",
         }),
       ),
     ).rejects.toThrow();

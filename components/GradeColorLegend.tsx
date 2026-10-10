@@ -5,7 +5,8 @@ import { formatGradeLabel } from "@/lib/grades";
 import {
   DIMMED_EVENT_COLORS,
   SCHOOL_GRADES,
-  WHOLE_SCHOOL_COLOR,
+  WHOLE_SCHOOL_SWATCH,
+  gradeSwatch,
   type GradeColorMap,
 } from "@/lib/grade-colors";
 
@@ -25,17 +26,14 @@ export function GradeColorLegend({ gradeColors, showDimmed = false }: Props) {
     >
       {SCHOOL_GRADES.map((grade) => (
         <LegendItem key={grade} label={t("legendGrade", { grade: formatGradeLabel(grade) })}>
-          <Swatch background={gradeColors[grade]} />
+          <Swatch {...swatchColors(gradeColors, grade)} />
         </LegendItem>
       ))}
       <LegendItem label={t("legendMulti")}>
-        <span className="inline-flex h-3 w-6 items-center justify-center gap-px rounded-sm border border-[#CFCBC1] bg-white">
-          <Dot color={gradeColors[SCHOOL_GRADES[0]]} />
-          <Dot color={gradeColors[SCHOOL_GRADES[1]]} />
-        </span>
+        <Swatch background="#ffffff" border="#E0DDD5" />
       </LegendItem>
       <LegendItem label={t("legendWholeSchool")}>
-        <Swatch background={WHOLE_SCHOOL_COLOR} />
+        <Swatch background={WHOLE_SCHOOL_SWATCH.fill} border={WHOLE_SCHOOL_SWATCH.ink} />
       </LegendItem>
       {showDimmed && (
         <LegendItem label={t("legendDimmed")}>
@@ -55,16 +53,17 @@ function LegendItem({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-function Swatch({ background }: { background: string }) {
+function swatchColors(gradeColors: GradeColorMap, grade: number) {
+  const swatch = gradeSwatch(gradeColors, grade);
+  return { background: swatch.fill, border: swatch.ink };
+}
+
+function Swatch({ background, border = "rgba(0,0,0,.15)" }: { background: string; border?: string }) {
   return (
     <span
       aria-hidden="true"
-      className="inline-block h-3 w-6 rounded-sm border border-black/15"
-      style={{ background }}
+      className="inline-block h-3 w-6 rounded-sm border"
+      style={{ background, borderColor: border }}
     />
   );
-}
-
-function Dot({ color }: { color: string }) {
-  return <span className="inline-block size-1.5 rounded-full" style={{ backgroundColor: color }} />;
 }

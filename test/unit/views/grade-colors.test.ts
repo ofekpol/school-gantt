@@ -9,6 +9,7 @@ import {
   resolveGradeColors,
   gradeTagLabel,
   sortBySelection,
+  swatchFor,
 } from "@/lib/grade-colors";
 import { calendarEventVisual } from "@/components/CalendarEventChip";
 
@@ -43,7 +44,7 @@ describe("eventColorScheme", () => {
     const scheme = eventColorScheme([9, 7], DEFAULT_GRADE_COLORS);
     expect(scheme.kind).toBe("multi");
     expect(scheme.fill).toBe("#ffffff");
-    expect(scheme.dots).toEqual([DEFAULT_GRADE_COLORS[7], DEFAULT_GRADE_COLORS[9]]);
+    expect(scheme.dots).toEqual([swatchFor(DEFAULT_GRADE_COLORS[7]).accent, swatchFor(DEFAULT_GRADE_COLORS[9]).accent]);
   });
 
   it("uses the whole-school color when every grade (or none) is included", () => {
@@ -73,10 +74,23 @@ describe("grade selection focus", () => {
 });
 
 describe("calendarEventVisual", () => {
-  it("dims events outside the selection and drops their dots", () => {
+  it("dims events outside the selection and mutes their grade tabs", () => {
     const visual = calendarEventVisual({ grades: [9, 10] }, DEFAULT_GRADE_COLORS, [7], "all");
     expect(visual.highlighted).toBe(false);
-    expect(visual.dots).toEqual([]);
+    expect(visual.tabs.map((tab) => tab.label)).toEqual(["ט", "י"]);
+    expect(visual.tabs[0].style.background).toBe("#D9D6CE");
+  });
+
+  it("puts a dark grade tab on the pastel chip", () => {
+    const visual = calendarEventVisual({ grades: [7] }, DEFAULT_GRADE_COLORS, [], "all");
+    const swatch = swatchFor(DEFAULT_GRADE_COLORS[7]);
+    expect(visual.tabs).toEqual([{ label: "ז", style: { background: swatch.ink, color: swatch.fill } }]);
+    expect(visual.style.color).toBe(swatch.ink);
+  });
+
+  it("labels whole-school chips with a single school tab", () => {
+    const visual = calendarEventVisual({ grades: ALL }, DEFAULT_GRADE_COLORS, [], "all");
+    expect(visual.tabs.map((tab) => tab.label)).toEqual(["all"]);
   });
 
   it("keeps the canceled treatment regardless of grade", () => {
@@ -96,5 +110,15 @@ describe("gradeTagLabel", () => {
     expect(gradeTagLabel([8, 7], "all")).toBe("ז–ח");
     expect(gradeTagLabel([7, 9], "all")).toBe("ז, ט");
     expect(gradeTagLabel([7, 8, 9, 10, 11, 12], "all")).toBe("all");
+  });
+});
+
+describe("swatchFor", () => {
+  it("returns the curated dark tones for a palette fill", () => {
+    expect(swatchFor("#cfe3fa")).toEqual({ fill: "#CFE3FA", accent: "#3D7CC9", ink: "#133A66" });
+  });
+
+  it("falls back to a readable swatch for unknown legacy colors", () => {
+    expect(swatchFor("#0F6FB0").ink).toBe("#ffffff");
   });
 });

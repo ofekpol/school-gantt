@@ -12,7 +12,7 @@ import { EventDrawer } from "./EventDrawer";
 import { useRouteProgress } from "@/components/RouteProgress";
 import { GanttWeeklyMobileList } from "@/components/Gantt/GanttWeeklyMobileList";
 import { WeeklyEventBar } from "@/components/Gantt/WeeklyEventBar";
-import { DEFAULT_GRADE_COLORS, gradeTextColor, type GradeColorMap } from "@/lib/grade-colors";
+import { DEFAULT_GRADE_COLORS, swatchFor, type GradeColorMap } from "@/lib/grade-colors";
 
 /* ---- Layout constants ---- */
 const AXIS_H = 72;
@@ -456,18 +456,18 @@ function NavBtn({ onClick, children, ...rest }: React.ButtonHTMLAttributes<HTMLB
   );
 }
 
-/* ---- Grade label: colored pill so each grade's color is learned in both views ---- */
+/* ---- Grade label: pastel pill so each grade's color is learned in both views ---- */
 function GradeBadge({ label, color }: { label: string; color: string | undefined }) {
-  const fill = color ?? "var(--sg-ink)";
+  const swatch = swatchFor(color);
   return (
     <div style={{
       alignSelf: "flex-start",
       minWidth: 40,
       padding: "4px 10px",
-      borderRadius: 8,
-      background: fill,
-      color: color ? gradeTextColor(color) : "white",
-      fontFamily: "var(--sg-font-display)", fontSize: 22, fontWeight: 600, lineHeight: 1,
+      borderRadius: 999,
+      background: swatch.fill,
+      color: swatch.ink,
+      fontFamily: "var(--sg-font-display)", fontSize: 20, fontWeight: 700, lineHeight: 1.1,
       textAlign: "center",
     }}>
       {label}
