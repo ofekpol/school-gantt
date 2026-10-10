@@ -347,7 +347,13 @@
     "chooseMonth": "בחר חודש",
     "newEventOnDate": "אירוע חדש ב-{date}",
     "canceled": "מבוטל",
-    "updated": "עודכן"
+    "updated": "עודכן",
+    "wholeSchool": "כל ביה״ס",
+    "legendTitle": "מקרא צבעי שכבות",
+    "legendGrade": "שכבה {grade}",
+    "legendMulti": "כמה שכבות",
+    "legendWholeSchool": "כל בית הספר",
+    "legendDimmed": "שכבה שלא נבחרה"
   },
   "schedule": {
     "weekly": "שבועי",

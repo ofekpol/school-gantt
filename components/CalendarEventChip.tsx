@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import {
   DIMMED_EVENT_COLORS,
   eventColorScheme,
+  gradeTagLabel,
   isEventInGradeSelection,
   type GradeColorMap,
 } from "@/lib/grade-colors";
@@ -18,6 +19,8 @@ export interface CalendarEventVisual {
   dots: string[];
   /** False when the event is outside the current grade selection. */
   highlighted: boolean;
+  /** Grade label shown on the chip ("ז", "ז–ח", whole-school label). */
+  tag: string;
 }
 
 /**
@@ -28,14 +31,17 @@ export function calendarEventVisual(
   item: { grades: number[]; isCanceled?: boolean },
   gradeColors: GradeColorMap,
   selectedGrades: readonly number[],
+  wholeSchoolLabel: string,
 ): CalendarEventVisual {
   const highlighted = isEventInGradeSelection(item.grades, selectedGrades);
-  if (item.isCanceled) return { style: CANCELED_STYLE, dots: [], highlighted };
+  const tag = gradeTagLabel(item.grades, wholeSchoolLabel);
+  if (item.isCanceled) return { style: CANCELED_STYLE, dots: [], highlighted, tag };
   if (!highlighted) {
     return {
       style: { backgroundColor: DIMMED_EVENT_COLORS.fill, color: DIMMED_EVENT_COLORS.text },
       dots: [],
       highlighted,
+      tag,
     };
   }
   const scheme = eventColorScheme(item.grades, gradeColors);
@@ -47,10 +53,12 @@ export function calendarEventVisual(
     },
     dots: scheme.dots,
     highlighted,
+    tag,
   };
 }
 
 interface BodyProps {
+  tag: string;
   glyph: string;
   title: string;
   dots: string[];
@@ -58,7 +66,7 @@ interface BodyProps {
 }
 
 /** Inner content shared by single-day chips and multi-day segments. */
-export function CalendarEventBody({ glyph, title, dots, badge }: BodyProps) {
+export function CalendarEventBody({ tag, glyph, title, dots, badge }: BodyProps) {
   return (
     <>
       {dots.length > 0 && (
@@ -66,13 +74,14 @@ export function CalendarEventBody({ glyph, title, dots, badge }: BodyProps) {
           {dots.map((color, index) => (
             <span
               key={`${color}-${index}`}
-              className="inline-block size-1.5 rounded-full"
+              className="inline-block size-2 rounded-full"
               style={{ backgroundColor: color }}
             />
           ))}
         </span>
       )}
-      <span aria-hidden="true" className="event-chip-glyph">
+      <span aria-hidden="true" className="shrink-0 font-bold">{tag}</span>
+      <span aria-hidden="true" className="event-chip-glyph hidden opacity-70 sm:inline">
         {glyph}
       </span>
       <span className="truncate">{title}</span>

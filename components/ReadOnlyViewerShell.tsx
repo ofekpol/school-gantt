@@ -17,7 +17,7 @@ import {
 } from "@/lib/views/public-viewer";
 import type { PublicViewerEventType, PublicViewerYear } from "@/lib/views/public-viewer-data";
 import { usePublicViewerEvents } from "@/lib/views/use-public-viewer-events";
-import type { GradeColorMap } from "@/lib/grade-colors";
+import { DEFAULT_GRADE_COLORS, type GradeColorMap } from "@/lib/grade-colors";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 const TABS = ["weekly", "monthly"] as const;
@@ -97,6 +97,7 @@ export function ReadOnlyViewerShell({
           searchQuery={state.params.q}
           zoom={state.params.zoom}
           zoomOptions={[]}
+          gradeColors={gradeColors ?? DEFAULT_GRADE_COLORS}
           onChange={state.setParams}
         />
         <ReadOnlyViewerContent

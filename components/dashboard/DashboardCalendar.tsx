@@ -23,6 +23,7 @@ import {
 } from "@/lib/dashboard/grade-filter";
 import type { GradeColorMap } from "@/lib/grade-colors";
 import { GradeSelector } from "./GradeSelector";
+import { GradeColorLegend } from "@/components/GradeColorLegend";
 
 interface SerializedEvent {
   id: string;
@@ -322,6 +323,12 @@ export function DashboardCalendar({
           onDayClick={canCreateEvents ? openNewEvent : undefined}
           onEventClick={setSelectedEventId}
           onMonthChange={updatePrintMonth}
+        />
+      )}
+      {currentView === "monthly" && displayMonths && (
+        <GradeColorLegend
+          gradeColors={gradeColors}
+          showDimmed={deferredSelectedGrades.length > 0}
         />
       )}
 

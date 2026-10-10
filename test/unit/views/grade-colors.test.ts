@@ -7,6 +7,7 @@ import {
   isEventInGradeSelection,
   isWholeSchoolEvent,
   resolveGradeColors,
+  gradeTagLabel,
   sortBySelection,
 } from "@/lib/grade-colors";
 import { calendarEventVisual } from "@/components/CalendarEventChip";
@@ -73,18 +74,27 @@ describe("grade selection focus", () => {
 
 describe("calendarEventVisual", () => {
   it("dims events outside the selection and drops their dots", () => {
-    const visual = calendarEventVisual({ grades: [9, 10] }, DEFAULT_GRADE_COLORS, [7]);
+    const visual = calendarEventVisual({ grades: [9, 10] }, DEFAULT_GRADE_COLORS, [7], "all");
     expect(visual.highlighted).toBe(false);
     expect(visual.dots).toEqual([]);
   });
 
   it("keeps the canceled treatment regardless of grade", () => {
-    const visual = calendarEventVisual({ grades: [7], isCanceled: true }, DEFAULT_GRADE_COLORS, []);
+    const visual = calendarEventVisual({ grades: [7], isCanceled: true }, DEFAULT_GRADE_COLORS, [], "all");
     expect(visual.style.textDecoration).toBe("line-through");
   });
 
   it("paints single-grade chips with the grade color", () => {
-    const visual = calendarEventVisual({ grades: [7] }, DEFAULT_GRADE_COLORS, []);
+    const visual = calendarEventVisual({ grades: [7] }, DEFAULT_GRADE_COLORS, [], "all");
     expect(visual.style.backgroundColor).toBe(DEFAULT_GRADE_COLORS[7]);
+  });
+});
+
+describe("gradeTagLabel", () => {
+  it("labels single, consecutive, gapped and whole-school events", () => {
+    expect(gradeTagLabel([7], "all")).toBe("ז");
+    expect(gradeTagLabel([8, 7], "all")).toBe("ז–ח");
+    expect(gradeTagLabel([7, 9], "all")).toBe("ז, ט");
+    expect(gradeTagLabel([7, 8, 9, 10, 11, 12], "all")).toBe("all");
   });
 });

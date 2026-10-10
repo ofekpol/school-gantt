@@ -1,4 +1,5 @@
 import { readableTextColor } from "@/lib/colors";
+import { formatGradeLabel } from "@/lib/grades";
 
 /**
  * Grade color system for calendar views.
@@ -117,4 +118,18 @@ export function sortBySelection<T extends { grades: readonly number[] }>(
   if (selectedGrades.length === 0) return [...events];
   const rank = (event: T) => (isEventInGradeSelection(event.grades, selectedGrades) ? 0 : 1);
   return [...events].sort((a, b) => rank(a) - rank(b));
+}
+
+/**
+ * Short grade tag shown on every chip so the grade is readable without the
+ * legend: "ז", "ז–ח" (consecutive), "ז, ט" (gaps), or the whole-school label.
+ */
+export function gradeTagLabel(grades: readonly number[], wholeSchoolLabel: string): string {
+  if (isWholeSchoolEvent(grades)) return wholeSchoolLabel;
+  const sorted = [...grades].sort((a, b) => a - b);
+  const consecutive = sorted.every((grade, index) => index === 0 || grade === sorted[index - 1] + 1);
+  if (sorted.length > 1 && consecutive) {
+    return `${formatGradeLabel(sorted[0])}–${formatGradeLabel(sorted[sorted.length - 1])}`;
+  }
+  return sorted.map(formatGradeLabel).join(", ");
 }

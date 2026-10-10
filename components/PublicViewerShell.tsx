@@ -20,7 +20,7 @@ import {
 } from "@/lib/views/public-viewer";
 import type { PublicViewerEventType, PublicViewerYear } from "@/lib/views/public-viewer-data";
 import { usePublicViewerEvents } from "@/lib/views/use-public-viewer-events";
-import type { GradeColorMap } from "@/lib/grade-colors";
+import { DEFAULT_GRADE_COLORS, type GradeColorMap } from "@/lib/grade-colors";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
@@ -203,6 +203,11 @@ export function PublicViewerShell({
           searchQuery={params.q}
           zoom={params.zoom}
           zoomOptions={zoomOptionsForView(view)}
+          gradeColors={
+            view === "calendar" || (view === "gantt" && params.zoom === "week")
+              ? (gradeColors ?? DEFAULT_GRADE_COLORS)
+              : undefined
+          }
           onChange={setParams}
         />
         {deferredView === "gantt" && (

@@ -347,7 +347,13 @@
     "chooseMonth": "Choose month",
     "newEventOnDate": "New event on {date}",
     "canceled": "Canceled",
-    "updated": "Updated"
+    "updated": "Updated",
+    "wholeSchool": "All school",
+    "legendTitle": "Grade color key",
+    "legendGrade": "Grade {grade}",
+    "legendMulti": "Several grades",
+    "legendWholeSchool": "Whole school",
+    "legendDimmed": "Not selected"
   },
   "schedule": {
     "weekly": "Weekly",

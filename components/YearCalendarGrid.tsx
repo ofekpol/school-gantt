@@ -44,6 +44,7 @@ export function YearCalendarGrid({
   const tw = useTranslations("weekdays");
   const tc = useTranslations("common");
   const tv = useTranslations("calendar");
+  const wholeSchool = tv("wholeSchool");
   const todayKey = jerusalemDateKey(new Date());
   const currentMonthStart = findCurrentMonthStart(
     months.map((month, index) => ({
@@ -178,8 +179,8 @@ export function YearCalendarGrid({
                     return (
                       <div
                         key={`${wi}-${di}`}
-                        className="calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top sm:min-h-[88px] sm:p-1"
-                        style={segmentSpace ? { minHeight: `${88 + segmentSpace}px` } : undefined}
+                        className="calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top sm:min-h-[112px] sm:p-1"
+                        style={segmentSpace ? { minHeight: `${112 + segmentSpace}px` } : undefined}
                       />
                     );
                   }
@@ -193,10 +194,10 @@ export function YearCalendarGrid({
                       style={
                         {
                           ...(day.closureColor ? { "--closure-color": day.closureColor } : {}),
-                          ...(segmentSpace ? { minHeight: `${88 + segmentSpace}px` } : {}),
+                          ...(segmentSpace ? { minHeight: `${112 + segmentSpace}px` } : {}),
                         } as React.CSSProperties
                       }
-                      className={`calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top transition-colors hover:bg-blue-50 sm:min-h-[88px] sm:p-1 ${
+                      className={`calendar-day relative min-h-[64px] bg-[var(--sg-surface)] p-0.5 align-top transition-colors hover:bg-blue-50 sm:min-h-[112px] sm:p-1 ${
                         day.date === todayKey ? "ring-2 ring-blue-500 ring-inset" : ""
                       }`}
                     >
@@ -226,7 +227,7 @@ export function YearCalendarGrid({
                         {sortBySelection(day.events, selectedGrades)
                           .slice(0, 4)
                           .map((chip) => {
-                            const visual = calendarEventVisual(chip, gradeColors, selectedGrades);
+                            const visual = calendarEventVisual(chip, gradeColors, selectedGrades, wholeSchool);
                             return (
                               <li
                                 key={chip.id}
@@ -241,10 +242,11 @@ export function YearCalendarGrid({
                                     onEventClick?.(chip.eventId);
                                   }}
                                   disabled={!onEventClick}
-                                  className="event-chip flex w-full items-center gap-1 truncate rounded-sm border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default"
+                                  className="event-chip flex w-full items-center gap-1 truncate rounded border border-black/10 px-1.5 py-0.5 text-start text-[11px] leading-4 font-medium disabled:cursor-default"
                                   style={visual.style}
                                 >
                                   <CalendarEventBody
+                                    tag={visual.tag}
                                     glyph={chip.eventTypeGlyph}
                                     title={chip.title}
                                     dots={visual.dots}
@@ -265,7 +267,7 @@ export function YearCalendarGrid({
                 })}
                 <div className="pointer-events-none absolute inset-x-0 top-7 z-20 grid grid-cols-7 gap-y-0.5 px-1">
                   {week.segments.map((segment) => {
-                    const visual = calendarEventVisual(segment, gradeColors, selectedGrades);
+                    const visual = calendarEventVisual(segment, gradeColors, selectedGrades, wholeSchool);
                     const label = eventTitle(segment.title, segment.isCanceled, segment.isUpdated, tv);
                     return (
                       <button
@@ -283,7 +285,7 @@ export function YearCalendarGrid({
                           onEventClick?.(segment.eventId);
                         }}
                         disabled={!onEventClick}
-                        className={`calendar-event-segment pointer-events-auto flex min-w-0 items-center gap-1 truncate border border-black/10 px-1 py-0.5 text-start text-[10px] disabled:cursor-default ${
+                        className={`calendar-event-segment pointer-events-auto flex min-w-0 items-center gap-1 truncate border border-black/10 px-1.5 py-0.5 text-start text-[11px] leading-4 font-medium disabled:cursor-default ${
                           segment.continuesBefore ? "rounded-s-none" : "rounded-s-sm"
                         } ${segment.continuesAfter ? "rounded-e-none" : "rounded-e-sm"}`}
                         style={{
@@ -293,6 +295,7 @@ export function YearCalendarGrid({
                         }}
                       >
                         <CalendarEventBody
+                          tag={visual.tag}
                           glyph={segment.eventTypeGlyph}
                           title={segment.title}
                           dots={visual.dots}
