@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { safeRedirectPath } from "@/lib/auth/redirects";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStaffUserFromInvite, getStaffUserByAuthId } from "@/lib/db/staff";
 import { getInviteByToken, markInviteUsed, updateInviteUsedBy } from "@/lib/db/invites";
@@ -7,9 +8,8 @@ import { createPendingRegistration, getPendingRegistrationByAuthId } from "@/lib
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const rawNext = searchParams.get("next") ?? "/dashboard";
   const inviteToken = searchParams.get("invite_token");
-  const next = rawNext.startsWith("/") ? rawNext : "/dashboard";
+  const next = safeRedirectPath(searchParams.get("next"), "/dashboard");
 
   if (!code) {
     return NextResponse.redirect(new URL("/auth/login", origin));
