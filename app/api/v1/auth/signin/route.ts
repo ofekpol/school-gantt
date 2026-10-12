@@ -9,7 +9,7 @@ import {
   incrementLoginAttempts,
   resetLoginAttempts,
 } from "@/lib/db/staff";
-import { getInviteByToken } from "@/lib/db/invites";
+import { getInviteByToken, markInviteUsed, updateInviteUsedBy } from "@/lib/db/invites";
 import { getPostLoginRedirect } from "@/lib/auth/redirects";
 
 const MAX_ATTEMPTS = 10;
@@ -89,8 +89,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           invite &&
           invite.expiresAt > new Date() &&
           (invite.multiUse || !invite.usedAt);
-        if (isValid) {
-          await createStaffUserFromInvite({
+        // Claim single-use invites atomically, exactly like /auth/confirm, so the
+        // same token cannot mint more than one account through this fallback.
+        if (invite && isValid && (await markInviteUsed(inviteToken, null, invite.multiUse)).affected > 0) {
+          const created = await createStaffUserFromInvite({
             authUserId: data.user.id,
             schoolId: invite.schoolId,
             email: data.user.email ?? email,
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             gradeScopes: invite.gradeScopes,
             eventTypeScopes: invite.eventTypeScopes,
           });
+          if (!invite.multiUse) await updateInviteUsedBy(inviteToken, created.id);
           resolvedUser = await getStaffUserByAuthId(data.user.id);
         }
       } catch {
