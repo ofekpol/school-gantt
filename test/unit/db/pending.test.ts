@@ -12,22 +12,30 @@ vi.mock("@/lib/db/client", () => ({
   withSchool: (...args: unknown[]) => withSchoolMock(...args),
 }));
 
+const deleteUserMock = vi.fn();
 vi.mock("@/lib/db/supabase-admin", () => ({
   supabaseAdmin: {
     auth: {
       admin: {
-        deleteUser: vi.fn(),
+        deleteUser: (...args: unknown[]) => deleteUserMock(...args),
       },
     },
   },
 }));
 
-import { approvePendingRegistration } from "@/lib/db/pending";
+const getStaffUserByAuthIdMock = vi.fn();
+vi.mock("@/lib/db/staff", () => ({
+  getStaffUserByAuthId: (...args: unknown[]) => getStaffUserByAuthIdMock(...args),
+}));
+
+import { approvePendingRegistration, rejectPendingRegistration } from "@/lib/db/pending";
+import { ApprovePendingSchema } from "@/lib/validations/admin";
 
 const SCHOOL = "00000000-0000-0000-0000-000000000001";
 const PENDING = "00000000-0000-0000-0000-000000000002";
 const AUTH_USER = "00000000-0000-0000-0000-000000000003";
 const APPROVER = "00000000-0000-0000-0000-000000000004";
+const OTHER_SCHOOL = "00000000-0000-0000-0000-000000000005";
 
 function makeTx() {
   const selectChain = {
@@ -66,6 +74,9 @@ type TxCallback = (tx: MockTx) => Promise<unknown>;
 beforeEach(() => {
   withSchoolMock.mockReset();
   transactionMock.mockReset();
+  deleteUserMock.mockReset();
+  getStaffUserByAuthIdMock.mockReset();
+  getStaffUserByAuthIdMock.mockResolvedValue(null);
   const tx = makeTx();
   withSchoolMock.mockImplementation(async (_schoolId: unknown, fn: TxCallback) => fn(tx));
   transactionMock.mockImplementation(async (fn: TxCallback) => fn(tx));
@@ -84,5 +95,46 @@ describe("approvePendingRegistration", () => {
     });
 
     expect(withSchoolMock).toHaveBeenCalledWith(SCHOOL, expect.any(Function));
+  });
+
+  it("refuses to approve an account that is already staff in another school", async () => {
+    getStaffUserByAuthIdMock.mockResolvedValue({ id: AUTH_USER, schoolId: OTHER_SCHOOL });
+
+    await expect(
+      approvePendingRegistration({
+        pendingId: PENDING,
+        schoolId: SCHOOL,
+        role: "admin",
+        fullName: "Hijack",
+        approvedBy: APPROVER,
+      }),
+    ).rejects.toThrow("staff_user_in_other_school");
+    expect(withSchoolMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("rejectPendingRegistration", () => {
+  it("deletes the auth account when the user never became staff", async () => {
+    await rejectPendingRegistration({ pendingId: PENDING, reviewedBy: APPROVER });
+    expect(deleteUserMock).toHaveBeenCalledWith(AUTH_USER);
+  });
+
+  it("does not delete the auth account of an existing staff member", async () => {
+    getStaffUserByAuthIdMock.mockResolvedValue({ id: AUTH_USER, schoolId: OTHER_SCHOOL });
+    await rejectPendingRegistration({ pendingId: PENDING, reviewedBy: APPROVER });
+    expect(deleteUserMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("ApprovePendingSchema", () => {
+  it("drops a client-supplied schoolId", () => {
+    const parsed = ApprovePendingSchema.parse({
+      action: "approve",
+      pendingId: PENDING,
+      schoolId: OTHER_SCHOOL,
+      role: "admin",
+      fullName: "x",
+    });
+    expect(parsed).not.toHaveProperty("schoolId");
   });
 });

@@ -41,7 +41,6 @@ export const ApprovePendingSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("approve"),
     pendingId: z.string().uuid(),
-    schoolId: z.string().uuid().optional(),
     role: z.enum(["editor", "admin", "viewer"]),
     fullName: z.string().min(1).max(255),
     gradeScopes: z.array(z.number().int().min(7).max(12)).optional(),

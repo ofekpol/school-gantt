@@ -45,15 +45,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const role = parsed.data.role;
-  const result = await approvePendingRegistration({
-    pendingId: parsed.data.pendingId,
-    schoolId: parsed.data.schoolId ?? user.schoolId,
-    role,
-    fullName: parsed.data.fullName,
-    gradeScopes: parsed.data.gradeScopes,
-    eventTypeScopes: parsed.data.eventTypeScopes,
-    approvedBy: user.id,
-  });
+  let result: Awaited<ReturnType<typeof approvePendingRegistration>>;
+  try {
+    // Always the admin's own school — never a client-supplied school id.
+    result = await approvePendingRegistration({
+      pendingId: parsed.data.pendingId,
+      schoolId: user.schoolId,
+      role,
+      fullName: parsed.data.fullName,
+      gradeScopes: parsed.data.gradeScopes,
+      eventTypeScopes: parsed.data.eventTypeScopes,
+      approvedBy: user.id,
+    });
+  } catch (e) {
+    if (e instanceof Error && e.message === "staff_user_in_other_school") {
+      return NextResponse.json({ error: "Conflict" }, { status: 409 });
+    }
+    throw e;
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
   // Send approval email off the response critical path. DB commit already
