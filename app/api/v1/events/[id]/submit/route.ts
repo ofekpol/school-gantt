@@ -3,7 +3,7 @@ import { getStaffUser } from "@/lib/auth/session";
 import { publishEvent } from "@/lib/events/approval";
 import { updateDraft } from "@/lib/events/crud";
 import { EventDraftSchema } from "@/lib/validations/events";
-import { getEditorAllowedGrades } from "@/lib/events/queries";
+import { getEditorAllowedGrades, isEventTypeAllowed } from "@/lib/events/queries";
 import { invalidatePublicViewerCache } from "@/lib/views/public-viewer-data";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -42,6 +42,14 @@ export async function POST(
               { status: 403 },
             );
           }
+        }
+        const { eventTypeId } = draftFields;
+        if (
+          eventTypeId &&
+          user.role !== "admin" &&
+          !(await isEventTypeAllowed(user.schoolId!, user.id, eventTypeId))
+        ) {
+          return NextResponse.json({ error: "scope_violation", eventTypeId }, { status: 403 });
         }
         const updated = await updateDraft(
           user.schoolId!,

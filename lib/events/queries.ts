@@ -32,6 +32,37 @@ export async function getEditorAllowedGrades(
   return rows.map((r) => Number(r.scopeValue));
 }
 
+/**
+ * Whether the editor may use `eventTypeId`. Mirrors the grade rule: an editor
+ * with zero event_type scopes may use every type; otherwise the type's key
+ * must be one of their scope values.
+ */
+export async function isEventTypeAllowed(
+  schoolId: string,
+  staffUserId: string,
+  eventTypeId: string,
+): Promise<boolean> {
+  return withSchool(schoolId, async (tx) => {
+    const scopeRows = await tx
+      .select({ scopeValue: editorScopes.scopeValue })
+      .from(editorScopes)
+      .where(
+        and(
+          eq(editorScopes.staffUserId, staffUserId),
+          eq(editorScopes.scopeKind, "event_type"),
+        ),
+      );
+    if (scopeRows.length === 0) return true;
+
+    const [type] = await tx
+      .select({ key: eventTypes.key })
+      .from(eventTypes)
+      .where(eq(eventTypes.id, eventTypeId))
+      .limit(1);
+    return type !== undefined && scopeRows.some((row) => row.scopeValue === type.key);
+  });
+}
+
 export interface DashboardEvent {
   id: string;
   title: string | null;

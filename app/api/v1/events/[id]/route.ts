@@ -9,6 +9,7 @@ import {
 import {
   getEditorAllowedGrades,
   getEventForEditor,
+  isEventTypeAllowed,
 } from "@/lib/events/queries";
 import { invalidatePublicViewerCache } from "@/lib/views/public-viewer-data";
 
@@ -73,6 +74,15 @@ export async function PATCH(
         { status: 403 },
       );
     }
+  }
+
+  const { eventTypeId } = parsed.data;
+  if (
+    eventTypeId &&
+    user.role !== "admin" &&
+    !(await isEventTypeAllowed(user.schoolId!, user.id, eventTypeId))
+  ) {
+    return NextResponse.json({ error: "scope_violation", eventTypeId }, { status: 403 });
   }
 
   const result = await updateDraft(
