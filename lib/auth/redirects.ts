@@ -10,9 +10,13 @@ const REDIRECT_BASE = "http://redirect.invalid";
  */
 export function safeRedirectPath(raw: string | null, fallback: string): string {
   if (!raw || !raw.startsWith("/")) return fallback;
-  const resolved = new URL(raw, REDIRECT_BASE);
-  if (resolved.origin !== REDIRECT_BASE) return fallback;
-  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  try {
+    const resolved = new URL(raw, REDIRECT_BASE);
+    if (resolved.origin !== REDIRECT_BASE) return fallback;
+    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  } catch {
+    return fallback; // e.g. "//[" is not a parseable URL
+  }
 }
 
 export function getPostLoginRedirect(user: StaffUserRecord | null): Route {

@@ -116,11 +116,7 @@ describe("POST /api/v1/events/publish", () => {
     const body = await res.json();
     expect(body.error).toBe("scope_violation");
     expect(body.eventTypeId).toBe(VALID_BODY.eventTypeId);
-    expect(isEventTypeAllowedMock).toHaveBeenCalledWith(
-      ACTIVE_EDITOR.schoolId,
-      ACTIVE_EDITOR.id,
-      VALID_BODY.eventTypeId,
-    );
+    expect(isEventTypeAllowedMock).toHaveBeenCalledWith(ACTIVE_EDITOR, VALID_BODY.eventTypeId);
     expect(createPublishedEventMock).not.toHaveBeenCalled();
   });
 

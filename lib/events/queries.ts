@@ -33,16 +33,18 @@ export async function getEditorAllowedGrades(
 }
 
 /**
- * Whether the editor may use `eventTypeId`. Mirrors the grade rule: an editor
- * with zero event_type scopes may use every type; otherwise the type's key
- * must be one of their scope values.
+ * Whether `user` may use `eventTypeId`. Admins may use every type. Mirrors the
+ * grade rule: an editor with zero event_type scopes may use every type;
+ * otherwise the type's key must be one of their scope values.
  */
 export async function isEventTypeAllowed(
-  schoolId: string,
-  staffUserId: string,
+  user: { id: string; schoolId: string | null; role: string },
   eventTypeId: string,
 ): Promise<boolean> {
-  return withSchool(schoolId, async (tx) => {
+  if (user.role === "admin") return true;
+  if (!user.schoolId) return false;
+  const staffUserId = user.id;
+  return withSchool(user.schoolId, async (tx) => {
     const scopeRows = await tx
       .select({ scopeValue: editorScopes.scopeValue })
       .from(editorScopes)

@@ -3,7 +3,11 @@ import { getStaffUser } from "@/lib/auth/session";
 import { publishEvent } from "@/lib/events/approval";
 import { updateDraft } from "@/lib/events/crud";
 import { EventDraftSchema } from "@/lib/validations/events";
-import { getEditorAllowedGrades, isEventTypeAllowed } from "@/lib/events/queries";
+import {
+  getEditorAllowedGrades,
+  getEventForEditor,
+  isEventTypeAllowed,
+} from "@/lib/events/queries";
 import { invalidatePublicViewerCache } from "@/lib/views/public-viewer-data";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -44,11 +48,7 @@ export async function POST(
           }
         }
         const { eventTypeId } = draftFields;
-        if (
-          eventTypeId &&
-          user.role !== "admin" &&
-          !(await isEventTypeAllowed(user.schoolId!, user.id, eventTypeId))
-        ) {
+        if (eventTypeId && !(await isEventTypeAllowed(user, eventTypeId))) {
           return NextResponse.json({ error: "scope_violation", eventTypeId }, { status: 403 });
         }
         const updated = await updateDraft(
@@ -65,6 +65,20 @@ export async function POST(
         if (updated.status === "conflict") {
           return NextResponse.json({ error: "version_conflict" }, { status: 409 });
         }
+      }
+    }
+
+    // Check the stored draft too: an empty body, or scopes narrowed after the
+    // draft was made, must not publish a type the editor may no longer use.
+    if (user.role !== "admin") {
+      const current = await getEventForEditor(user.schoolId!, id, user.id, false);
+      if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      const storedTypeId = current.event.eventTypeId;
+      if (!(await isEventTypeAllowed(user, storedTypeId))) {
+        return NextResponse.json(
+          { error: "scope_violation", eventTypeId: storedTypeId },
+          { status: 403 },
+        );
       }
     }
 

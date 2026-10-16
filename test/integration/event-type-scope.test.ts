@@ -34,6 +34,10 @@ async function createEditor(schoolId: string, eventTypeKeys: string[]): Promise<
   return id;
 }
 
+function editor(id: string) {
+  return { id, schoolId: testSchoolA, role: "editor" };
+}
+
 async function twoEventTypes(schoolId: string) {
   const rows = await testDb!
     .select({ id: schema.eventTypes.id, key: schema.eventTypes.key })
@@ -57,15 +61,15 @@ describe.skipIf(skipIfNoTestDb)("isEventTypeAllowed", () => {
   });
 
   it("allows a type inside the editor's event-type scope", async () => {
-    expect(await isEventTypeAllowed(testSchoolA, scopedEditor, types.allowed.id)).toBe(true);
+    expect(await isEventTypeAllowed(editor(scopedEditor), types.allowed.id)).toBe(true);
   });
 
   it("denies a type outside the editor's event-type scope", async () => {
-    expect(await isEventTypeAllowed(testSchoolA, scopedEditor, types.other.id)).toBe(false);
+    expect(await isEventTypeAllowed(editor(scopedEditor), types.other.id)).toBe(false);
   });
 
   it("allows every type for an editor with no event-type scopes", async () => {
-    expect(await isEventTypeAllowed(testSchoolA, unscopedEditor, types.other.id)).toBe(true);
+    expect(await isEventTypeAllowed(editor(unscopedEditor), types.other.id)).toBe(true);
   });
 
   it("denies a scoped editor an event type from another school", async () => {
@@ -75,6 +79,6 @@ describe.skipIf(skipIfNoTestDb)("isEventTypeAllowed", () => {
       .where(eq(schema.eventTypes.schoolId, testSchoolB))
       .limit(1);
     if (!foreign) return;
-    expect(await isEventTypeAllowed(testSchoolA, scopedEditor, foreign.id)).toBe(false);
+    expect(await isEventTypeAllowed(editor(scopedEditor), foreign.id)).toBe(false);
   });
 });

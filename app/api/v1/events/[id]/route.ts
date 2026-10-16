@@ -77,11 +77,7 @@ export async function PATCH(
   }
 
   const { eventTypeId } = parsed.data;
-  if (
-    eventTypeId &&
-    user.role !== "admin" &&
-    !(await isEventTypeAllowed(user.schoolId!, user.id, eventTypeId))
-  ) {
+  if (eventTypeId && !(await isEventTypeAllowed(user, eventTypeId))) {
     return NextResponse.json({ error: "scope_violation", eventTypeId }, { status: 403 });
   }
 

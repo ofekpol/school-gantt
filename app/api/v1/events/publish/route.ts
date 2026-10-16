@@ -34,7 +34,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 403 },
       );
     }
-    if (!(await isEventTypeAllowed(user.schoolId!, user.id, parsed.data.eventTypeId))) {
+    if (!(await isEventTypeAllowed(user, parsed.data.eventTypeId))) {
       return NextResponse.json(
         { error: "scope_violation", eventTypeId: parsed.data.eventTypeId },
         { status: 403 },

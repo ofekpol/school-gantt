@@ -18,6 +18,7 @@ describe("safeRedirectPath", () => {
     "/\\evil.com",
     "/\t/evil.com",
     "/\n/evil.com",
+    "//[",
     "javascript:alert(1)",
   ])("falls back for unsafe value %s", (value) => {
     expect(safeRedirectPath(value, "/dashboard")).toBe("/dashboard");

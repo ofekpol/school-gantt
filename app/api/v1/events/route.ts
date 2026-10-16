@@ -45,7 +45,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const { eventTypeId, publish, ...draftFields } = parsed.data;
 
-  if (user.role !== "admin" && !(await isEventTypeAllowed(user.schoolId!, user.id, eventTypeId))) {
+  if (!(await isEventTypeAllowed(user, eventTypeId))) {
     return NextResponse.json({ error: "scope_violation", eventTypeId }, { status: 403 });
   }
 
