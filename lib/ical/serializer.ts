@@ -51,6 +51,10 @@ export function serializeCalendar(input: SerializeInput): string {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeText(input.schoolName)}`,
+    // Refresh hints for subscribing clients (Apple/Outlook honor them; Google
+    // Calendar ignores them and polls on its own schedule).
+    "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
+    "X-PUBLISHED-TTL:PT1H",
   ];
 
   // Stable order so output is deterministic for ETag.
