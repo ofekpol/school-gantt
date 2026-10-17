@@ -30,7 +30,6 @@ export const StaffInviteCreateSchema = z.object({
   role: z.enum(["editor", "admin", "viewer"]),
   gradeScopes: z.array(z.number().int().min(7).max(12)).optional(),
   eventTypeScopes: z.array(z.string().min(1).max(64)).optional(),
-  expiresInHours: z.number().int().min(1).max(24 * 30).optional(),
   multiUse: z.boolean().optional().default(false),
   email: z.string().email().optional(),
 });

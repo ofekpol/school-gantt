@@ -87,7 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const invite = await getInviteByToken(inviteToken);
         const isValid =
           invite &&
-          invite.expiresAt > new Date() &&
+          !invite.revokedAt &&
           (invite.multiUse || !invite.usedAt);
         // Claim single-use invites atomically, exactly like /auth/confirm, so the
         // same token cannot mint more than one account through this fallback.

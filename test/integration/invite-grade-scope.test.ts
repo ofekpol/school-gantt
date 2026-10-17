@@ -63,7 +63,6 @@ describe.skipIf(skipIfNoTestDb)("INV-01: editor invite stores correct role + gra
       gradeScopes: [10],
       eventTypeScopes: [],
       createdBy: adminId,
-      expiresInHours: 24,
     });
 
     expect(token).toMatch(
@@ -97,7 +96,6 @@ describe.skipIf(skipIfNoTestDb)("INV-02: viewer invite stores correct role", () 
       gradeScopes: [],
       eventTypeScopes: [],
       createdBy: adminId,
-      expiresInHours: 24,
     });
 
     expect(token).toBeTruthy();

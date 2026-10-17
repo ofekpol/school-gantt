@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import { staffInvites } from "@/lib/db/schema";
 
@@ -12,7 +12,7 @@ export interface InviteRecord {
   eventTypeScopes: string[];
   createdBy: string;
   multiUse: boolean;
-  expiresAt: Date;
+  revokedAt: Date | null;
   usedAt: Date | null;
   usedBy: string | null;
   createdAt: Date;
@@ -35,11 +35,7 @@ export async function createInvite(params: {
   eventTypeScopes: string[];
   createdBy: string;
   multiUse?: boolean;
-  expiresInHours?: number;
-}): Promise<{ token: string; expiresAt: Date }> {
-  const expiresAt = new Date(
-    Date.now() + (params.expiresInHours ?? 72) * 60 * 60 * 1000,
-  );
+}): Promise<{ token: string }> {
   const [row] = await withSchool(params.schoolId, (tx) =>
     tx
       .insert(staffInvites)
@@ -50,11 +46,10 @@ export async function createInvite(params: {
         eventTypeScopes: params.eventTypeScopes,
         createdBy: params.createdBy,
         multiUse: params.multiUse ?? false,
-        expiresAt,
       })
-      .returning({ token: staffInvites.token, expiresAt: staffInvites.expiresAt }),
+      .returning({ token: staffInvites.token }),
   );
-  return { token: row.token, expiresAt: row.expiresAt };
+  return { token: row.token };
 }
 
 /**
@@ -75,7 +70,7 @@ export async function getInviteByToken(token: string): Promise<InviteRecord | nu
 
 /**
  * Atomically marks a single-use invite as used. Returns the number of rows affected
- * (0 = already used or expired; 1 = success). For multi-use invites, always returns 1
+ * (0 = already used or revoked; 1 = success). For multi-use invites, always returns 1
  * without touching the DB — they are never consumed.
  *
  * Pass usedBy=null to claim without a resolved staff user id yet; call updateInviteUsedBy
@@ -95,7 +90,7 @@ export async function markInviteUsed(
       and(
         eq(staffInvites.token, token),
         isNull(staffInvites.usedAt),
-        sql`${staffInvites.expiresAt} > now()`,
+        isNull(staffInvites.revokedAt),
       ),
     )
     .returning({ id: staffInvites.id });
@@ -114,7 +109,7 @@ export async function revokeInvite(id: string, schoolId: string): Promise<void> 
   await withSchool(schoolId, (tx) =>
     tx
       .update(staffInvites)
-      .set({ expiresAt: new Date() })
+      .set({ revokedAt: new Date() })
       .where(and(eq(staffInvites.id, id), isNull(staffInvites.usedAt))),
   );
 }

@@ -42,7 +42,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     role: parsed.data.role,
     gradeScopes: isEditor ? (parsed.data.gradeScopes ?? []) : [],
     eventTypeScopes: isEditor ? (parsed.data.eventTypeScopes ?? []) : [],
-    expiresInHours: parsed.data.expiresInHours,
     multiUse: parsed.data.multiUse,
     createdBy: user.id,
   });
@@ -56,7 +55,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         to: parsed.data.email,
         inviteUrl: url,
         role: parsed.data.role,
-        expiresAt: result.expiresAt,
       });
       emailSent = true;
     } catch (err) {

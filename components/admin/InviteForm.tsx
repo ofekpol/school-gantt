@@ -44,7 +44,6 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
     const emailRaw = String(form.get("email") ?? "").trim();
     const body: Record<string, unknown> = {
       role: selectedRole,
-      expiresInHours: Number(form.get("expiresInHours") ?? 72),
       gradeScopes,
       eventTypeScopes,
       multiUse: form.get("multiUse") === "on",
@@ -99,17 +98,6 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
           className="w-56 rounded border px-2 py-1"
           aria-label={t("email")}
         />
-        <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
-          <span>{t("expiresInHours")}</span>
-          <input
-            name="expiresInHours"
-            type="number"
-            defaultValue={72}
-            min={1}
-            max={720}
-            className="w-24 rounded border px-2 py-1 text-base font-normal text-neutral-900"
-          />
-        </label>
         <label className="flex items-center gap-2 text-sm text-neutral-700">
           <input type="checkbox" name="multiUse" />
           {t("multiUse")}

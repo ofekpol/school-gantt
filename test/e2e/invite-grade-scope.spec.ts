@@ -50,7 +50,7 @@ test.describe("INVITE: admin creates invite links via API", () => {
     request,
   }) => {
     const res = await request.post("/api/v1/admin/staff/invites", {
-      data: { role: "editor", gradeScopes: [10], expiresInHours: 24 },
+      data: { role: "editor", gradeScopes: [10] },
     });
 
     expect(res.status()).toBe(201);

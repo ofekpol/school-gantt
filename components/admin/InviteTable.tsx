@@ -13,15 +13,9 @@ interface InviteRow {
   gradeScopes: number[];
   eventTypeScopes: string[];
   multiUse: boolean;
-  expiresAt: Date | string;
+  revokedAt: Date | string | null;
   usedAt: Date | string | null;
 }
-
-const EXPIRES_AT_FMT = new Intl.DateTimeFormat("he-IL", {
-  timeZone: "Asia/Jerusalem",
-  dateStyle: "short",
-  timeStyle: "short",
-});
 
 export function InviteTable({ invites }: { invites: InviteRow[] }) {
   const t = useTranslations("admin.staff");
@@ -48,12 +42,12 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
     <div className="rounded-lg border border-neutral-200">
       <div aria-label={t("mobileInviteListLabel")} className="space-y-3 p-3 md:hidden">
         {invites.map((invite) => {
-          const expired = new Date(invite.expiresAt) <= new Date();
-          const isActive = !invite.usedAt && !expired;
+          const revoked = Boolean(invite.revokedAt);
+          const isActive = !invite.usedAt && !revoked;
           const status = invite.usedAt
             ? t("used")
-            : expired
-              ? t("expired")
+            : revoked
+              ? t("revoked")
               : t("active");
           const role = t(`role${capitalize(invite.role)}`);
           const scopeLabels = formatInviteScopes(invite);
@@ -62,9 +56,6 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-medium text-neutral-950">{role}</h3>
-                  <p className="mt-1 text-xs text-neutral-500">
-                    {EXPIRES_AT_FMT.format(new Date(invite.expiresAt))}
-                  </p>
                 </div>
                 <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">
                   {status}
@@ -107,24 +98,23 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
       </div>
 
       <div className="hidden max-h-[420px] overflow-auto md:block">
-      <table className="w-full min-w-[720px] text-sm">
+      <table className="w-full min-w-[600px] text-sm">
         <thead className="sticky top-0 z-10 bg-white text-xs font-semibold text-neutral-500 uppercase shadow-[0_1px_0_var(--color-border)]">
           <tr>
             <th className="py-3 ps-4 pe-4 text-start">{t("role")}</th>
             <th className="py-3 pe-4 text-start">{t("scopes")}</th>
-            <th className="py-3 pe-4 text-start">{t("expiresAt")}</th>
             <th className="py-3 pe-4 text-start">{t("status")}</th>
             <th className="py-3 pe-4 text-start">{t("actions")}</th>
           </tr>
         </thead>
         <tbody>
           {invites.map((invite) => {
-            const expired = new Date(invite.expiresAt) <= new Date();
-            const isActive = !invite.usedAt && !expired;
+            const revoked = Boolean(invite.revokedAt);
+            const isActive = !invite.usedAt && !revoked;
             const status = invite.usedAt
               ? t("used")
-              : expired
-                ? t("expired")
+              : revoked
+                ? t("revoked")
                 : t("active");
             const scopeLabels = formatInviteScopes(invite);
             return (
@@ -140,7 +130,6 @@ export function InviteTable({ invites }: { invites: InviteRow[] }) {
                 <td className="max-w-[340px] py-3 pe-4 text-neutral-700">
                   {scopeLabels || "—"}
                 </td>
-                <td className="py-3 pe-4">{EXPIRES_AT_FMT.format(new Date(invite.expiresAt))}</td>
                 <td className="py-3 pe-4">{status}</td>
                 <td className="py-3 pe-4">
                   <div className="flex gap-2">
