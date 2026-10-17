@@ -160,7 +160,7 @@ describe("POST /api/v1/auth/signin", () => {
       eventTypeScopes: [],
       multiUse: false,
       usedAt: null,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      revokedAt: null,
     };
 
     function signInWithInviteMetadata() {

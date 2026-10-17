@@ -22,7 +22,6 @@ import { sendApprovalEmail } from "@/lib/email/approval";
 // Fixtures
 // ─────────────────────────────────────────────────────────────────────────────
 
-const EXPIRES_AT = new Date("2026-12-31T23:59:59.000Z");
 
 beforeEach(() => {
   sendMock.mockClear();
@@ -43,7 +42,6 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       to: "user@example.com",
       inviteUrl: "https://app.example.com/invite/tok",
       role: "editor",
-      expiresAt: EXPIRES_AT,
     });
     expect(sendMock).not.toHaveBeenCalled();
   });
@@ -54,7 +52,6 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       to: "user@example.com",
       inviteUrl: "https://app.example.com/invite/tok",
       role: "editor",
-      expiresAt: EXPIRES_AT,
     });
     expect(sendMock).toHaveBeenCalledOnce();
   });
@@ -65,7 +62,6 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       to: "invitee@school.edu",
       inviteUrl: "https://app.example.com/invite/tok",
       role: "admin",
-      expiresAt: EXPIRES_AT,
     });
     const [payload] = sendMock.mock.calls[0];
     expect(payload.to).toBe("invitee@school.edu");
@@ -77,7 +73,6 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       to: "user@example.com",
       inviteUrl: "https://app.example.com/invite/tok",
       role: "editor",
-      expiresAt: EXPIRES_AT,
     });
     const [payload] = sendMock.mock.calls[0];
     expect(payload.subject).toBe("הוזמנת להצטרף למערכת גאנט בית הספר");
@@ -86,7 +81,7 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
   it("email text contains the invite URL", async () => {
     vi.stubEnv("RESEND_API_KEY", "re_test_key");
     const inviteUrl = "https://app.example.com/invite/abc123";
-    await sendInviteEmail({ to: "u@e.com", inviteUrl, role: "viewer", expiresAt: EXPIRES_AT });
+    await sendInviteEmail({ to: "u@e.com", inviteUrl, role: "viewer" });
     const [payload] = sendMock.mock.calls[0];
     expect(payload.text).toContain(inviteUrl);
   });
@@ -97,27 +92,10 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       to: "u@e.com",
       inviteUrl: "https://app.example.com/invite/tok",
       role: "admin",
-      expiresAt: EXPIRES_AT,
     });
     const [payload] = sendMock.mock.calls[0];
     expect(payload.text).toContain("admin");
   });
-
-  it("email text contains the expiry date", async () => {
-    vi.stubEnv("RESEND_API_KEY", "re_test_key");
-    await sendInviteEmail({
-      to: "u@e.com",
-      inviteUrl: "https://app.example.com/invite/tok",
-      role: "editor",
-      expiresAt: EXPIRES_AT,
-    });
-    const [payload] = sendMock.mock.calls[0];
-    // EXPIRES_AT is 2026-12-31 UTC which is 2027-01-01 in Asia/Jerusalem.
-    // The email formats via Intl.DateTimeFormat(Asia/Jerusalem), so expect the localised year.
-    const localYear = new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem", year: "numeric" }).format(EXPIRES_AT);
-    expect(payload.text).toContain(localYear);
-  });
-
   it("falls back to the default from address when RESEND_FROM_EMAIL is not set", async () => {
     vi.stubEnv("RESEND_API_KEY", "re_test_key");
     // Do NOT stub RESEND_FROM_EMAIL — leave it undefined so ?? triggers the fallback
@@ -126,7 +104,6 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       to: "u@e.com",
       inviteUrl: "https://app.example.com/invite/tok",
       role: "editor",
-      expiresAt: EXPIRES_AT,
     });
     const [payload] = sendMock.mock.calls[0];
     expect(payload.from).toContain("no-reply@example.com");
@@ -139,7 +116,6 @@ describe("sendInviteEmail: sends invite or no-ops when key absent", () => {
       to: "u@e.com",
       inviteUrl: "https://app.example.com/invite/tok",
       role: "editor",
-      expiresAt: EXPIRES_AT,
     });
     const [payload] = sendMock.mock.calls[0];
     expect(payload.from).toBe("Gantt <gantt@myschool.edu>");

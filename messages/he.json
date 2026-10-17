@@ -127,7 +127,6 @@
       "editorHint": "עורך מקבל הרשאות לפי שכבות וסוגי אירועים",
       "adminHint": "מנהל מקבל גישה מלאה",
       "createInvite": "צור הזמנה",
-      "expiresInHours": "תוקף ההזמנה בשעות",
       "inviteCreated": "ההזמנה נוצרה",
       "noInvites": "אין הזמנות.",
       "mobileInviteListLabel": "רשימת הזמנות למובייל",
@@ -141,11 +140,10 @@
       "allStatuses": "כל הסטטוסים",
       "mobileListLabel": "רשימת צוות למובייל",
       "noStaffMatches": "אין אנשי צוות שמתאימים לסינון.",
-      "expiresAt": "תוקף עד",
       "status": "סטטוס",
       "active": "פעילה",
       "used": "נוצלה",
-      "expired": "פגה",
+      "revoked": "בוטלה",
       "copyInvite": "העתק קישור",
       "inviteCopied": "ההזמנה הועתקה",
       "emailSent": "האימייל נשלח",
@@ -221,7 +219,7 @@
     "login": "כניסה עם חשבון קיים",
     "guest": "המשך כאורח (צפייה בלוח)",
     "unavailableTitle": "הקישור אינו תקף",
-    "unavailableBody": "הקישור פג תוקפו, כבר נוצל, או שאינו קיים."
+    "unavailableBody": "הקישור בוטל, כבר נוצל, או שאינו קיים."
   },
   "dashboard": {
     "title": "לוח שנה",

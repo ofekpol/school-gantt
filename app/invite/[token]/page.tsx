@@ -18,7 +18,7 @@ export default async function InvitePage({ params, searchParams }: PageProps) {
   const invite = await getInviteByToken(token);
   const isValid =
     invite &&
-    invite.expiresAt > new Date() &&
+    !invite.revokedAt &&
     (invite.multiUse || !invite.usedAt) &&
     !error;
 

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, it, expect, beforeAll } from "vitest";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
-import { createInvite } from "@/lib/db/invites";
+import { createInvite, getInviteByToken, markInviteUsed, revokeInvite } from "@/lib/db/invites";
 import { createStaffUserFromInvite } from "@/lib/db/staff";
 import { getEditorAllowedGrades } from "@/lib/events/queries";
 import { createDraft, updateDraft } from "@/lib/events/crud";
@@ -63,7 +63,6 @@ describe.skipIf(skipIfNoTestDb)("INV-01: editor invite stores correct role + gra
       gradeScopes: [10],
       eventTypeScopes: [],
       createdBy: adminId,
-      expiresInHours: 24,
     });
 
     expect(token).toMatch(
@@ -97,7 +96,6 @@ describe.skipIf(skipIfNoTestDb)("INV-02: viewer invite stores correct role", () 
       gradeScopes: [],
       eventTypeScopes: [],
       createdBy: adminId,
-      expiresInHours: 24,
     });
 
     expect(token).toBeTruthy();
@@ -318,3 +316,44 @@ describe.skipIf(skipIfNoTestDb)(
     });
   },
 );
+
+describe.skipIf(skipIfNoTestDb)("INV-05: revoked invite cannot be redeemed; unrevoked never expires", () => {
+  let adminId: string;
+
+  beforeAll(async () => {
+    if (shouldSkip()) return;
+    const admin = await ensureAdminForInviteTests(testSchoolA, "invite-admin@test");
+    adminId = admin.id;
+  });
+
+  async function newInvite() {
+    return createInvite({
+      schoolId: testSchoolA,
+      role: "viewer",
+      gradeScopes: [],
+      eventTypeScopes: [],
+      createdBy: adminId,
+    });
+  }
+
+  it("markInviteUsed claims 0 rows after revokeInvite", async () => {
+    const { token } = await newInvite();
+    const invite = await getInviteByToken(token);
+    expect(invite?.revokedAt).toBeNull();
+
+    await revokeInvite(invite!.id, testSchoolA);
+
+    expect((await getInviteByToken(token))?.revokedAt).toBeInstanceOf(Date);
+    expect((await markInviteUsed(token, null, false)).affected).toBe(0);
+  });
+
+  it("an old unrevoked invite is still redeemable", async () => {
+    const { token } = await newInvite();
+    await testDb!
+      .update(schema.staffInvites)
+      .set({ createdAt: new Date("2020-01-01T00:00:00Z") })
+      .where(eq(schema.staffInvites.token, token));
+
+    expect((await markInviteUsed(token, null, false)).affected).toBe(1);
+  });
+});

@@ -61,7 +61,7 @@ describe("admin staff role permissions", () => {
             gradeScopes: [7],
             eventTypeScopes: ["trip"],
             multiUse: true,
-            expiresAt: new Date("2026-06-27T08:00:00.000Z"),
+            revokedAt: null,
             usedAt: null,
           },
         ]}

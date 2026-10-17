@@ -130,7 +130,7 @@ export const staffInvites = pgTable(
       .notNull()
       .references(() => staffUsers.id, { onDelete: "restrict" }),
     multiUse: boolean("multi_use").notNull().default(false),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
     usedAt: timestamp("used_at", { withTimezone: true }),
     usedBy: uuid("used_by").references(() => staffUsers.id),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

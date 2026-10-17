@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     const invite = await getInviteByToken(inviteToken);
     const isValid =
       invite &&
-      invite.expiresAt > new Date() &&
+      !invite.revokedAt &&
       (invite.multiUse || !invite.usedAt);
 
     if (!isValid) {

@@ -127,7 +127,6 @@
       "editorHint": "Editor gets grade and event-type permissions",
       "adminHint": "Admin gets full access",
       "createInvite": "Create Invite",
-      "expiresInHours": "Invite expires in hours",
       "inviteCreated": "Invite created",
       "noInvites": "No invites.",
       "mobileInviteListLabel": "Mobile invite list",
@@ -141,11 +140,10 @@
       "allStatuses": "All statuses",
       "mobileListLabel": "Mobile staff list",
       "noStaffMatches": "No staff members match the current filters.",
-      "expiresAt": "Expires",
       "status": "Status",
       "active": "Active",
       "used": "Used",
-      "expired": "Expired",
+      "revoked": "Revoked",
       "copyInvite": "Copy URL",
       "inviteCopied": "Invite copied",
       "emailSent": "Email sent",
@@ -221,7 +219,7 @@
     "login": "Sign in with an existing account",
     "guest": "Continue as guest (view the calendar)",
     "unavailableTitle": "Invite unavailable",
-    "unavailableBody": "This invite link is expired, already used, or no longer exists."
+    "unavailableBody": "This invite link was revoked, already used, or no longer exists."
   },
   "dashboard": {
     "title": "Dashboard",

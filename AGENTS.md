@@ -103,7 +103,7 @@ Google OAuth requires the Google provider enabled in the Supabase dashboard (Cli
 
 Invite flow:
 
-1. Admin creates invite via `lib/db/invites.ts` (token, role, grade/event-type scopes, 72h TTL)
+1. Admin creates invite via `lib/db/invites.ts` (token, role, grade/event-type scopes; no expiry, admin revokes via `revoked_at`)
 2. Invitee opens `/invite/[token]` → registers at `/auth/register` → confirms via `/auth/confirm`
 3. On confirm: `staff_users` row created, scopes applied, invite marked used
 
@@ -146,7 +146,7 @@ Rules:
 schools           id, slug, name, locale, timezone, active_academic_year_id
 academic_years    id, school_id, label, start_date, end_date
 staff_users       id, school_id, auth_id, email, full_name, role ∈ {editor,admin,viewer}, status ∈ {pending,active,deactivated}, locked_until
-staff_invites     id, school_id, token, role, grade_scopes[], event_type_scopes[], expires_at, used_at, used_by, created_by
+staff_invites     id, school_id, token, role, grade_scopes[], event_type_scopes[], revoked_at, used_at, used_by, created_by
 editor_scopes     id, staff_user_id, scope_kind ∈ {grade,event_type}, scope_value
 event_types       id, school_id, key, label_he, label_en, color_hex, glyph, sort_order
 events            id, school_id, status ∈ {draft,approved}, version, deleted_at, ...

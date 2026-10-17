@@ -1,12 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
 
-const DATE_FMT = new Intl.DateTimeFormat("he-IL", {
-  timeZone: "Asia/Jerusalem",
-  dateStyle: "long",
-  timeStyle: "short",
-});
-
 const ROLE_HE: Record<string, string> = {
   admin: "מנהל",
   editor: "עורך",
@@ -17,13 +11,11 @@ export async function sendInviteEmail(params: {
   to: string;
   inviteUrl: string;
   role: "editor" | "admin" | "viewer";
-  expiresAt: Date;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
 
   const resend = new Resend(apiKey);
-  const expiryFormatted = DATE_FMT.format(params.expiresAt);
   const roleHe = ROLE_HE[params.role] ?? params.role;
 
   await resend.emails.send({
@@ -34,7 +26,7 @@ export async function sendInviteEmail(params: {
       "שלום,",
       "",
       `הוזמנת להצטרף למערכת גאנט בית הספר בתפקיד ${roleHe}.`,
-      `פתח את הקישור הבא כדי לקבל את ההזמנה (תוקף עד ${expiryFormatted}):`,
+      `פתח את הקישור הבא כדי לקבל את ההזמנה:`,
       params.inviteUrl,
       "",
       "---",
@@ -42,7 +34,7 @@ export async function sendInviteEmail(params: {
       "Hi,",
       "",
       `You've been invited to join School Gantt as a ${params.role}.`,
-      `Open this link to accept the invite (expires ${expiryFormatted}):`,
+      `Open this link to accept the invite:`,
       params.inviteUrl,
     ].join("\n"),
   });

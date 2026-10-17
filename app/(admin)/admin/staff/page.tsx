@@ -36,7 +36,7 @@ export default async function AdminStaffPage() {
     (member) => member.role === "editor" && !member.deactivatedAt,
   ).length;
   const openInviteCount = invites.filter(
-    (invite) => !invite.usedAt && new Date(invite.expiresAt) > new Date(),
+    (invite) => !invite.usedAt && !invite.revokedAt,
   ).length;
 
   return (
