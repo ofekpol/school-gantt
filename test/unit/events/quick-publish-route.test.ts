@@ -7,8 +7,10 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 
 const getEditorAllowedGradesMock = vi.fn();
+const isEventTypeAllowedMock = vi.fn();
 vi.mock("@/lib/events/queries", () => ({
   getEditorAllowedGrades: (...args: unknown[]) => getEditorAllowedGradesMock(...args),
+  isEventTypeAllowed: (...args: unknown[]) => isEventTypeAllowedMock(...args),
 }));
 
 const createPublishedEventMock = vi.fn();
@@ -48,6 +50,8 @@ describe("POST /api/v1/events/publish", () => {
     createPublishedEventMock.mockReset();
     invalidatePublicViewerCacheMock.mockReset();
     getEditorAllowedGradesMock.mockResolvedValue([9, 10]);
+    isEventTypeAllowedMock.mockReset();
+    isEventTypeAllowedMock.mockResolvedValue(true);
     createPublishedEventMock.mockResolvedValue({
       id: "00000000-0000-0000-0000-000000000123",
       version: 1,
@@ -102,6 +106,26 @@ describe("POST /api/v1/events/publish", () => {
     const body = await res.json();
     expect(body.error).toBe("scope_violation");
     expect(body.grades).toEqual([9]);
+  });
+
+  it("returns 403 when an editor publishes an out-of-scope event type", async () => {
+    getStaffUserMock.mockResolvedValue(ACTIVE_EDITOR);
+    isEventTypeAllowedMock.mockResolvedValue(false);
+    const res = await POST(makeRequest(VALID_BODY));
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe("scope_violation");
+    expect(body.eventTypeId).toBe(VALID_BODY.eventTypeId);
+    expect(isEventTypeAllowedMock).toHaveBeenCalledWith(ACTIVE_EDITOR, VALID_BODY.eventTypeId);
+    expect(createPublishedEventMock).not.toHaveBeenCalled();
+  });
+
+  it("skips the event-type scope check for admins", async () => {
+    getStaffUserMock.mockResolvedValue({ ...ACTIVE_EDITOR, role: "admin" });
+    isEventTypeAllowedMock.mockResolvedValue(false);
+    const res = await POST(makeRequest(VALID_BODY));
+    expect(res.status).toBe(201);
+    expect(isEventTypeAllowedMock).not.toHaveBeenCalled();
   });
 
   it("creates a published event for valid editor requests", async () => {

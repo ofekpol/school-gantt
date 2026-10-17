@@ -3,6 +3,7 @@ import { eq, isNull } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import { supabaseAdmin } from "@/lib/db/supabase-admin";
 import { editorScopes, pendingRegistrations, staffUsers } from "@/lib/db/schema";
+import { getStaffUserByAuthId } from "@/lib/db/staff";
 
 export interface PendingRegistrationRecord {
   id: string;
@@ -69,6 +70,13 @@ export async function approvePendingRegistration(params: {
 
   if (!pending || pending.reviewOutcome) {
     throw new Error("pending_registration_not_found");
+  }
+
+  // The account may have joined another school (e.g. via invite) after landing
+  // in pending; approving it here must not touch that school's staff member.
+  const existing = await getStaffUserByAuthId(pending.authUserId);
+  if (existing?.schoolId && existing.schoolId !== params.schoolId) {
+    throw new Error("staff_user_in_other_school");
   }
 
   await withSchool(params.schoolId, async (tx) => {
@@ -147,6 +155,11 @@ export async function rejectPendingRegistration(params: {
       reviewOutcome: "rejected",
     })
     .where(eq(pendingRegistrations.id, params.pendingId));
+
+  // Never delete the auth account of someone who already became staff
+  // (possibly in another school) — only close out the pending request.
+  const existing = await getStaffUserByAuthId(pending.authUserId);
+  if (existing) return;
 
   await supabaseAdmin.auth.admin.deleteUser(pending.authUserId);
 }

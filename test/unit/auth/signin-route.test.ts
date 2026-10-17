@@ -12,11 +12,23 @@ const getStaffMock = vi.fn();
 const getStaffByAuthIdMock = vi.fn();
 const incrementLoginAttemptsMock = vi.fn();
 const resetLoginAttemptsMock = vi.fn();
+const createFromInviteMock = vi.fn();
 vi.mock("@/lib/db/staff", () => ({
   getStaffUserByAuthId: (...args: unknown[]) => getStaffByAuthIdMock(...args),
   getStaffUserByEmail: (...args: unknown[]) => getStaffMock(...args),
+  getStaffUserRecordByEmail: async () => null,
+  createStaffUserFromInvite: (...args: unknown[]) => createFromInviteMock(...args),
   incrementLoginAttempts: (...args: unknown[]) => incrementLoginAttemptsMock(...args),
   resetLoginAttempts: (...args: unknown[]) => resetLoginAttemptsMock(...args),
+}));
+
+const getInviteMock = vi.fn();
+const markInviteUsedMock = vi.fn();
+const updateInviteUsedByMock = vi.fn();
+vi.mock("@/lib/db/invites", () => ({
+  getInviteByToken: (...args: unknown[]) => getInviteMock(...args),
+  markInviteUsed: (...args: unknown[]) => markInviteUsedMock(...args),
+  updateInviteUsedBy: (...args: unknown[]) => updateInviteUsedByMock(...args),
 }));
 
 import { POST } from "@/app/api/v1/auth/signin/route";
@@ -28,6 +40,10 @@ describe("POST /api/v1/auth/signin", () => {
     getStaffByAuthIdMock.mockReset();
     incrementLoginAttemptsMock.mockReset();
     resetLoginAttemptsMock.mockReset();
+    createFromInviteMock.mockReset();
+    getInviteMock.mockReset();
+    markInviteUsedMock.mockReset();
+    updateInviteUsedByMock.mockReset();
   });
 
   function makeRequest(body: unknown) {
@@ -134,5 +150,50 @@ describe("POST /api/v1/auth/signin", () => {
 
     const res = await POST(makeRequest({ email: "ghost@b.com", password: "password123" }));
     expect(res.status).toBe(401);
+  });
+
+  describe("invite fallback (auth user without staff row)", () => {
+    const invite = {
+      schoolId: "school-1",
+      role: "admin",
+      gradeScopes: [],
+      eventTypeScopes: [],
+      multiUse: false,
+      usedAt: null,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    };
+
+    function signInWithInviteMetadata() {
+      getStaffMock.mockResolvedValue(null);
+      getStaffByAuthIdMock.mockResolvedValue(null);
+      signInMock.mockResolvedValue({
+        data: {
+          user: { id: "auth-1", email: "new@b.com", user_metadata: { invite_token: "tok" } },
+        },
+        error: null,
+      });
+      getInviteMock.mockResolvedValue(invite);
+    }
+
+    it("claims a single-use invite before creating the staff row", async () => {
+      signInWithInviteMetadata();
+      markInviteUsedMock.mockResolvedValue({ affected: 1 });
+      createFromInviteMock.mockResolvedValue({ id: "auth-1" });
+
+      await POST(makeRequest({ email: "new@b.com", password: "password123" }));
+
+      expect(markInviteUsedMock).toHaveBeenCalledWith("tok", null, false);
+      expect(createFromInviteMock).toHaveBeenCalledTimes(1);
+      expect(updateInviteUsedByMock).toHaveBeenCalledWith("tok", "auth-1");
+    });
+
+    it("does not create a staff row when the invite was already claimed", async () => {
+      signInWithInviteMetadata();
+      markInviteUsedMock.mockResolvedValue({ affected: 0 });
+
+      await POST(makeRequest({ email: "new@b.com", password: "password123" }));
+
+      expect(createFromInviteMock).not.toHaveBeenCalled();
+    });
   });
 });

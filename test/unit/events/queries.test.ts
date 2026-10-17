@@ -16,6 +16,7 @@ import {
   getEditorAllowedGrades,
   getEditorDashboardEvents,
   getEventForEditor,
+  isEventTypeAllowed,
   listEventTypes,
 } from "@/lib/events/queries";
 
@@ -213,5 +214,18 @@ describe("listEventTypes: returns ordered event-type palette", () => {
     useTx(makeTx([types]));
     const result = await listEventTypes(SCHOOL);
     expect(result).toEqual(types);
+  });
+});
+
+describe("isEventTypeAllowed", () => {
+  it("allows admins without querying scopes", async () => {
+    const allowed = await isEventTypeAllowed({ id: "a", schoolId: SCHOOL, role: "admin" }, "t");
+    expect(allowed).toBe(true);
+    expect(withSchoolMock).not.toHaveBeenCalled();
+  });
+
+  it("denies users without a school", async () => {
+    const allowed = await isEventTypeAllowed({ id: "e", schoolId: null, role: "editor" }, "t");
+    expect(allowed).toBe(false);
   });
 });

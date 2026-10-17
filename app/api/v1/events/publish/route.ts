@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStaffUser } from "@/lib/auth/session";
 import { createPublishedEvent } from "@/lib/events/crud";
-import { getEditorAllowedGrades } from "@/lib/events/queries";
+import { getEditorAllowedGrades, isEventTypeAllowed } from "@/lib/events/queries";
 import { EventQuickPublishSchema } from "@/lib/validations/events";
 import { invalidatePublicViewerCache } from "@/lib/views/public-viewer-data";
 
@@ -31,6 +31,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (violators.length > 0) {
       return NextResponse.json(
         { error: "scope_violation", grades: violators },
+        { status: 403 },
+      );
+    }
+    if (!(await isEventTypeAllowed(user, parsed.data.eventTypeId))) {
+      return NextResponse.json(
+        { error: "scope_violation", eventTypeId: parsed.data.eventTypeId },
         { status: 403 },
       );
     }

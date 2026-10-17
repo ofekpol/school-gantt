@@ -4,7 +4,11 @@ import { getStaffUser } from "@/lib/auth/session";
 import { createDraft, updateDraft } from "@/lib/events/crud";
 import { publishEvent } from "@/lib/events/approval";
 import { EventDraftSchema } from "@/lib/validations/events";
-import { getEditorAllowedGrades, getEditorDashboardEvents } from "@/lib/events/queries";
+import {
+  getEditorAllowedGrades,
+  getEditorDashboardEvents,
+  isEventTypeAllowed,
+} from "@/lib/events/queries";
 
 const CreateBodySchema = EventDraftSchema.extend({
   eventTypeId: z.string().uuid(),
@@ -40,6 +44,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const { eventTypeId, publish, ...draftFields } = parsed.data;
+
+  if (!(await isEventTypeAllowed(user, eventTypeId))) {
+    return NextResponse.json({ error: "scope_violation", eventTypeId }, { status: 403 });
+  }
 
   const draft = await createDraft(user.schoolId!, user.id, eventTypeId);
 
