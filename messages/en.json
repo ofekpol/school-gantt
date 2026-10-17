@@ -219,7 +219,7 @@
     "login": "Sign in with an existing account",
     "guest": "Continue as guest (view the calendar)",
     "unavailableTitle": "Invite unavailable",
-    "unavailableBody": "This invite link is expired, already used, or no longer exists."
+    "unavailableBody": "This invite link was revoked, already used, or no longer exists."
   },
   "dashboard": {
     "title": "Dashboard",
