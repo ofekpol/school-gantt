@@ -10,6 +10,7 @@
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import {
   createCalendarDateStatusResolver,
+  jerusalemDateKey,
   type CalendarDateStatus,
 } from "@/lib/views/date-status";
 
@@ -136,6 +137,66 @@ function wkPos(dayIdx: number, hour: number): number {
   return ((dayIdx + within) / 7) * 100;
 }
 
+/** Whole calendar days from `fromKey` to `toKey` (both "YYYY-MM-DD"). */
+function daysBetween(fromKey: string, toKey: string): number {
+  const toUtc = (key: string) => {
+    const [y, m, d] = key.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((toUtc(toKey) - toUtc(fromKey)) / (24 * 60 * 60 * 1000));
+}
+
+/**
+ * Projects one event onto the week's day columns, or null if it falls outside.
+ * Days are Jerusalem calendar days: an all-day event is stored as local
+ * midnight (the previous evening in UTC), so slicing the week into UTC days
+ * would also paint it on the day before.
+ */
+function buildBar(
+  e: AgendaItem,
+  grade: number,
+  weekStartKey: string,
+): Omit<WeeklyEventBar, "lane"> | null {
+  // End is treated as exclusive, so an event ending exactly at local midnight
+  // does not spill into the next day.
+  const lastInstant = new Date(Math.max(e.startAt.getTime(), e.endAt.getTime() - 1));
+  const startKey = jerusalemDateKey(e.startAt);
+  const lastKey = jerusalemDateKey(lastInstant);
+  const rawStartIdx = daysBetween(weekStartKey, startKey);
+  const rawEndIdx = daysBetween(weekStartKey, lastKey);
+  if (rawEndIdx < 0 || rawStartIdx > 6) return null;
+
+  const startDayIdx = Math.max(0, rawStartIdx);
+  const endDayIdx = Math.min(6, rawEndIdx);
+  const startClamped = rawStartIdx < 0;
+  const endClamped = rawEndIdx > 6 || jerusalemDateKey(e.endAt) !== lastKey;
+
+  const startHour = e.allDay || startClamped ? WEEK_DAY_START_HOUR : hourInJerusalem(e.startAt);
+  const endHour = e.allDay || endClamped ? WEEK_DAY_END_HOUR : hourInJerusalem(e.endAt);
+
+  const startPct = wkPos(startDayIdx, startHour);
+  const endPct = wkPos(endDayIdx, endHour);
+  const minWidth = (1 / 7) * 0.3 * 100; // 30% of a day column
+
+  return {
+    id: `${e.id}-${grade}`,
+    eventId: e.id,
+    title: e.title,
+    eventTypeKey: e.eventTypeKey,
+    eventTypeColor: e.eventTypeColor,
+    eventTypeGlyph: e.eventTypeGlyph,
+    eventTypeLabelHe: e.eventTypeLabelHe,
+    grades: e.grades,
+    status: e.isCanceled ? "canceled" as const : "approved" as const,
+    isCanceled: e.isCanceled,
+    isUpdated: e.isUpdated,
+    dayStart: startDayIdx,
+    dayEnd: endDayIdx,
+    startPct,
+    widthPct: Math.max(endPct - startPct, minWidth),
+  };
+}
+
 function assignLanes(bars: Omit<WeeklyEventBar, "lane">[]): WeeklyEventBar[] {
   const sorted = [...bars].sort((a, b) => a.startPct - b.startPct);
   const laneEnds: number[] = [];
@@ -155,6 +216,7 @@ export function buildWeeklyModel(
   today: Date,
 ): WeeklyModel {
   const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const weekStartKey = weekStart.toISOString().slice(0, 10);
   const todayStart = getWeekStart(today);
   const resolveDayStatus = createCalendarDateStatusResolver(events);
 
@@ -179,44 +241,10 @@ export function buildWeeklyModel(
   });
 
   const rows: WeeklyGradeRow[] = grades.map((grade) => {
-    const gradeEvents = events.filter(
-      (e) => e.grades.includes(grade) && e.endAt > weekStart && e.startAt < weekEnd,
-    );
-
-    const bars: Omit<WeeklyEventBar, "lane">[] = gradeEvents.map((e) => {
-      const clampedStart = e.startAt < weekStart ? weekStart : e.startAt;
-      const clampedEnd = e.endAt > weekEnd ? weekEnd : e.endAt;
-
-      const startDayMs = clampedStart.getTime() - weekStart.getTime();
-      const startDayIdx = Math.floor(startDayMs / (24 * 60 * 60 * 1000));
-      const endDayMs = clampedEnd.getTime() - weekStart.getTime();
-      const endDayIdx = Math.min(6, Math.ceil(endDayMs / (24 * 60 * 60 * 1000)) - 1);
-
-      const startHour = e.allDay ? WEEK_DAY_START_HOUR : hourInJerusalem(clampedStart);
-      const endHour = e.allDay ? WEEK_DAY_END_HOUR : hourInJerusalem(clampedEnd);
-
-      const startPct = wkPos(startDayIdx, startHour);
-      const endPct = wkPos(Math.max(startDayIdx, endDayIdx), endHour);
-      const minWidth = (1 / 7) * 0.3 * 100; // 30% of a day column
-
-      return {
-        id: `${e.id}-${grade}`,
-        eventId: e.id,
-        title: e.title,
-        eventTypeKey: e.eventTypeKey,
-        eventTypeColor: e.eventTypeColor,
-        eventTypeGlyph: e.eventTypeGlyph,
-        eventTypeLabelHe: e.eventTypeLabelHe,
-        grades: e.grades,
-        status: e.isCanceled ? "canceled" as const : "approved" as const,
-        isCanceled: e.isCanceled,
-        isUpdated: e.isUpdated,
-        dayStart: startDayIdx,
-        dayEnd: endDayIdx,
-        startPct,
-        widthPct: Math.max(endPct - startPct, minWidth),
-      };
-    });
+    const bars = events
+      .filter((e) => e.grades.includes(grade))
+      .map((e) => buildBar(e, grade, weekStartKey))
+      .filter((bar): bar is Omit<WeeklyEventBar, "lane"> => bar !== null);
 
     const scopedEvents = events.filter(
       (event) => event.eventTypeKey === "holiday" || event.grades.includes(grade),
