@@ -14,6 +14,11 @@ import type { AgendaItem } from "@/lib/views/agenda-model";
 // Sun 15 Nov 2026 – Sat 21 Nov 2026 (UTC midnight)
 const WEEK_START = new Date(Date.UTC(2026, 10, 15));
 
+/** Jerusalem local midnight on day `d` of Nov 2026 (IST, +02:00) — how all-day events are stored. */
+function jlmMidnight(d: number): Date {
+  return new Date(`2026-11-${String(d).padStart(2, "0")}T00:00:00+02:00`);
+}
+
 // Wednesday 18 Nov 2026 noon UTC — used as "today" so days[3] gets isToday=true
 const TODAY = new Date("2026-11-18T12:00:00Z");
 
@@ -22,8 +27,8 @@ function makeEvent(overrides: Partial<AgendaItem> = {}): AgendaItem {
     id: "ev1",
     title: "Test event",
     // default: all-day Tuesday Nov 17, covers only day 2 of the week
-    startAt: new Date(Date.UTC(2026, 10, 17)),
-    endAt: new Date(Date.UTC(2026, 10, 18)),
+    startAt: jlmMidnight(17),
+    endAt: jlmMidnight(18),
     allDay: true,
     description: null,
     location: null,
@@ -183,8 +188,8 @@ describe("buildWeeklyModel: event positioning and day indices", () => {
 
   it("event fully before the week is excluded", () => {
     const event = makeEvent({
-      startAt: new Date(Date.UTC(2026, 10, 10)), // Nov 10
-      endAt: new Date(Date.UTC(2026, 10, 15)),   // Nov 15 = weekStart (exclusive: endAt <= weekStart)
+      startAt: jlmMidnight(10), // Nov 10
+      endAt: jlmMidnight(15),   // Nov 15 = weekStart (exclusive: endAt <= weekStart)
     });
     const model = buildWeeklyModel(WEEK_START, [event], [9], TODAY);
     expect(model.rows[0].bars).toHaveLength(0);
@@ -192,8 +197,8 @@ describe("buildWeeklyModel: event positioning and day indices", () => {
 
   it("event fully after the week is excluded", () => {
     const event = makeEvent({
-      startAt: new Date(Date.UTC(2026, 10, 22)), // Nov 22 = weekEnd
-      endAt: new Date(Date.UTC(2026, 10, 23)),
+      startAt: jlmMidnight(22), // Nov 22 = weekEnd
+      endAt: jlmMidnight(23),
     });
     const model = buildWeeklyModel(WEEK_START, [event], [9], TODAY);
     expect(model.rows[0].bars).toHaveLength(0);
@@ -202,8 +207,8 @@ describe("buildWeeklyModel: event positioning and day indices", () => {
   it("event spanning week start is clamped — bar starts at day 0", () => {
     // Starts Nov 10 (before week), ends Nov 17 (all-day: last day is Nov 16 Monday)
     const event = makeEvent({
-      startAt: new Date(Date.UTC(2026, 10, 10)),
-      endAt: new Date(Date.UTC(2026, 10, 17)), // Nov 17 UTC midnight = day 2 boundary
+      startAt: jlmMidnight(10),
+      endAt: jlmMidnight(17), // Nov 17 local midnight = day 2 boundary
     });
     const model = buildWeeklyModel(WEEK_START, [event], [9], TODAY);
     expect(model.rows[0].bars).toHaveLength(1);
@@ -214,8 +219,8 @@ describe("buildWeeklyModel: event positioning and day indices", () => {
   it("event spanning week end is clamped — bar ends at day 6", () => {
     // Starts Nov 19 Thursday, ends Nov 25 (after week)
     const event = makeEvent({
-      startAt: new Date(Date.UTC(2026, 10, 19)),
-      endAt: new Date(Date.UTC(2026, 10, 25)),
+      startAt: jlmMidnight(19),
+      endAt: jlmMidnight(25),
     });
     const model = buildWeeklyModel(WEEK_START, [event], [9], TODAY);
     expect(model.rows[0].bars).toHaveLength(1);
@@ -225,8 +230,8 @@ describe("buildWeeklyModel: event positioning and day indices", () => {
   it("multi-day event spanning Tuesday–Thursday has dayStart=2, dayEnd=3", () => {
     // Nov 17 (Tue) → Nov 19 (Thu) exclusive → covers Tue + Wed
     const event = makeEvent({
-      startAt: new Date(Date.UTC(2026, 10, 17)),
-      endAt: new Date(Date.UTC(2026, 10, 19)), // exclusive, so dayEnd = Tue+Wed = 2..3
+      startAt: jlmMidnight(17),
+      endAt: jlmMidnight(19), // exclusive, so dayEnd = Tue+Wed = 2..3
     });
     const model = buildWeeklyModel(WEEK_START, [event], [9], TODAY);
     const bar = model.rows[0].bars[0];
@@ -246,6 +251,69 @@ describe("buildWeeklyModel: event positioning and day indices", () => {
     const event = makeEvent({ grades: [8] }); // grade 8 not in [9, 10]
     const model = buildWeeklyModel(WEEK_START, [event], [9, 10], TODAY);
     model.rows.forEach((r) => expect(r.bars).toHaveLength(0));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// buildWeeklyModel — Jerusalem day boundaries (regression: all-day events
+// stored as local midnight leaked onto the previous day)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("buildWeeklyModel: day columns follow Jerusalem calendar days", () => {
+  // Week of Sun 18 Oct 2026 (IDT, +03:00)
+  const OCT_WEEK = new Date(Date.UTC(2026, 9, 18));
+
+  it("all-day Thursday stored as wizard output (00:00–23:59:59 local, IDT) stays on Thursday only", () => {
+    const event = makeEvent({
+      startAt: new Date("2026-10-22T00:00:00+03:00"),
+      endAt: new Date("2026-10-22T23:59:59+03:00"),
+    });
+    const bar = buildWeeklyModel(OCT_WEEK, [event], [9], TODAY).rows[0].bars[0];
+    expect(bar.dayStart).toBe(4);
+    expect(bar.dayEnd).toBe(4);
+  });
+
+  it("all-day Thursday in winter (IST) stays on Thursday only", () => {
+    const event = makeEvent({
+      startAt: new Date("2026-11-19T00:00:00+02:00"),
+      endAt: new Date("2026-11-19T23:59:59+02:00"),
+    });
+    const bar = buildWeeklyModel(WEEK_START, [event], [9], TODAY).rows[0].bars[0];
+    expect(bar.dayStart).toBe(4);
+    expect(bar.dayEnd).toBe(4);
+  });
+
+  it("all-day Sunday does not leak into the previous week's Saturday", () => {
+    const event = makeEvent({
+      startAt: new Date("2026-10-25T00:00:00+03:00"),
+      endAt: new Date("2026-10-25T23:59:59+03:00"),
+    });
+    expect(buildWeeklyModel(OCT_WEEK, [event], [9], TODAY).rows[0].bars).toHaveLength(0);
+    const next = buildWeeklyModel(new Date(Date.UTC(2026, 9, 25)), [event], [9], TODAY);
+    expect(next.rows[0].bars[0].dayStart).toBe(0);
+    expect(next.rows[0].bars[0].dayEnd).toBe(0);
+  });
+
+  it("early-morning timed event (01:00 local) lands on its local day", () => {
+    const event = makeEvent({
+      startAt: new Date("2026-10-21T01:00:00+03:00"),
+      endAt: new Date("2026-10-21T02:00:00+03:00"),
+      allDay: false,
+    });
+    const bar = buildWeeklyModel(OCT_WEEK, [event], [9], TODAY).rows[0].bars[0];
+    expect(bar.dayStart).toBe(3);
+    expect(bar.dayEnd).toBe(3);
+  });
+
+  it("multi-day all-day event Tue–Thu spans exactly days 2..4", () => {
+    const event = makeEvent({
+      startAt: new Date("2026-10-20T00:00:00+03:00"),
+      endAt: new Date("2026-10-22T23:59:59+03:00"),
+    });
+    const bar = buildWeeklyModel(OCT_WEEK, [event], [9], TODAY).rows[0].bars[0];
+    expect(bar.dayStart).toBe(2);
+    expect(bar.dayEnd).toBe(4);
+    expect(bar.widthPct).toBeCloseTo((3 / 7) * 100, 0);
   });
 });
 
@@ -278,13 +346,13 @@ describe("buildWeeklyModel: lane assignment for collision avoidance", () => {
     // event1 = Sunday all-day; event2 = Thursday all-day — no overlap
     const event1 = makeEvent({
       id: "e1",
-      startAt: new Date(Date.UTC(2026, 10, 15)), // Sunday
-      endAt:   new Date(Date.UTC(2026, 10, 16)),
+      startAt: jlmMidnight(15), // Sunday
+      endAt:   jlmMidnight(16),
     });
     const event2 = makeEvent({
       id: "e2",
-      startAt: new Date(Date.UTC(2026, 10, 19)), // Thursday
-      endAt:   new Date(Date.UTC(2026, 10, 20)),
+      startAt: jlmMidnight(19), // Thursday
+      endAt:   jlmMidnight(20),
     });
     const model = buildWeeklyModel(WEEK_START, [event1, event2], [9], TODAY);
     const bars = model.rows[0].bars;
