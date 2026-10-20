@@ -42,3 +42,15 @@ export function addCalendarDays(date: string, days: number): string {
   const [y, m, d] = date.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
+
+/**
+ * `instant` shifted so its UTC fields read as Jerusalem wall-clock time.
+ * Use it to place instants on an axis whose days start at UTC midnight
+ * (e.g. Date.UTC(y, m, d)): local midnight then lands exactly on a day
+ * boundary instead of 2–3 hours into the previous day.
+ */
+export function jerusalemWallClockMs(instant: Date): number {
+  const [, sign, hh, mm] = jerusalemOffset(instant).match(/([+-])(\d{2}):(\d{2})/) ?? [];
+  const offsetMin = (Number(hh) * 60 + Number(mm)) * (sign === "-" ? -1 : 1);
+  return instant.getTime() + (offsetMin || 0) * 60 * 1000;
+}
