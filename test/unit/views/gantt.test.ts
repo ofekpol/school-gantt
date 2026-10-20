@@ -197,3 +197,43 @@ function eventForGrade(
     eventTypeGlyph: TYPE.glyph,
   };
 }
+
+describe("buildGanttModel: day positions follow Jerusalem calendar days", () => {
+  const DAY_PCT = 100 / 334; // YEAR spans 334 days
+  function allDay(id: string, startIso: string, endIso: string): GanttInputEvent {
+    return {
+      id,
+      title: id,
+      startAt: new Date(startIso),
+      endAt: new Date(endIso),
+      allDay: true,
+      description: null,
+      location: null,
+      grades: [10],
+      eventTypeKey: TYPE.key,
+      eventTypeLabelHe: TYPE.labelHe,
+      eventTypeColor: TYPE.colorHex,
+      eventTypeGlyph: TYPE.glyph,
+    };
+  }
+
+  it("all-day event (IDT) starts exactly on its local day boundary", () => {
+    // 2026-10-22 is day 51 of the year (Sep 1 = day 0)
+    const evt = allDay("idt", "2026-10-22T00:00:00+03:00", "2026-10-22T23:59:59+03:00");
+    const bar = buildGanttModel({ year: YEAR, grades: [10], events: [evt] }).bars[0];
+    expect(bar.leftPct).toBeCloseTo(51 * DAY_PCT, 5);
+    expect(bar.widthPct).toBeCloseTo(DAY_PCT, 3);
+  });
+
+  it("all-day event (IST) starts exactly on its local day boundary", () => {
+    // 2026-12-03 is day 93 of the year
+    const evt = allDay("ist", "2026-12-03T00:00:00+02:00", "2026-12-03T23:59:59+02:00");
+    const bar = buildGanttModel({ year: YEAR, grades: [10], events: [evt] }).bars[0];
+    expect(bar.leftPct).toBeCloseTo(93 * DAY_PCT, 5);
+  });
+
+  it("all-day event on the day after the year ends is excluded", () => {
+    const evt = allDay("after", "2027-08-01T00:00:00+03:00", "2027-08-01T23:59:59+03:00");
+    expect(buildGanttModel({ year: YEAR, grades: [10], events: [evt] }).bars).toHaveLength(0);
+  });
+});

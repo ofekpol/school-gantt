@@ -6,6 +6,7 @@ import { Ban, Pencil } from "lucide-react";
 import type { AgendaItem } from "@/lib/views/agenda-model";
 import type { GanttBar, GanttMonth, ZoomLevel } from "@/lib/views/gantt";
 import { zoomScale } from "@/lib/views/gantt";
+import { jerusalemWallClockMs } from "@/lib/datetime";
 import { formatGradeLabel } from "@/lib/grades";
 import { EventDrawer } from "./EventDrawer";
 import { findCurrentMonthStart } from "@/lib/views/current-period";
@@ -264,8 +265,8 @@ function buildBackgroundRanges(
 
   for (const event of events) {
     if (event.isCanceled || (event.eventTypeKey !== "holiday" && event.eventTypeKey !== "vacation")) continue;
-    const eventStart = new Date(event.startAt).getTime();
-    const eventEnd = new Date(event.endAt).getTime();
+    const eventStart = jerusalemWallClockMs(new Date(event.startAt));
+    const eventEnd = jerusalemWallClockMs(new Date(event.endAt));
     const leftPct = Math.max(0, ((eventStart - start.getTime()) / (end.getTime() - start.getTime())) * 100);
     const rightPct = Math.min(100, ((eventEnd - start.getTime()) / (end.getTime() - start.getTime())) * 100);
     if (rightPct <= 0 || leftPct >= 100) continue;
