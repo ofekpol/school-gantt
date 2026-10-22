@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { addCalendarDays, jerusalemOffset, jerusalemWallClockToIso } from "@/lib/datetime";
+import {
+  addCalendarDays,
+  jerusalemOffset,
+  jerusalemWallClockMs,
+  jerusalemWallClockToIso,
+} from "@/lib/datetime";
 
 describe("jerusalemWallClockToIso", () => {
   it("uses +02:00 in winter (after the 25 Oct 2026 switch)", () => {
@@ -28,5 +33,22 @@ describe("addCalendarDays", () => {
   it("crosses month and year boundaries", () => {
     expect(addCalendarDays("2026-10-31", 1)).toBe("2026-11-01");
     expect(addCalendarDays("2026-12-31", 1)).toBe("2027-01-01");
+  });
+});
+
+describe("jerusalemWallClockMs", () => {
+  it("maps local midnight in summer (IDT) to UTC midnight of the same date", () => {
+    const ms = jerusalemWallClockMs(new Date("2026-10-22T00:00:00+03:00"));
+    expect(new Date(ms).toISOString()).toBe("2026-10-22T00:00:00.000Z");
+  });
+
+  it("maps local midnight in winter (IST) to UTC midnight of the same date", () => {
+    const ms = jerusalemWallClockMs(new Date("2026-12-03T00:00:00+02:00"));
+    expect(new Date(ms).toISOString()).toBe("2026-12-03T00:00:00.000Z");
+  });
+
+  it("keeps the local hour for timed instants", () => {
+    const ms = jerusalemWallClockMs(new Date("2026-11-17T08:00:00Z")); // 10:00 IST
+    expect(new Date(ms).toISOString()).toBe("2026-11-17T10:00:00.000Z");
   });
 });

@@ -12,6 +12,8 @@
  * "≤ 2 s with 1 k events" target without a client-side layout pass.
  */
 
+import { jerusalemWallClockMs } from "@/lib/datetime";
+
 export interface GanttInputEvent {
   id: string;
   title: string;
@@ -95,8 +97,9 @@ export function buildGanttModel(input: BuildGanttInput): GanttModel {
 
   const bars: GanttBar[] = [];
   for (const evt of input.events) {
-    const evtStart = evt.startAt.getTime();
-    const evtEnd = evt.endAt.getTime();
+    // The axis is Jerusalem calendar days, so compare in local wall-clock time.
+    const evtStart = jerusalemWallClockMs(evt.startAt);
+    const evtEnd = jerusalemWallClockMs(evt.endAt);
     if (evtEnd <= startMs || evtStart >= endMs) continue;
 
     const clampedStart = Math.max(evtStart, startMs);
