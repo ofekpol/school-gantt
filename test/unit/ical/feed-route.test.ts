@@ -85,6 +85,28 @@ describe("GET /ical/[token]", () => {
       ],
     });
   });
+
+  it("passes the row edit stamp and version through for DTSTAMP/SEQUENCE", async () => {
+    getAgendaForSchoolMock.mockResolvedValue([
+      agendaEvent({ id: "edited-1", title: "Edited", isCanceled: false }),
+    ]);
+
+    await GET(
+      new Request("http://localhost/ical/token-123") as never,
+      { params: Promise.resolve({ token: "token-123" }) },
+    );
+
+    expect(serializeCalendarMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        events: [
+          expect.objectContaining({
+            updatedAt: new Date("2026-07-01T09:30:00.000Z"),
+            version: 4,
+          }),
+        ],
+      }),
+    );
+  });
 });
 
 function agendaEvent(overrides: { id: string; title: string; isCanceled: boolean }) {
@@ -105,5 +127,7 @@ function agendaEvent(overrides: { id: string; title: string; isCanceled: boolean
     status: overrides.isCanceled ? "canceled" : "approved",
     isCanceled: overrides.isCanceled,
     isUpdated: false,
+    updatedAt: new Date("2026-07-01T09:30:00.000Z"),
+    version: 4,
   };
 }

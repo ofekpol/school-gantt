@@ -46,7 +46,7 @@ describe("migrated production rows", () => {
       const body = serializeCalendar({
         schoolName: "s",
         schoolSlug: "s",
-        events: [{ id: "x", title: "t", description: null, location: null, startAt, endAt, allDay, eventTypeLabelHe: "t", updatedAt: startAt }],
+        events: [{ id: "x", title: "t", description: null, location: null, startAt, endAt, allDay, eventTypeLabelHe: "t", updatedAt: startAt, version: 1 }],
       });
       const dayAfterEnd = new Date(`${typedEnd.slice(0, 10)}T12:00:00Z`);
       dayAfterEnd.setUTCDate(dayAfterEnd.getUTCDate() + 1);

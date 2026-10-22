@@ -15,6 +15,9 @@ export interface AgendaItem {
   status?: "approved" | "canceled";
   isCanceled?: boolean;
   isUpdated?: boolean;
+  /** Row edit stamp + version; feed the iCal change signals. */
+  updatedAt?: Date;
+  version?: number;
 }
 
 export interface AgendaWeek {

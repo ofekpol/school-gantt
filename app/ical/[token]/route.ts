@@ -64,9 +64,10 @@ export async function GET(
     allDay: e.allDay,
     eventTypeLabelHe: e.eventTypeLabelHe,
     canceled: e.isCanceled === true,
-    // DTSTAMP must be stable for ETag — use event boundaries instead of
-    // wall-clock now(). startAt is a reasonable monotonic surrogate.
-    updatedAt: new Date(e.startAt),
+    // Row edit stamp (not now()) keeps the ETag stable while still changing
+    // on edits, so subscribed calendars replace their cached copy.
+    updatedAt: new Date(e.updatedAt ?? e.startAt),
+    version: e.version ?? 1,
   }));
 
   const body = serializeCalendar({
