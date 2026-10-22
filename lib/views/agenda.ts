@@ -100,6 +100,8 @@ export async function getAgendaForSchool(
         eventTypeColor: eventTypes.colorHex,
         eventTypeGlyph: eventTypes.glyph,
         status: events.status,
+        updatedAt: events.updatedAt,
+        version: events.version,
         isUpdated: sql<boolean>`exists (
           select 1 from ${eventRevisions}
           where ${eventRevisions.eventId} = ${events.id}

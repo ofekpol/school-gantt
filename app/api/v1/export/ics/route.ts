@@ -83,8 +83,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     allDay: e.allDay,
     eventTypeLabelHe: e.eventTypeLabelHe,
     canceled: e.isCanceled === true,
-    // Stable DTSTAMP (see iCal feed) — startAt is a deterministic surrogate.
-    updatedAt: new Date(e.startAt),
+    // Stable DTSTAMP from the row's edit stamp (see iCal feed).
+    updatedAt: new Date(e.updatedAt ?? e.startAt),
+    version: e.version ?? 1,
   }));
 
   const body = serializeCalendar({

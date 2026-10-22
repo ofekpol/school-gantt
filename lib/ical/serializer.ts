@@ -3,9 +3,8 @@
  *
  * Hand-written instead of pulling in `ical-generator` so:
  *   - the bytes stay byte-stable for ETag comparisons,
- *   - we never emit a server-time DTSTAMP (RFC requires it, but Google
- *     handles a fixed one from updatedAt fine; we want determinism more
- *     than DTSTAMP-honesty here),
+ *   - we never emit a server-time DTSTAMP — it comes from the row's
+ *     updatedAt, which is deterministic yet still changes on every edit,
  *   - the file is small and reviewable.
  *
  * Field mapping (PRD §6.4):
@@ -16,6 +15,8 @@
  *   LOCATION    ← location (caller resolves "first line of requirements")
  *   DESCRIPTION ← description
  *   CATEGORIES  ← event type label
+ *   DTSTAMP / LAST-MODIFIED ← updatedAt
+ *   SEQUENCE    ← version + FEED_FORMAT_REVISION
  */
 
 import { addCalendarDays } from "@/lib/datetime";
@@ -30,9 +31,21 @@ export interface ICalEvent {
   endAt: Date;
   allDay: boolean;
   eventTypeLabelHe: string;
+  /** Last edit time → DTSTAMP / LAST-MODIFIED. */
   updatedAt: Date;
+  /** Event row version (bumped on every edit) → SEQUENCE. */
+  version: number;
   canceled?: boolean;
 }
+
+/**
+ * Added to every SEQUENCE. Google Calendar keeps its cached copy of an event
+ * unless SEQUENCE rises, so bump this whenever the serialized output changes
+ * (dates, fields, escaping) to make subscribers re-read every event.
+ * Guarded by test/unit/ical/serializer-change-signals.test.ts.
+ * 1: added SEQUENCE/LAST-MODIFIED; flushes pre-fix all-day dates (Oct 2026).
+ */
+export const FEED_FORMAT_REVISION = 1;
 
 export interface SerializeInput {
   schoolName: string;
@@ -69,6 +82,8 @@ export function serializeCalendar(input: SerializeInput): string {
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${evt.id}@${input.schoolSlug}.school-gantt`);
     lines.push(`DTSTAMP:${formatUtc(evt.updatedAt)}`);
+    lines.push(`LAST-MODIFIED:${formatUtc(evt.updatedAt)}`);
+    lines.push(`SEQUENCE:${evt.version + FEED_FORMAT_REVISION}`);
     const days = evt.allDay ? allDayDates(evt) : null;
     if (days) {
       lines.push(`DTSTART;VALUE=DATE:${days.start}`);

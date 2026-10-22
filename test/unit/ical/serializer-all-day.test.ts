@@ -12,6 +12,7 @@ function allDay(startAt: string, endAt: string): ICalEvent {
     allDay: true,
     eventTypeLabelHe: "חג",
     updatedAt: new Date(startAt),
+    version: 1,
   };
 }
 

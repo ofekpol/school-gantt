@@ -12,6 +12,7 @@ function evt(overrides: Partial<ICalEvent> = {}): ICalEvent {
     eventTypeLabelHe: "טיול",
     allDay: false,
     updatedAt: new Date("2026-09-01T12:00:00.000Z"),
+    version: 1,
     ...overrides,
   };
 }
