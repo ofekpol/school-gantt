@@ -28,7 +28,19 @@ dump_prod() {
   pg_dump "$PROD_DATABASE_URL" -Fc --data-only --table=auth.users --table=auth.identities -f "$dir/auth.dump"
   # Skip the schema entry, the Supabase platform helper, and default ACLs owned by
   # supabase_admin (non-superusers cannot set them; staging already has the same ones).
-  pg_restore -l "$dir/public.dump" | grep -vE ' SCHEMA - public |rls_auto_enable| DEFAULT ACL ' > "$dir/public.list"
+  pg_restore -l "$dir/public.dump" | grep -vE ' SCHEMA - public |rls_auto_enable| DEFAULT ACL ' > "$dir/all.list"
+  grep -v ' ACL ' "$dir/all.list" > "$dir/objects.list"
+  grep ' ACL ' "$dir/all.list" > "$dir/acl.list" || true
+}
+
+# Staging's default privileges auto-grant new tables to the API roles; strip those so
+# only prod's exact grants (restored next from acl.list) remain — e.g. 0010's revokes.
+reset_api_grants() {
+  psql "$STAGING_DATABASE_URL" -v ON_ERROR_STOP=1 -q <<'SQL'
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA public FROM anon, authenticated, service_role;
+SQL
 }
 
 # Drops app objects in public; leaves the schema and Supabase's rls_auto_enable helper intact.
@@ -62,7 +74,10 @@ SQL
 restore_staging() {
   local dir="$1"
   pg_restore -d "$STAGING_DATABASE_URL" --no-owner --single-transaction --exit-on-error \
-    -L "$dir/public.list" "$dir/public.dump"
+    -L "$dir/objects.list" "$dir/public.dump"
+  reset_api_grants
+  pg_restore -d "$STAGING_DATABASE_URL" --no-owner --single-transaction --exit-on-error \
+    -L "$dir/acl.list" "$dir/public.dump"
   pg_restore -d "$STAGING_DATABASE_URL" --data-only --single-transaction --exit-on-error "$dir/auth.dump"
 }
 
