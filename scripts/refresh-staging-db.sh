@@ -26,8 +26,9 @@ dump_prod() {
   local dir="$1"
   pg_dump "$PROD_DATABASE_URL" -Fc --no-owner --schema=public -f "$dir/public.dump"
   pg_dump "$PROD_DATABASE_URL" -Fc --data-only --table=auth.users --table=auth.identities -f "$dir/auth.dump"
-  # Skip the schema entry itself and the Supabase platform helper (already present on staging).
-  pg_restore -l "$dir/public.dump" | grep -vE ' SCHEMA - public |rls_auto_enable' > "$dir/public.list"
+  # Skip the schema entry, the Supabase platform helper, and default ACLs owned by
+  # supabase_admin (non-superusers cannot set them; staging already has the same ones).
+  pg_restore -l "$dir/public.dump" | grep -vE ' SCHEMA - public |rls_auto_enable| DEFAULT ACL ' > "$dir/public.list"
 }
 
 # Drops app objects in public; leaves the schema and Supabase's rls_auto_enable helper intact.
