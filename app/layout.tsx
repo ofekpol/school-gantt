@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { dirFor, isLocale, DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { RouteProgressProvider } from "@/components/RouteProgress";
 import { VercelSpeedInsights } from "@/components/VercelSpeedInsights";
+import { Analytics } from "@vercel/analytics/next";
 
 // Only Heebo (UI) is preloaded — it's the body font for every Hebrew
 // page above the fold. Display / mono / sans-latin fonts load on demand
@@ -86,6 +87,7 @@ export default async function RootLayout({
           </RouteProgressProvider>
         </NextIntlClientProvider>
         <VercelSpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
