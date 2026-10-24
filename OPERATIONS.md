@@ -103,6 +103,28 @@ Required project settings:
 3. **Output** — Next.js (auto-detected). Middleware runs on Edge.
 4. **Region** — pick a region close to the Supabase project to minimize round-trip latency for `withSchool` transactions.
 
+### Environments
+
+| Env | Git branch | URL | Supabase project |
+|-----|-----------|-----|------------------|
+| Production | `main` | `school-gantt.vercel.app` | `school-gantt-production` (`mfrtdirkknuvweaiqfzs`) |
+| Staging | `staging` | `school-gantt-git-staging-ofekpols-projects.vercel.app` (Vercel login required) | `school-gantt-staging` (`wmapfuwpdyishfqtzwha`, eu-central-1) |
+| Branch previews | any other | `school-gantt-git-<branch>-ofekpols-projects.vercel.app` | same as staging |
+
+Vercel **Preview** env vars point at the staging project. `RESEND_API_KEY` and `NEXT_PUBLIC_APP_URL` are deliberately unset on Preview: no emails are sent, and links use the request origin.
+
+**Promotion flow:** feature branch → PR into `staging` → verify on the staging URL → PR `staging` → `main`. A hotfix merged straight into `main` must be merged back into `staging`.
+
+**Data refresh:** `.github/workflows/refresh-staging-db.yml` runs nightly (01:00 UTC) and copies prod's `public` schema plus `auth.users`/`auth.identities` into staging via `scripts/refresh-staging-db.sh`, then re-applies staging-only migrations. Anything created on staging is wiped nightly. Run on demand:
+
+```bash
+gh workflow run refresh-staging-db.yml
+```
+
+Required GitHub secrets (Supabase **session pooler** URIs — runners are IPv4-only): `PROD_DATABASE_URL`, `STAGING_DATABASE_URL`. The script only reads from prod and refuses any target that isn't the staging project.
+
+Running `pnpm test:integration` with `TEST_DATABASE_URL` pointed at staging leaves test rows on staging until the next refresh.
+
 ## 8. Monitoring & SLOs
 
 The PRD targets and the corresponding observables:
