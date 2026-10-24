@@ -194,7 +194,8 @@ Never commit these.
 
 - Never commit directly to `main`
 - Branch naming: `feature/<desc>`, `fix/<desc>`, `phase/<n>-<desc>`
-- For every new feature: create a new branch (`git checkout -b feature/<desc>`), work on that branch, then merge to `main` when implementation is complete (`git checkout main && git merge feature/<desc>`)
+- For every new feature: create a new branch (`git checkout -b feature/<desc>`) from `staging`, work on it, then merge into `staging` and verify on the staging deployment; promote with `staging` → `main` (see OPERATIONS.md §7 "Environments")
+- Hotfixes merged straight into `main` must be merged back into `staging`
 - Verify `pnpm build` passes before merging
 - Keep commits atomic per logical change
 - Never spawn agents with `isolation: "worktree"`.
