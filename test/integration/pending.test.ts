@@ -9,7 +9,7 @@ import {
   approvePendingRegistration,
   rejectPendingRegistration,
 } from "@/lib/db/pending";
-import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA } from "./setup";
+import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA, testSchoolB } from "./setup";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -45,6 +45,7 @@ describe.skipIf(skipIfNoTestDb)(
         authUserId,
         email,
         fullName: "Pending User",
+        schoolId: testSchoolA,
       });
     });
 
@@ -62,12 +63,12 @@ describe.skipIf(skipIfNoTestDb)(
 
     it("createPendingRegistration is idempotent (duplicate does not throw)", async () => {
       await expect(
-        createPendingRegistration({ authUserId, email, fullName: "Duplicate" }),
+        createPendingRegistration({ authUserId, email, fullName: "Duplicate", schoolId: testSchoolA }),
       ).resolves.toBeUndefined();
     });
 
     it("listPendingRegistrations includes the unreviewed row", async () => {
-      const rows = await listPendingRegistrations();
+      const rows = await listPendingRegistrations(testSchoolA);
       const found = rows.find((r) => r.authUserId === authUserId);
       expect(found).toBeDefined();
       expect(found!.reviewOutcome).toBeNull();
@@ -99,6 +100,7 @@ describe.skipIf(skipIfNoTestDb)(
         email,
         fullName: "To Approve",
         googleAvatarUrl: "https://example.com/avatar.jpg",
+        schoolId: testSchoolA,
       });
 
       const [row] = await testDb!
@@ -141,7 +143,7 @@ describe.skipIf(skipIfNoTestDb)(
     });
 
     it("approved row no longer appears in listPendingRegistrations", async () => {
-      const rows = await listPendingRegistrations();
+      const rows = await listPendingRegistrations(testSchoolA);
       expect(rows.find((r) => r.id === pendingId)).toBeUndefined();
     });
 
@@ -176,6 +178,7 @@ describe.skipIf(skipIfNoTestDb)(
         authUserId: scopedAuthId,
         email: `scoped-${scopedAuthId.slice(0, 8)}@test`,
         fullName: "Scoped Editor",
+        schoolId: testSchoolA,
       });
       const [scopedRow] = await testDb!
         .select({ id: schema.pendingRegistrations.id })
@@ -221,6 +224,7 @@ describe.skipIf(skipIfNoTestDb)(
         authUserId,
         email: `pending-03-${authUserId.slice(0, 8)}@test`,
         fullName: "To Reject",
+        schoolId: testSchoolA,
       });
       const [row] = await testDb!
         .select({ id: schema.pendingRegistrations.id })
@@ -235,7 +239,7 @@ describe.skipIf(skipIfNoTestDb)(
       // fails. The DB change is committed before the Supabase call, so we verify the
       // DB state after catching the (expected) Supabase error.
       try {
-        await rejectPendingRegistration({ pendingId, reviewedBy: reviewerId });
+        await rejectPendingRegistration({ pendingId, schoolId: testSchoolA, reviewedBy: reviewerId });
       } catch {
         // supabaseAdmin.auth.admin.deleteUser is expected to fail in test environment
       }
@@ -249,19 +253,106 @@ describe.skipIf(skipIfNoTestDb)(
     it("throws pending_registration_not_found when row is already reviewed", async () => {
       // pendingId was rejected above; a second attempt must throw
       await expect(
-        rejectPendingRegistration({ pendingId, reviewedBy: reviewerId }),
+        rejectPendingRegistration({ pendingId, schoolId: testSchoolA, reviewedBy: reviewerId }),
       ).rejects.toThrow("pending_registration_not_found");
     });
 
     it("throws pending_registration_not_found when pendingId does not exist", async () => {
       await expect(
-        rejectPendingRegistration({ pendingId: randomUUID(), reviewedBy: reviewerId }),
+        rejectPendingRegistration({ pendingId: randomUUID(), schoolId: testSchoolA, reviewedBy: reviewerId }),
       ).rejects.toThrow("pending_registration_not_found");
     });
 
     it("rejected row does not appear in listPendingRegistrations", async () => {
-      const rows = await listPendingRegistrations();
+      const rows = await listPendingRegistrations(testSchoolA);
       expect(rows.find((r) => r.id === pendingId)).toBeUndefined();
     });
   },
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PENDING-04: cross-school isolation
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function insertPending(schoolId: string | null) {
+  const authUserId = randomUUID();
+  await createPendingRegistration({
+    authUserId,
+    email: `pending-04-${authUserId.slice(0, 8)}@test`,
+    fullName: "Cross School",
+    schoolId,
+  });
+  const [row] = await testDb!
+    .select({ id: schema.pendingRegistrations.id })
+    .from(schema.pendingRegistrations)
+    .where(eq(schema.pendingRegistrations.authUserId, authUserId));
+  return { pendingId: row.id, authUserId };
+}
+
+describe.skipIf(skipIfNoTestDb)("PENDING-04: cross-school isolation", () => {
+  let schoolARow: { pendingId: string; authUserId: string };
+  let noSchoolRow: { pendingId: string; authUserId: string };
+  let reviewerBId: string;
+
+  beforeAll(async () => {
+    if (shouldSkip()) return;
+    reviewerBId = (await ensureReviewer(testSchoolB, "pending-reviewer-b@test")).id;
+    schoolARow = await insertPending(testSchoolA);
+    noSchoolRow = await insertPending(null);
+  });
+
+  it("list for school B excludes school A's row", async () => {
+    const rows = await listPendingRegistrations(testSchoolB);
+    expect(rows.find((r) => r.id === schoolARow.pendingId)).toBeUndefined();
+  });
+
+  it("list excludes rows with null school", async () => {
+    const rowsA = await listPendingRegistrations(testSchoolA);
+    const rowsB = await listPendingRegistrations(testSchoolB);
+    expect([...rowsA, ...rowsB].find((r) => r.id === noSchoolRow.pendingId)).toBeUndefined();
+  });
+
+  it("approve from school B throws pending_registration_not_found and creates no staff row", async () => {
+    await expect(
+      approvePendingRegistration({
+        pendingId: schoolARow.pendingId,
+        schoolId: testSchoolB,
+        role: "admin",
+        fullName: "Hijack",
+        approvedBy: reviewerBId,
+      }),
+    ).rejects.toThrow("pending_registration_not_found");
+    const staff = await testDb!
+      .select()
+      .from(schema.staffUsers)
+      .where(eq(schema.staffUsers.id, schoolARow.authUserId));
+    expect(staff).toHaveLength(0);
+  });
+
+  it("reject from school B throws pending_registration_not_found and leaves the row unreviewed", async () => {
+    await expect(
+      rejectPendingRegistration({
+        pendingId: schoolARow.pendingId,
+        schoolId: testSchoolB,
+        reviewedBy: reviewerBId,
+      }),
+    ).rejects.toThrow("pending_registration_not_found");
+    const [row] = await testDb!
+      .select({ reviewOutcome: schema.pendingRegistrations.reviewOutcome })
+      .from(schema.pendingRegistrations)
+      .where(eq(schema.pendingRegistrations.id, schoolARow.pendingId));
+    expect(row.reviewOutcome).toBeNull();
+  });
+
+  it("approve of a null-school row throws pending_registration_not_found", async () => {
+    await expect(
+      approvePendingRegistration({
+        pendingId: noSchoolRow.pendingId,
+        schoolId: testSchoolB,
+        role: "editor",
+        fullName: "Orphan",
+        approvedBy: reviewerBId,
+      }),
+    ).rejects.toThrow("pending_registration_not_found");
+  });
+});

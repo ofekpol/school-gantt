@@ -18,7 +18,7 @@ export async function GET(): Promise<NextResponse> {
     throw e;
   }
 
-  const pending = await listPendingRegistrations();
+  const pending = await listPendingRegistrations(user.schoolId);
   return NextResponse.json({ pending });
 }
 
@@ -37,10 +37,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   if (parsed.data.action === "reject") {
-    await rejectPendingRegistration({
-      pendingId: parsed.data.pendingId,
-      reviewedBy: user.id,
-    });
+    try {
+      await rejectPendingRegistration({
+        pendingId: parsed.data.pendingId,
+        schoolId: user.schoolId,
+        reviewedBy: user.id,
+      });
+    } catch (e) {
+      if (isNotFound(e)) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      throw e;
+    }
     return NextResponse.json({ ok: true });
   }
 
@@ -61,6 +67,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (e instanceof Error && e.message === "staff_user_in_other_school") {
       return NextResponse.json({ error: "Conflict" }, { status: 409 });
     }
+    if (isNotFound(e)) return NextResponse.json({ error: "Not found" }, { status: 404 });
     throw e;
   }
 
@@ -81,4 +88,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
 
   return NextResponse.json({ ok: true, staffUserId: result.staffUserId });
+}
+
+/** Unknown id, already reviewed, or another school's row — all look the same to the caller. */
+function isNotFound(e: unknown): boolean {
+  return e instanceof Error && e.message === "pending_registration_not_found";
 }

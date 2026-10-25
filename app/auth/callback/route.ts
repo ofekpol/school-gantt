@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
       email,
       fullName,
       googleAvatarUrl,
+      schoolId: null,
     });
   }
 
