@@ -115,13 +115,15 @@ Vercel **Preview** env vars point at the staging project. `RESEND_API_KEY` and `
 
 **Promotion flow:** feature branch → PR into `staging` → verify on the staging URL → PR `staging` → `main`. A hotfix merged straight into `main` must be merged back into `staging`.
 
-**Data refresh:** `.github/workflows/refresh-staging-db.yml` runs nightly (01:00 UTC) and copies prod's `public` schema plus `auth.users`/`auth.identities` into staging via `scripts/refresh-staging-db.sh`, then re-applies staging-only migrations. Anything created on staging is wiped nightly. Run on demand:
+**Data refresh (manual):** `.github/workflows/refresh-staging-db.yml` copies prod's `public` schema plus `auth.users`/`auth.identities` into staging via `scripts/refresh-staging-db.sh`, re-applies staging-only migrations, then runs `pnpm seed` to re-create the `demo-school` tenant next to prod's real school. It no longer runs on a schedule, so anything created on staging survives until the next refresh. Run it:
 
 ```bash
 gh workflow run refresh-staging-db.yml
 ```
 
-Required GitHub secrets (Supabase **session pooler** URIs — runners are IPv4-only): `PROD_DATABASE_URL`, `STAGING_DATABASE_URL`. The script only reads from prod and refuses any target that isn't the staging project.
+Required GitHub secrets: `PROD_DATABASE_URL`, `STAGING_DATABASE_URL` (Supabase **session pooler** URIs — runners are IPv4-only), plus `STAGING_SUPABASE_URL` and `STAGING_SUPABASE_SERVICE_ROLE_KEY` for the demo seed. The script only reads from prod and refuses any target that isn't the staging project; `db/seed.ts` refuses any database that isn't local or staging.
+
+Demo logins on staging are the seed accounts listed under "Default credentials after `pnpm seed`" above (forced password change on first login).
 
 Running `pnpm test:integration` with `TEST_DATABASE_URL` pointed at staging leaves test rows on staging until the next refresh.
 

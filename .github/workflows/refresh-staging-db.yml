@@ -1,8 +1,7 @@
 name: Refresh staging DB
 
 on:
-  schedule:
-    - cron: "0 1 * * *" # ~03:00-04:00 Asia/Jerusalem
+  # Manual only: staging keeps the demo school (and anything tested on it) until the next refresh.
   workflow_dispatch:
 
 concurrency:
@@ -55,3 +54,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
         run: pnpm db:migrate
+
+      - name: Seed demo school
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+        run: pnpm seed

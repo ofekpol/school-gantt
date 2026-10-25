@@ -235,7 +235,25 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
   return { schoolId: school.id };
 }
 
+// Same project ref scripts/refresh-staging-db.sh refuses to deviate from.
+const STAGING_PROJECT_REF = "wmapfuwpdyishfqtzwha";
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
+
+/** The seed creates ChangeMe123! accounts — it must never run against prod. */
+export function assertSeedTargetAllowed(databaseUrl: string | undefined): void {
+  const isLocal = (() => {
+    try {
+      return databaseUrl !== undefined && LOCAL_HOSTS.has(new URL(databaseUrl).hostname);
+    } catch {
+      return false;
+    }
+  })();
+  if (isLocal || databaseUrl?.includes(STAGING_PROJECT_REF)) return;
+  throw new Error("refusing to seed: DATABASE_URL is not local or staging");
+}
+
 async function main() {
+  assertSeedTargetAllowed(process.env.DATABASE_URL);
   const { schoolId } = await seedDb({
     ensureStaffUserId: (email) => ensureAuthUser(email, SEED_TEMP_PASSWORD),
   });
