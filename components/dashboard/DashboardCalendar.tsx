@@ -57,6 +57,8 @@ interface Props {
   selectedGrades: number[];
   gradeColors: GradeColorMap;
   canCreateEvents?: boolean;
+  /** Opens this event's dialog on first render (deep link from the smart adder). */
+  initialEventId?: string;
 }
 
 /**
@@ -76,6 +78,7 @@ export function DashboardCalendar({
   selectedGrades,
   gradeColors,
   canCreateEvents = true,
+  initialEventId,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -87,7 +90,7 @@ export function DashboardCalendar({
   const [selectedGradeState, setSelectedGradeState] = useState(selectedGrades);
   const deferredSelectedGrades = useDeferredValue(selectedGradeState);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(initialEventId ?? null);
   const [printMonthKey, setPrintMonthKey] = useState<string | null>(null);
   const allowedGradeOptions = useMemo(
     () => Array.from(new Set(allowedGrades)).sort((a, b) => a - b),

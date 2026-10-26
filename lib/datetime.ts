@@ -66,3 +66,15 @@ const dateFormatter = new Intl.DateTimeFormat("en-CA", {
 export function jerusalemDateString(instant: Date): string {
   return dateFormatter.format(instant);
 }
+
+const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: SCHOOL_TIMEZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** "HH:MM" of `instant` on the Jerusalem clock. */
+export function jerusalemTimeString(instant: Date): string {
+  return timeFormatter.format(instant);
+}

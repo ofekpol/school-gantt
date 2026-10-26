@@ -14,6 +14,8 @@ import { buildCalendarRangeFromEvents } from "@/lib/views/date-range";
 import { getDashboardGradeSelection, visibleWeeklyGrades } from "@/lib/dashboard/grade-filter";
 import { getGradeColors } from "@/lib/db/grade-colors";
 import { DashboardCalendar } from "@/components/dashboard/DashboardCalendar";
+import { SmartAdderButton } from "@/components/ai/SmartAdderButton";
+import { isAiEnabled } from "@/lib/ai/model";
 
 const ALL_GRADES = [7, 8, 9, 10, 11, 12];
 
@@ -23,6 +25,7 @@ interface PageProps {
     week?: string;
     month?: string;
     grades?: string | string[];
+    event?: string;
   }>;
 }
 
@@ -91,6 +94,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     <main className="pb-12">
       <div className="flex items-center justify-between px-6 pt-6">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
+        {user.role !== "viewer" && isAiEnabled() && (
+          <SmartAdderButton eventTypes={eventTypeList} allowedGrades={allowedGrades} />
+        )}
       </div>
 
       {school && (
@@ -105,6 +111,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           selectedGrades={gradeSelection.selectedGrades}
           gradeColors={gradeColors}
           canCreateEvents={user.role !== "viewer"}
+          initialEventId={typeof sp.event === "string" ? sp.event : undefined}
         />
       )}
 
