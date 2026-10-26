@@ -45,7 +45,7 @@ export default async function LoginPage({
         )}
 
         <div className="space-y-4">
-          <EmailPasswordSignInForm />
+          <EmailPasswordSignInForm school={school?.slug} />
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

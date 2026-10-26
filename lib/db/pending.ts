@@ -38,6 +38,26 @@ export async function createPendingRegistration(params: {
     .onConflictDoNothing();
 }
 
+/**
+ * Files a still-open, school-less registration under `schoolId` (the user came
+ * back through a school's sign-up link). Never moves a row between schools.
+ */
+export async function assignPendingSchoolIfMissing(
+  authUserId: string,
+  schoolId: string,
+): Promise<void> {
+  await db
+    .update(pendingRegistrations)
+    .set({ schoolId })
+    .where(
+      and(
+        eq(pendingRegistrations.authUserId, authUserId),
+        isNull(pendingRegistrations.schoolId),
+        isNull(pendingRegistrations.reviewOutcome),
+      ),
+    );
+}
+
 export async function getPendingRegistrationByAuthId(
   authUserId: string,
 ): Promise<PendingRegistrationRecord | null> {

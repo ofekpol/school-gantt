@@ -17,7 +17,7 @@ export default async function PendingPage() {
         </p>
         {missingSchool && (
           <p className="text-sm text-destructive" data-testid="pending-missing-school">
-            לא זוהה בית ספר לבקשה. בקשו מבית הספר את קישור ההרשמה שלו והירשמו דרכו.
+            לא זוהה בית ספר לבקשה. בקשו מבית הספר את קישור ההרשמה שלו והתחברו דרכו.
           </p>
         )}
         <LogoutButton label="יציאה מהמערכת" />

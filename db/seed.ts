@@ -239,21 +239,33 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
 const STAGING_PROJECT_REF = "wmapfuwpdyishfqtzwha";
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
-/** The seed creates ChangeMe123! accounts — it must never run against prod. */
-export function assertSeedTargetAllowed(databaseUrl: string | undefined): void {
-  const isLocal = (() => {
-    try {
-      return databaseUrl !== undefined && LOCAL_HOSTS.has(new URL(databaseUrl).hostname);
-    } catch {
-      return false;
-    }
-  })();
-  if (isLocal || databaseUrl?.includes(STAGING_PROJECT_REF)) return;
-  throw new Error("refusing to seed: DATABASE_URL is not local or staging");
+function isLocalOrStaging(url: string): boolean {
+  if (url.includes(STAGING_PROJECT_REF)) return true;
+  try {
+    return LOCAL_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The seed creates ChangeMe123! accounts — it must never touch prod, neither
+ * its database nor its Supabase Auth (ensureAuthUser uses the Supabase URL).
+ */
+export function assertSeedTargetAllowed(
+  databaseUrl: string | undefined,
+  supabaseUrl?: string,
+): void {
+  if (databaseUrl === undefined || !isLocalOrStaging(databaseUrl)) {
+    throw new Error("refusing to seed: DATABASE_URL is not local or staging");
+  }
+  if (supabaseUrl !== undefined && !isLocalOrStaging(supabaseUrl)) {
+    throw new Error("refusing to seed: NEXT_PUBLIC_SUPABASE_URL is not local or staging");
+  }
 }
 
 async function main() {
-  assertSeedTargetAllowed(process.env.DATABASE_URL);
+  assertSeedTargetAllowed(process.env.DATABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_URL);
   const { schoolId } = await seedDb({
     ensureStaffUserId: (email) => ensureAuthUser(email, SEED_TEMP_PASSWORD),
   });

@@ -13,11 +13,10 @@ test.skip(
 test("READONLY: login screen links to a 2-tab read-only schedule with working filters", async ({ page }) => {
   await page.goto("/auth/login");
 
-  await page.getByRole("link", { name: "המשך כאורח (צפייה בלוח)" }).click();
-  // The e2e DB holds several schools (demo + second + integration fixtures), so
-  // /schedule shows a picker first.
-  await page.getByRole("link", { name: "Demo School" }).click();
-  await expect(page).toHaveURL(/\/schedule\?school=demo-school$/);
+  // /schedule shows a picker or the only school depending on how many schools
+  // the DB holds; pin demo-school so this spec works either way.
+  await expect(page.getByRole("link", { name: "המשך כאורח (צפייה בלוח)" })).toHaveAttribute("href", "/schedule");
+  await page.goto("/schedule?school=demo-school");
 
   // Exactly weekly + monthly tabs, no agenda.
   const weeklyTab = page.getByRole("button", { name: "שבועי" });

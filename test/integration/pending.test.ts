@@ -7,6 +7,7 @@ import {
   getPendingRegistrationByAuthId,
   listPendingRegistrations,
   approvePendingRegistration,
+  assignPendingSchoolIfMissing,
   rejectPendingRegistration,
 } from "@/lib/db/pending";
 import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA, testSchoolB } from "./setup";
@@ -342,6 +343,15 @@ describe.skipIf(skipIfNoTestDb)("PENDING-04: cross-school isolation", () => {
       .from(schema.pendingRegistrations)
       .where(eq(schema.pendingRegistrations.id, schoolARow.pendingId));
     expect(row.reviewOutcome).toBeNull();
+  });
+
+  it("assignPendingSchoolIfMissing files a null-school row but never moves a school A row", async () => {
+    const orphan = await insertPending(null);
+    await assignPendingSchoolIfMissing(orphan.authUserId, testSchoolB);
+    expect((await listPendingRegistrations(testSchoolB)).some((r) => r.id === orphan.pendingId)).toBe(true);
+
+    await assignPendingSchoolIfMissing(schoolARow.authUserId, testSchoolB);
+    expect((await listPendingRegistrations(testSchoolB)).some((r) => r.id === schoolARow.pendingId)).toBe(false);
   });
 
   it("approve of a null-school row throws pending_registration_not_found", async () => {
