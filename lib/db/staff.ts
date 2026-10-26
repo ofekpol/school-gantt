@@ -210,6 +210,15 @@ export async function updateStaffUser(
   },
 ): Promise<void> {
   await withSchool(schoolId, async (tx) => {
+    // RLS hides other schools' staff. Bail before the scope rewrite and the
+    // service-role signOut below, which RLS does not protect.
+    const [target] = await tx
+      .select({ id: staffUsers.id })
+      .from(staffUsers)
+      .where(eq(staffUsers.id, staffUserId))
+      .limit(1);
+    if (!target) throw new Response(null, { status: 404, statusText: "Not found" });
+
     const updates: Partial<{
       fullName: string;
       role: "editor" | "admin" | "viewer";
