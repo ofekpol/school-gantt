@@ -22,7 +22,7 @@ interface ExportEventType {
 export type { CalendarPrintOptions } from "@/components/CalendarPrintDialogs";
 
 interface Props {
-  schoolSlug?: string;
+  accessToken?: string;
   allGrades?: number[];
   eventTypes?: ExportEventType[];
   defaultGrades?: number[];
@@ -37,7 +37,7 @@ type ExportMode = "choices" | "google" | "print";
 
 /** Opens Google Calendar and selected-month printing export choices. */
 export function ExportToGoogleCalendarButton({
-  schoolSlug: _schoolSlug,
+  accessToken: _accessToken,
   allGrades: _allGrades,
   eventTypes: _eventTypes,
   defaultGrades: _defaultGrades,

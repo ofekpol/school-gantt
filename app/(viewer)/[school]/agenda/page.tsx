@@ -11,13 +11,13 @@ interface PageProps {
 }
 
 export default async function AgendaPage({ params, searchParams }: PageProps) {
-  const { school: slug } = await params;
-  const [data, sp] = await Promise.all([loadPublicViewerData(slug), searchParams]);
+  const { school: accessToken } = await params;
+  const [data, sp] = await Promise.all([loadPublicViewerData(accessToken), searchParams]);
   if (!data) notFound();
 
   return (
     <PublicViewerShell
-      schoolSlug={slug}
+      accessToken={data.school.accessToken}
       schoolName={data.school.name}
       initialView="agenda"
       initialParams={parsePublicViewerParams(toUrlSearchParams(sp))}

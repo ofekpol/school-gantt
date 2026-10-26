@@ -45,7 +45,7 @@ export default async function LoginPage({
         )}
 
         <div className="space-y-4">
-          <EmailPasswordSignInForm school={school?.slug} />
+          <EmailPasswordSignInForm school={school?.accessToken} />
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -56,13 +56,13 @@ export default async function LoginPage({
             </div>
           </div>
 
-          <GoogleSignInButton next={next} token={token} school={school?.slug} />
+          <GoogleSignInButton next={next} token={token} school={school?.accessToken} />
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
           עדיין אין לכם חשבון?{" "}
           <Link
-            href={{ pathname: "/auth/register", query: authLinkQuery(token, school?.slug) }}
+            href={{ pathname: "/auth/register", query: authLinkQuery(token, school?.accessToken) }}
             className="underline hover:text-foreground"
           >
             הרשמה
@@ -71,7 +71,7 @@ export default async function LoginPage({
 
         <GuestViewButton
           label="המשך כאורח (צפייה בלוח)"
-          href={school ? `/schedule?school=${school.slug}` : undefined}
+          href={school ? `/schedule?school=${school.accessToken}` : undefined}
         />
       </div>
     </div>

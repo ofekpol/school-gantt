@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { DEMO_SCHOOL_PATH } from "../../db/demo-school";
 
 /**
  * Invite → grade-scope → publish → viewer tests (E2E).
@@ -245,7 +246,7 @@ test.describe("VIEWER: viewer staff account experience", () => {
     // The agenda lists event titles as plain text — a reliable public-view
     // assertion. (The Gantt renders titles inside a wide, horizontally-scrolled
     // canvas where individual labels are not reliably in-viewport.)
-    await page.goto("/demo-school/agenda");
+    await page.goto(`${DEMO_SCHOOL_PATH}/agenda`);
     await expect(page.getByText(approvedEventTitle).first()).toBeVisible({
       timeout: 10_000,
     });

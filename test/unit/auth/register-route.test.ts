@@ -10,6 +10,8 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import { POST } from "@/app/api/v1/auth/register/route";
 
+const SCHOOL_TOKEN = "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1";
+
 describe("POST /api/v1/auth/register", () => {
   beforeEach(() => signUpMock.mockReset());
 
@@ -71,18 +73,18 @@ describe("POST /api/v1/auth/register", () => {
     expect(res.status).toBe(500);
   });
 
-  it("stores school slug in user_metadata", async () => {
+  it("stores the school link token in user_metadata", async () => {
     signUpMock.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
     const res = await POST(
-      makeRequest({ email: "a@b.com", fullName: "Test", password: "password123", school: "test-a" }),
+      makeRequest({ email: "a@b.com", fullName: "Test", password: "password123", school: SCHOOL_TOKEN }),
     );
     expect(res.status).toBe(200);
-    expect(signUpMock.mock.calls[0][0].options.data).toMatchObject({ school: "test-a" });
+    expect(signUpMock.mock.calls[0][0].options.data).toMatchObject({ school: SCHOOL_TOKEN });
   });
 
-  it("rejects an invalid school slug with 422", async () => {
+  it.each([["../x"], ["test-a"]])("rejects %s (not a school link token) with 422", async (school) => {
     const res = await POST(
-      makeRequest({ email: "a@b.com", fullName: "Test", password: "password123", school: "../x" }),
+      makeRequest({ email: "a@b.com", fullName: "Test", password: "password123", school }),
     );
     expect(res.status).toBe(422);
     expect(signUpMock).not.toHaveBeenCalled();

@@ -115,7 +115,7 @@ describe("PublicViewerShell grade filter", () => {
 
     render(
       <PublicViewerShell
-        schoolSlug="demo-school"
+        accessToken="demo-school"
         schoolName="Demo School"
         initialView="gantt"
         initialParams={{ grades: [], types: [], q: "", zoom: "year", week: null }}
@@ -196,7 +196,7 @@ function renderPublicViewer(initialView: "gantt" | "calendar" | "agenda") {
 
   return render(
     <PublicViewerShell
-      schoolSlug="demo-school"
+      accessToken="demo-school"
       schoolName="Demo School"
       initialView={initialView}
       initialParams={{ grades: [], types: [], q: "", zoom: "year", week: null }}

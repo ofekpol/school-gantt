@@ -19,7 +19,7 @@ const MAX_ATTEMPTS = 10;
 const SignInSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
-  /** `?school=` from the login page; validated by resolveSchoolIdFromParam. */
+  /** Secret school link token from the login page; validated by resolveSchoolIdFromParam. */
   school: z.string().max(64).optional(),
 });
 

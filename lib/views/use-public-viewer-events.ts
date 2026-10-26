@@ -12,7 +12,7 @@ import {
 } from "@/lib/validations/public-viewer";
 
 export interface UsePublicViewerEventsArgs {
-  schoolSlug: string;
+  accessToken: string;
   initialEvents: PublicViewerEvent[];
   initialEventsSignature: string;
 }
@@ -25,7 +25,7 @@ export interface UsePublicViewerEventsArgs {
  * 3-tab PublicViewerShell and the 2-tab ReadOnlyViewerShell).
  */
 export function usePublicViewerEvents({
-  schoolSlug,
+  accessToken,
   initialEvents,
   initialEventsSignature,
 }: UsePublicViewerEventsArgs): PublicViewerEvent[] {
@@ -38,14 +38,14 @@ export function usePublicViewerEvents({
   const [, startTransition] = useTransition();
 
   const refresh = useCallback(() => {
-    void refreshEventsIfChanged(schoolSlug, eventsSignature).then((result) => {
+    void refreshEventsIfChanged(accessToken, eventsSignature).then((result) => {
       if (!result) return;
       startTransition(() => {
         setEventsSignature(result.signature);
         if (result.events) setEvents(result.events);
       });
     });
-  }, [eventsSignature, schoolSlug, startTransition]);
+  }, [eventsSignature, accessToken, startTransition]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -70,8 +70,8 @@ export function usePublicViewerEvents({
   return events;
 }
 
-async function fetchEvents(schoolSlug: string): Promise<PublicViewerEvent[] | null> {
-  const response = await fetch(`/api/v1/public/${schoolSlug}/events`);
+async function fetchEvents(accessToken: string): Promise<PublicViewerEvent[] | null> {
+  const response = await fetch(`/api/v1/public/${accessToken}/events`);
   if (!response.ok) return null;
   const json = await response.json().catch(() => null);
   const parsed = PublicViewerEventsResponseSchema.safeParse(json);
@@ -79,21 +79,21 @@ async function fetchEvents(schoolSlug: string): Promise<PublicViewerEvent[] | nu
 }
 
 async function refreshEventsIfChanged(
-  schoolSlug: string,
+  accessToken: string,
   currentSignature: string,
 ): Promise<{ signature: string; events: PublicViewerEvent[] | null } | null> {
-  const nextSignature = await fetchEventsSignature(schoolSlug);
+  const nextSignature = await fetchEventsSignature(accessToken);
   if (!nextSignature) return null;
   if (!shouldRefreshPublicEvents(currentSignature, nextSignature)) {
     return { signature: nextSignature, events: null };
   }
 
-  const events = await fetchEvents(schoolSlug);
+  const events = await fetchEvents(accessToken);
   return events ? { signature: nextSignature, events } : null;
 }
 
-async function fetchEventsSignature(schoolSlug: string): Promise<string | null> {
-  const response = await fetch(`/api/v1/public/${schoolSlug}/events/signature`);
+async function fetchEventsSignature(accessToken: string): Promise<string | null> {
+  const response = await fetch(`/api/v1/public/${accessToken}/events/signature`);
   if (!response.ok) return null;
   const json = await response.json().catch(() => null);
   const parsed = PublicViewerEventSignatureResponseSchema.safeParse(json);

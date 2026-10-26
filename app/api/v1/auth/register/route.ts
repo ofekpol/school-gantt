@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { SchoolSlugSchema } from "@/lib/validations/school";
+import { SchoolAccessTokenSchema } from "@/lib/validations/school";
 
 const RegisterSchema = z.object({
   email: z.string().email(),
   fullName: z.string().min(1),
   password: z.string().min(8),
   inviteToken: z.string().uuid().optional(),
-  school: SchoolSlugSchema.optional(),
+  // Secret school link token from `?school=`; a slug is rejected (422).
+  school: SchoolAccessTokenSchema.optional(),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

@@ -37,7 +37,7 @@ interface UseReadOnlyViewerStateResult {
 }
 
 interface Props {
-  schoolSlug: string;
+  accessToken: string;
   schoolName: string;
   initialParams: PublicViewerParams;
   year: PublicViewerYear;
@@ -60,7 +60,7 @@ interface Props {
  * requirement above.
  */
 export function ReadOnlyViewerShell({
-  schoolSlug,
+  accessToken,
   schoolName,
   initialParams,
   year,
@@ -72,7 +72,7 @@ export function ReadOnlyViewerShell({
   const t = useTranslations("schedule");
   const gantt = useTranslations("gantt");
   const state = useReadOnlyViewerState({
-    schoolSlug,
+    accessToken,
     initialParams,
     year,
     eventTypes,
@@ -118,7 +118,7 @@ export function ReadOnlyViewerShell({
 }
 
 function useReadOnlyViewerState({
-  schoolSlug,
+  accessToken,
   initialParams,
   year,
   eventTypes,
@@ -127,7 +127,7 @@ function useReadOnlyViewerState({
 }: Omit<Props, "schoolName">): UseReadOnlyViewerStateResult {
   const [tab, setTab] = useState<ReadOnlyTab>("weekly");
   const [params, setParams] = useState(initialParams);
-  const events = usePublicViewerEvents({ schoolSlug, initialEvents, initialEventsSignature });
+  const events = usePublicViewerEvents({ accessToken, initialEvents, initialEventsSignature });
   const [calendarMonths, setCalendarMonths] = useState<CalendarMonth[] | null>(null);
 
   const eventTypesForFilter = useMemo(

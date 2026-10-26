@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { db, supabaseAdmin, withSchool } from "@/lib/db/client";
 import * as schema from "@/lib/db/schema";
+import { DEMO_SCHOOL_ACCESS_TOKEN } from "@/db/demo-school";
 
 const SCHOOL_SLUG = "demo-school";
 const ADMIN_EMAIL = "admin@demo-school.test";
@@ -93,12 +94,13 @@ export async function seedDb(opts: SeedOptions): Promise<{ schoolId: string }> {
     .values({
       slug: SCHOOL_SLUG,
       name: "Demo School",
+      accessToken: DEMO_SCHOOL_ACCESS_TOKEN,
       locale: "he",
       timezone: "Asia/Jerusalem",
     })
     .onConflictDoUpdate({
       target: schema.schools.slug,
-      set: { name: sql`excluded.name` },
+      set: { name: sql`excluded.name`, accessToken: sql`excluded.access_token` },
     })
     .returning();
 

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getSchoolBySlug } from "@/lib/db/schools";
+import { resolveSchoolFromParam } from "@/lib/db/schools";
 import { getAgendaForSchool } from "@/lib/views/agenda";
 import { serializeCalendar, type ICalEvent } from "@/lib/ical/serializer";
 
 /**
- * Public, unauthenticated bulk `.ics` export for a school's events.
+ * Public, unauthenticated bulk `.ics` export for a school's events, keyed by
+ * the school's secret link token (`?school=<token>`) — never its slug.
  *
  * Mirrors the iCal subscription feed (app/ical/[token]/route.ts) but is
  * stateless: filters come from query params instead of a stored subscription,
@@ -63,9 +64,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     return NextResponse.json({ error: "Invalid query" }, { status: 400 });
   }
 
-  const { school: slug, grades, eventTypes } = parsed.data;
+  const { school: accessToken, grades, eventTypes } = parsed.data;
 
-  const school = await getSchoolBySlug(slug);
+  const school = await resolveSchoolFromParam(accessToken);
   if (!school) return new NextResponse("Not found", { status: 404 });
 
   const events = await getAgendaForSchool(school.id, {

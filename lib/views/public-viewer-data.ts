@@ -1,6 +1,6 @@
 import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
-import { getSchoolBySlug, type PublicSchoolRecord } from "@/lib/db/schools";
+import { resolveSchoolFromParam, type PublicSchoolRecord } from "@/lib/db/schools";
 import { getGradeColors } from "@/lib/db/grade-colors";
 import type { GradeColorMap } from "@/lib/grade-colors";
 import { listEventTypes } from "@/lib/events/queries";
@@ -42,18 +42,22 @@ export function invalidatePublicViewerCache(slug: string | null | undefined): vo
   revalidateTag(getPublicViewerCacheTag(slug));
 }
 
-export async function loadPublicViewerData(slug: string): Promise<PublicViewerData | null> {
+/**
+ * Public loaders take the untrusted school link token straight from the URL.
+ * The token → school lookup runs uncached (one indexed read) so the cache and
+ * its invalidation tag stay keyed by slug, which mutations know.
+ */
+export async function loadPublicViewerData(accessToken: unknown): Promise<PublicViewerData | null> {
+  const school = await resolveSchoolFromParam(accessToken);
+  if (!school) return null;
   return unstable_cache(
-    () => loadPublicViewerDataUncached(slug),
-    ["public-viewer-data", slug],
-    { revalidate: 5, tags: [getPublicViewerCacheTag(slug)] },
+    () => loadPublicViewerDataForSchool(school),
+    ["public-viewer-data", school.slug],
+    { revalidate: 5, tags: [getPublicViewerCacheTag(school.slug)] },
   )();
 }
 
-async function loadPublicViewerDataUncached(slug: string): Promise<PublicViewerData | null> {
-  const school = await getSchoolBySlug(slug);
-  if (!school) return null;
-
+async function loadPublicViewerDataForSchool(school: PublicSchoolRecord): Promise<PublicViewerData> {
   const [eventTypes, gradeColors, events, eventSignature] = await Promise.all([
     listEventTypes(school.id),
     getGradeColors(school.id),
@@ -72,24 +76,18 @@ async function loadPublicViewerDataUncached(slug: string): Promise<PublicViewerD
   };
 }
 
-export async function loadPublicViewerEvents(slug: string): Promise<PublicViewerEvent[] | null> {
+export async function loadPublicViewerEvents(accessToken: unknown): Promise<PublicViewerEvent[] | null> {
+  const school = await resolveSchoolFromParam(accessToken);
+  if (!school) return null;
   return unstable_cache(
-    () => loadPublicViewerEventsUncached(slug),
-    ["public-viewer-events", slug],
-    { revalidate: 5, tags: [getPublicViewerCacheTag(slug)] },
+    async () => (await getAgendaForSchool(school.id, {})).map(toPublicEventPayload),
+    ["public-viewer-events", school.slug],
+    { revalidate: 5, tags: [getPublicViewerCacheTag(school.slug)] },
   )();
 }
 
-async function loadPublicViewerEventsUncached(slug: string): Promise<PublicViewerEvent[] | null> {
-  const school = await getSchoolBySlug(slug);
-  if (!school) return null;
-
-  const events = await getAgendaForSchool(school.id, {});
-  return events.map(toPublicEventPayload);
-}
-
-export async function loadPublicViewerEventSignature(slug: string): Promise<string | null> {
-  const school = await getSchoolBySlug(slug);
+export async function loadPublicViewerEventSignature(accessToken: unknown): Promise<string | null> {
+  const school = await resolveSchoolFromParam(accessToken);
   if (!school) return null;
 
   return getAgendaSignatureForSchool(school.id, {});

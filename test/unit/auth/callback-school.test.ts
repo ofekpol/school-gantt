@@ -38,6 +38,8 @@ function callback(query: string) {
   return GET(new NextRequest(`http://localhost/auth/callback?code=c${query}`));
 }
 
+const SCHOOL_TOKEN = "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1";
+
 describe("GET /auth/callback without an invite", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -48,10 +50,10 @@ describe("GET /auth/callback without an invite", () => {
     });
   });
 
-  it("creates the pending registration in the school from ?school=", async () => {
+  it("creates the pending registration in the school whose link token is in ?school=", async () => {
     resolveMock.mockResolvedValue("school-a-id");
-    const res = await callback("&school=test-a");
-    expect(resolveMock).toHaveBeenCalledWith("test-a");
+    const res = await callback(`&school=${SCHOOL_TOKEN}`);
+    expect(resolveMock).toHaveBeenCalledWith(SCHOOL_TOKEN);
     expect(createPendingMock).toHaveBeenCalledWith(
       expect.objectContaining({ authUserId: "auth-1", schoolId: "school-a-id" }),
     );
@@ -61,14 +63,14 @@ describe("GET /auth/callback without an invite", () => {
   it("fills the school on an existing pending row that has none", async () => {
     getPendingMock.mockResolvedValue({ id: "p1", schoolId: null });
     resolveMock.mockResolvedValue("school-a-id");
-    await callback("&school=test-a");
+    await callback(`&school=${SCHOOL_TOKEN}`);
     expect(createPendingMock).not.toHaveBeenCalled();
     expect(assignSchoolMock).toHaveBeenCalledWith("auth-1", "school-a-id");
   });
 
-  it("uses a null school when the slug does not resolve", async () => {
+  it("uses a null school when the param is not a known link token", async () => {
     resolveMock.mockResolvedValue(null);
-    await callback("&school=no-such-school");
+    await callback("&school=test-a");
     expect(createPendingMock).toHaveBeenCalledWith(expect.objectContaining({ schoolId: null }));
   });
 });
