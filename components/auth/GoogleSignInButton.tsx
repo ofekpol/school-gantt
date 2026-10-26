@@ -6,10 +6,12 @@ import { useState } from "react";
 interface GoogleSignInButtonProps {
   next?: string;
   token?: string;
+  /** School slug from a `?school=` sign-up link; files a pending registration under it. */
+  school?: string;
   label?: string;
 }
 
-export function GoogleSignInButton({ next, token, label }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ next, token, school, label }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
 
   async function handleSignIn() {
@@ -18,6 +20,7 @@ export function GoogleSignInButton({ next, token, label }: GoogleSignInButtonPro
     const callbackUrl = new URL("/auth/callback", window.location.origin);
     if (next) callbackUrl.searchParams.set("next", next);
     if (token) callbackUrl.searchParams.set("invite_token", token);
+    if (school) callbackUrl.searchParams.set("school", school);
 
     await supabase.auth.signInWithOAuth({
       provider: "google",

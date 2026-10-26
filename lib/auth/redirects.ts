@@ -19,6 +19,14 @@ export function safeRedirectPath(raw: string | null, fallback: string): string {
   }
 }
 
+/** Query that carries invite token + school between the login and register pages. */
+export function authLinkQuery(
+  token: string | undefined,
+  school: string | undefined,
+): Record<string, string> {
+  return { ...(token ? { token } : {}), ...(school ? { school } : {}) };
+}
+
 export function getPostLoginRedirect(user: StaffUserRecord | null): Route {
   if (!user) return "/auth/login";
   if (user.status === "pending") return "/auth/pending";

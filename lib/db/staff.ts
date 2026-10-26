@@ -195,30 +195,6 @@ export async function createStaffUserDirect(params: {
 }
 
 /**
- * Creates a staff_users row for a user who registered via email/password.
- * schoolId is null — an admin assigns the school later.
- * Called from /auth/confirm after Supabase verifies the signup OTP.
- * Idempotent: onConflictDoNothing prevents duplicate-key errors on retry.
- */
-export async function createStaffUserFromEmailSignup(params: {
-  authUserId: string;
-  email: string;
-  fullName: string;
-}): Promise<void> {
-  await db
-    .insert(staffUsers)
-    .values({
-      id: params.authUserId,
-      schoolId: null,
-      email: params.email,
-      fullName: params.fullName,
-      role: "editor",
-      status: "active",
-    })
-    .onConflictDoNothing();
-}
-
-/**
  * Updates a staff user's fields.
  * If deactivated=true, sets deactivated_at and revokes all sessions via supabaseAdmin.
  */

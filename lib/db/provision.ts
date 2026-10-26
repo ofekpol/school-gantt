@@ -3,6 +3,7 @@
 // Next.js code (Server Components / route handlers); never import from a Client Component.
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { z } from "zod";
+import { SchoolSlugSchema } from "@/lib/validations/school";
 import { db, supabaseAdmin, withSchool } from "./client";
 import * as schema from "./schema";
 
@@ -25,11 +26,7 @@ export const DEFAULT_EVENT_TYPES = [
 ] as const;
 
 export const ProvisionSchoolInput = z.object({
-    slug: z
-      .string()
-      .min(2)
-      .max(64)
-      .regex(/^[a-z0-9-]+$/, "slug must match ^[a-z0-9-]+$"),
+    slug: SchoolSlugSchema,
     name: z.string().min(1).max(200),
     locale: z.enum(["he", "en"]).default("he"),
     timezone: z.string().default("Asia/Jerusalem"),

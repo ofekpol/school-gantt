@@ -1,5 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { safeRedirectPath } from "@/lib/auth/redirects";
+import { authLinkQuery, safeRedirectPath } from "@/lib/auth/redirects";
+
+describe("authLinkQuery", () => {
+  it("carries both invite token and school", () => {
+    expect(authLinkQuery("tok", "test-a")).toEqual({ token: "tok", school: "test-a" });
+  });
+
+  it("omits missing values", () => {
+    expect(authLinkQuery(undefined, "test-a")).toEqual({ school: "test-a" });
+    expect(authLinkQuery(undefined, undefined)).toEqual({});
+  });
+});
 
 const ORIGIN = "https://app.example.com";
 

@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createStaffUserFromEmailSignup, createStaffUserFromInvite, getStaffUserByAuthId } from "@/lib/db/staff";
+import { createStaffUserFromInvite, getStaffUserByAuthId } from "@/lib/db/staff";
+import { createPendingRegistration, getPendingRegistrationByAuthId } from "@/lib/db/pending";
+import { resolveSchoolIdFromParam } from "@/lib/db/schools";
 import { getInviteByToken, markInviteUsed, updateInviteUsedBy } from "@/lib/db/invites";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -72,6 +74,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  await createStaffUserFromEmailSignup({ authUserId: authUser.id, email, fullName });
+  // No (valid) invite: queue for the school whose sign-up link was used.
+  if (!(await getPendingRegistrationByAuthId(authUser.id))) {
+    await createPendingRegistration({
+      authUserId: authUser.id,
+      email,
+      fullName,
+      schoolId: await resolveSchoolIdFromParam(authUser.user_metadata?.school),
+    });
+  }
   return NextResponse.redirect(new URL("/auth/login?confirmed=1", origin));
 }

@@ -111,7 +111,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   return NextResponse.json(
-    { status: "ok", redirectTo: getPostLoginRedirect(resolvedUser) },
+    {
+      status: "ok",
+      // No staff row yet = a confirmed registrant waiting for admin approval.
+      redirectTo: resolvedUser ? getPostLoginRedirect(resolvedUser) : "/auth/pending",
+    },
     { status: 200 },
   );
 }

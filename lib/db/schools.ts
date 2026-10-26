@@ -2,6 +2,7 @@ import "server-only";
 import { asc, eq } from "drizzle-orm";
 import { db, rethrowWithDatabaseHint } from "@/lib/db/client";
 import { schools } from "@/lib/db/schema";
+import { SchoolSlugSchema } from "@/lib/validations/school";
 
 export interface PublicSchoolRecord {
   id: string;
@@ -40,6 +41,20 @@ export async function getSchoolBySlug(
   }
 
   return row ?? null;
+}
+
+/**
+ * Resolves an untrusted `?school=` value (URL param, signup metadata) to a
+ * school id. Anything malformed or unknown is "no school" — never an error.
+ */
+export async function resolveSchoolFromParam(raw: unknown): Promise<PublicSchoolRecord | null> {
+  const parsed = SchoolSlugSchema.safeParse(raw);
+  if (!parsed.success) return null;
+  return getSchoolBySlug(parsed.data);
+}
+
+export async function resolveSchoolIdFromParam(raw: unknown): Promise<string | null> {
+  return (await resolveSchoolFromParam(raw))?.id ?? null;
 }
 
 /**

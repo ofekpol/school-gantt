@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStaffUserFromInvite, getStaffUserByAuthId } from "@/lib/db/staff";
 import { getInviteByToken, markInviteUsed, updateInviteUsedBy } from "@/lib/db/invites";
 import { createPendingRegistration, getPendingRegistrationByAuthId } from "@/lib/db/pending";
+import { resolveSchoolIdFromParam } from "@/lib/db/schools";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
       email,
       fullName,
       googleAvatarUrl,
-      schoolId: null,
+      schoolId: await resolveSchoolIdFromParam(searchParams.get("school")),
     });
   }
 
