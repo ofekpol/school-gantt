@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getStaffUser } from "@/lib/auth/session";
+import { getSchoolById } from "@/lib/db/schools";
 import { AppHeader } from "@/components/AppHeader";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { buildNavLinks, getCurrentPath } from "@/lib/nav";
@@ -20,15 +21,16 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (user.status === "deactivated") redirect("/auth/deactivated");
   if (user.mustChangePassword) redirect("/auth/change-password");
   if (user.role === "viewer") redirect("/dashboard");
-  const [navLinks, currentPath, t] = await Promise.all([
+  const [navLinks, currentPath, t, school] = await Promise.all([
     buildNavLinks(user.role),
     getCurrentPath(),
     getTranslations("nav"),
+    user.schoolId ? getSchoolById(user.schoolId) : null,
   ]);
   return (
     <div className="min-h-screen">
       <AppHeader
-        title={user.fullName}
+        title={school?.name ?? user.fullName}
         subtitle={user.email}
         navLinks={navLinks}
         currentPath={currentPath}

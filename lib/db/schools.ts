@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { asc, eq } from "drizzle-orm";
 import { db, rethrowWithDatabaseHint } from "@/lib/db/client";
 import { schools } from "@/lib/db/schema";
@@ -59,9 +60,12 @@ export async function resolveSchoolIdFromParam(raw: unknown): Promise<string | n
 
 /**
  * Resolves a school by id. Used by authenticated pages where the caller
- * already has `user.schoolId` and needs the human-readable name.
+ * already has `user.schoolId` and needs the human-readable name. Cached per
+ * request so the staff/admin layout header and the page share one query.
  */
-export async function getSchoolById(
+export const getSchoolById = cache(resolveSchoolById);
+
+async function resolveSchoolById(
   id: string,
 ): Promise<PublicSchoolRecord | null> {
   let row: PublicSchoolRecord | undefined;
