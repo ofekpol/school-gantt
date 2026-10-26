@@ -2,6 +2,7 @@ import "server-only";
 import { asc, eq } from "drizzle-orm";
 import { db, rethrowWithDatabaseHint } from "@/lib/db/client";
 import { schools } from "@/lib/db/schema";
+import { SchoolSlugSchema } from "@/lib/validations/school";
 
 export interface PublicSchoolRecord {
   id: string;
@@ -43,6 +44,20 @@ export async function getSchoolBySlug(
 }
 
 /**
+ * Resolves an untrusted `?school=` value (URL param, signup metadata) to a
+ * school id. Anything malformed or unknown is "no school" — never an error.
+ */
+export async function resolveSchoolFromParam(raw: unknown): Promise<PublicSchoolRecord | null> {
+  const parsed = SchoolSlugSchema.safeParse(raw);
+  if (!parsed.success) return null;
+  return getSchoolBySlug(parsed.data);
+}
+
+export async function resolveSchoolIdFromParam(raw: unknown): Promise<string | null> {
+  return (await resolveSchoolFromParam(raw))?.id ?? null;
+}
+
+/**
  * Resolves a school by id. Used by authenticated pages where the caller
  * already has `user.schoolId` and needs the human-readable name.
  */
@@ -71,8 +86,7 @@ export async function getSchoolById(
 
 /**
  * Lists all schools, alphabetical by name. Used by the unauthenticated
- * /schedule page to resolve the single school in this deployment (no
- * picker UI — this app is single-tenant in practice today).
+ * /schedule page: one school renders directly, several show a picker.
  */
 export async function listSchools(): Promise<PublicSchoolRecord[]> {
   try {

@@ -5,21 +5,31 @@ import { getStaffUser } from "@/lib/auth/session";
 import Link from "next/link";
 import { GuestViewButton } from "@/components/auth/GuestViewButton";
 import { redirect } from "next/navigation";
+import { resolveSchoolFromParam } from "@/lib/db/schools";
+import { authLinkQuery } from "@/lib/auth/redirects";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; token?: string; confirmed?: string; error?: string }>;
+  searchParams: Promise<{
+    next?: string;
+    token?: string;
+    confirmed?: string;
+    error?: string;
+    school?: string;
+  }>;
 }) {
-  const { next, token, confirmed, error } = await searchParams;
+  const { next, token, confirmed, error, school: schoolParam } = await searchParams;
   const user = await getStaffUser();
   if (user) redirect(getPostLoginRedirect(user));
+  const school = await resolveSchoolFromParam(schoolParam);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 p-8 border rounded-lg shadow-sm">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-bold">כניסה למערכת</h1>
+          {school && <p className="text-muted-foreground text-sm">{school.name}</p>}
         </div>
 
         {confirmed === "1" && (
@@ -35,7 +45,7 @@ export default async function LoginPage({
         )}
 
         <div className="space-y-4">
-          <EmailPasswordSignInForm />
+          <EmailPasswordSignInForm school={school?.slug} />
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -46,20 +56,23 @@ export default async function LoginPage({
             </div>
           </div>
 
-          <GoogleSignInButton next={next} token={token} />
+          <GoogleSignInButton next={next} token={token} school={school?.slug} />
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
           עדיין אין לכם חשבון?{" "}
           <Link
-            href={token ? `/auth/register?token=${token}` : "/auth/register"}
+            href={{ pathname: "/auth/register", query: authLinkQuery(token, school?.slug) }}
             className="underline hover:text-foreground"
           >
             הרשמה
           </Link>
         </p>
 
-        <GuestViewButton label="המשך כאורח (צפייה בלוח)" />
+        <GuestViewButton
+          label="המשך כאורח (צפייה בלוח)"
+          href={school ? `/schedule?school=${school.slug}` : undefined}
+        />
       </div>
     </div>
   );

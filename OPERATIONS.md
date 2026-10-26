@@ -115,13 +115,23 @@ Vercel **Preview** env vars point at the staging project. `RESEND_API_KEY` and `
 
 **Promotion flow:** feature branch → PR into `staging` → verify on the staging URL → PR `staging` → `main`. A hotfix merged straight into `main` must be merged back into `staging`.
 
-**Data refresh:** `.github/workflows/refresh-staging-db.yml` runs nightly (01:00 UTC) and copies prod's `public` schema plus `auth.users`/`auth.identities` into staging via `scripts/refresh-staging-db.sh`, then re-applies staging-only migrations. Anything created on staging is wiped nightly. Run on demand:
+**Data refresh (manual):** `.github/workflows/refresh-staging-db.yml` copies prod's `public` schema plus `auth.users`/`auth.identities` into staging via `scripts/refresh-staging-db.sh` and re-applies staging-only migrations. It does not run on a schedule, so anything created on staging survives until the next refresh. Run it:
 
 ```bash
-gh workflow run refresh-staging-db.yml
+gh workflow run refresh-staging-db.yml --ref staging
 ```
 
-Required GitHub secrets (Supabase **session pooler** URIs — runners are IPv4-only): `PROD_DATABASE_URL`, `STAGING_DATABASE_URL`. The script only reads from prod and refuses any target that isn't the staging project.
+Required GitHub secrets: `PROD_DATABASE_URL`, `STAGING_DATABASE_URL` (Supabase **session pooler** URIs — runners are IPv4-only). The script only reads from prod and refuses any target that isn't the staging project.
+
+**Demo school on staging (optional):** staging is a copy of prod, so debug against the copied prod school directly. A refresh wipes any `demo-school` tenant. Seed it again only when you need the role-specific test logins (admin, grade editors, counselor, viewer). Point `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` at the **staging** project, then:
+
+```bash
+pnpm seed
+```
+
+`db/seed.ts` refuses any database or Supabase project that isn't local or staging. Demo logins are the seed accounts listed under "Default credentials after `pnpm seed`" above (forced password change on first login).
+
+**Second school on staging:** for manual cross-school checks, provision one with `scripts/provision-school.ts` against staging (the onboarding rehearsal, see "Onboarding checklist for a new school"). Redo it after each refresh. Automated isolation coverage doesn't depend on staging: the integration suite uses its own two test schools, and `test/e2e/multi-school.spec.ts` creates its own `second-school`.
 
 Running `pnpm test:integration` with `TEST_DATABASE_URL` pointed at staging leaves test rows on staging until the next refresh.
 
@@ -182,15 +192,12 @@ Events from the previous year remain readable but read-only.
 
 ## 12. Provisioning a new school (production tenant)
 
-For real (non-demo) schools, use `scripts/provision-school.ts` rather than the seed. The CLI creates the `schools` row, the active `academic_years` row, the 11 default `event_types`, and a Supabase Auth + `staff_users` admin record, then generates a one-time magic-link email via Resend.
+For real (non-demo) schools, use `scripts/provision-school.ts` rather than the seed. The CLI creates the `schools` row, the 11 default `event_types`, and a Supabase Auth + `staff_users` admin record, then generates a one-time magic-link email via Resend. No academic year is needed: the public views derive their date range from the school's events.
 
 ```bash
 pnpm provision:school \
   --slug=kfar-galim \
   --name="כפר גלים" \
-  --year-label=2026-2027 \
-  --year-start=2026-09-01 \
-  --year-end=2027-07-31 \
   --admin-email=admin@example.com \
   --admin-name="ישראל ישראלי"
 ```
@@ -201,10 +208,7 @@ Flags:
 |------|----------|-------|
 | `--slug` | yes | URL segment; `^[a-z0-9-]+$` |
 | `--name` | yes | Display name (Hebrew OK) |
-| `--year-label` | yes | e.g. `2026-2027` |
-| `--year-start` | yes | ISO `YYYY-MM-DD` |
-| `--year-end` | yes | ISO `YYYY-MM-DD`, after `--year-start` |
-| `--admin-email` | yes | First admin's real email |
+| `--admin-email` | yes | First admin's real email. Must not already be staff in another school (one login = one school) |
 | `--admin-name` | yes | First admin's full name |
 | `--locale` | no | `he` (default) or `en` |
 | `--timezone` | no | default `Asia/Jerusalem` |
@@ -217,6 +221,17 @@ Behavior:
 - Conflict on existing slug → exits 1 with `school with slug "..." already exists — refusing to clobber`.
 - Admin Supabase Auth user is created **without a password** — first sign-in is via the emailed magic link (1 h expiry, Supabase default).
 - After first sign-in the admin invites further staff via `/admin/staff` (the standard invite flow); the CLI never creates editors directly.
+
+### Onboarding checklist for a new school
+
+Rehearse on staging first (point the env at staging); the next manual staging refresh wipes it.
+
+1. `pnpm provision:school --slug=<slug> --name=... --admin-email=... --admin-name=...` with prod env loaded.
+2. The admin signs in through the magic link and reviews `/admin/event-types`.
+3. Give the school two links:
+   - Staff sign-up: `https://<app>/auth/login?school=<slug>`. Google or email sign-ups through it land in **that** school's pending list (`/admin/staff`). Sign-ups without the link have no school and no admin sees them. Invites (`/admin/staff`) work regardless.
+   - Public schedule: `https://<app>/<slug>` (full viewer) or `https://<app>/schedule?school=<slug>` (read-only). With 2+ schools, plain `/schedule` shows a school picker.
+4. Smoke-check `/<slug>`, `/<slug>/calendar`, `/<slug>/agenda` after the first event is published.
 
 Production cutover (one-time, per new Supabase project):
 

@@ -11,12 +11,16 @@ import {
 } from "@/lib/db/staff";
 import { getInviteByToken, markInviteUsed, updateInviteUsedBy } from "@/lib/db/invites";
 import { getPostLoginRedirect } from "@/lib/auth/redirects";
+import { assignPendingSchoolIfMissing } from "@/lib/db/pending";
+import { resolveSchoolIdFromParam } from "@/lib/db/schools";
 
 const MAX_ATTEMPTS = 10;
 
 const SignInSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  /** `?school=` from the login page; validated by resolveSchoolIdFromParam. */
+  school: z.string().max(64).optional(),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { email, password } = parsed.data;
+  const { email, password, school } = parsed.data;
 
   const staffUser = await getStaffUserByEmail(email);
 
@@ -110,8 +114,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  // Email registrant who signed up without a school link, now arriving through one.
+  if (!resolvedUser) {
+    const schoolId = await resolveSchoolIdFromParam(school);
+    if (schoolId) await assignPendingSchoolIfMissing(data.user.id, schoolId);
+  }
+
   return NextResponse.json(
-    { status: "ok", redirectTo: getPostLoginRedirect(resolvedUser) },
+    {
+      status: "ok",
+      // No staff row yet = a confirmed registrant waiting for admin approval.
+      redirectTo: resolvedUser ? getPostLoginRedirect(resolvedUser) : "/auth/pending",
+    },
     { status: 200 },
   );
 }

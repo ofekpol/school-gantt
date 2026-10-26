@@ -195,30 +195,6 @@ export async function createStaffUserDirect(params: {
 }
 
 /**
- * Creates a staff_users row for a user who registered via email/password.
- * schoolId is null — an admin assigns the school later.
- * Called from /auth/confirm after Supabase verifies the signup OTP.
- * Idempotent: onConflictDoNothing prevents duplicate-key errors on retry.
- */
-export async function createStaffUserFromEmailSignup(params: {
-  authUserId: string;
-  email: string;
-  fullName: string;
-}): Promise<void> {
-  await db
-    .insert(staffUsers)
-    .values({
-      id: params.authUserId,
-      schoolId: null,
-      email: params.email,
-      fullName: params.fullName,
-      role: "editor",
-      status: "active",
-    })
-    .onConflictDoNothing();
-}
-
-/**
  * Updates a staff user's fields.
  * If deactivated=true, sets deactivated_at and revokes all sessions via supabaseAdmin.
  */
@@ -234,6 +210,15 @@ export async function updateStaffUser(
   },
 ): Promise<void> {
   await withSchool(schoolId, async (tx) => {
+    // RLS hides other schools' staff. Bail before the scope rewrite and the
+    // service-role signOut below, which RLS does not protect.
+    const [target] = await tx
+      .select({ id: staffUsers.id })
+      .from(staffUsers)
+      .where(eq(staffUsers.id, staffUserId))
+      .limit(1);
+    if (!target) throw new Response(null, { status: 404, statusText: "Not found" });
+
     const updates: Partial<{
       fullName: string;
       role: "editor" | "admin" | "viewer";

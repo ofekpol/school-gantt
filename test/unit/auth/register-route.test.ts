@@ -70,4 +70,21 @@ describe("POST /api/v1/auth/register", () => {
     const res = await POST(makeRequest({ email: "a@b.com", fullName: "Test", password: "password123" }));
     expect(res.status).toBe(500);
   });
+
+  it("stores school slug in user_metadata", async () => {
+    signUpMock.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    const res = await POST(
+      makeRequest({ email: "a@b.com", fullName: "Test", password: "password123", school: "test-a" }),
+    );
+    expect(res.status).toBe(200);
+    expect(signUpMock.mock.calls[0][0].options.data).toMatchObject({ school: "test-a" });
+  });
+
+  it("rejects an invalid school slug with 422", async () => {
+    const res = await POST(
+      makeRequest({ email: "a@b.com", fullName: "Test", password: "password123", school: "../x" }),
+    );
+    expect(res.status).toBe(422);
+    expect(signUpMock).not.toHaveBeenCalled();
+  });
 });

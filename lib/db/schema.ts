@@ -324,6 +324,8 @@ export const auditLog = pgTable(
 export const pendingRegistrations = pgTable("pending_registrations", {
   id: uuid().defaultRandom().primaryKey(),
   authUserId: uuid("auth_user_id").notNull().unique(),
+  // NULL = signed up without a school link; invisible to every admin.
+  schoolId: uuid("school_id").references(() => schools.id, { onDelete: "cascade" }),
   email: varchar({ length: 255 }).notNull().unique(),
   fullName: text("full_name").notNull().default(""),
   googleAvatarUrl: text("google_avatar_url"),

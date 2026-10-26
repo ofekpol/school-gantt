@@ -5,9 +5,10 @@ import { useState } from "react";
 interface RegisterFormProps {
   onSuccess?: () => void;
   inviteToken?: string;
+  school?: string;
 }
 
-export function RegisterForm({ onSuccess, inviteToken }: RegisterFormProps) {
+export function RegisterForm({ onSuccess, inviteToken, school }: RegisterFormProps) {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +35,13 @@ export function RegisterForm({ onSuccess, inviteToken }: RegisterFormProps) {
       const res = await fetch("/api/v1/auth/register", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, fullName, password, ...(inviteToken ? { inviteToken } : {}) }),
+        body: JSON.stringify({
+          email,
+          fullName,
+          password,
+          ...(inviteToken ? { inviteToken } : {}),
+          ...(school ? { school } : {}),
+        }),
       });
       const data = await res.json();
 

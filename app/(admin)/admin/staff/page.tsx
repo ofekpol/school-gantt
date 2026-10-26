@@ -26,7 +26,7 @@ export default async function AdminStaffPage() {
   const [staff, eventTypes, pendingRegs, invites] = await Promise.all([
     listStaffUsers(user.schoolId),
     listEventTypes(user.schoolId),
-    listPendingRegistrations(),
+    listPendingRegistrations(user.schoolId),
     listInvitesForSchool(user.schoolId),
   ]);
 
