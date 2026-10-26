@@ -496,5 +496,20 @@
       "invalid_input": "Enter text of up to 3000 characters",
       "publish_failed": "Publishing failed – check the details and try again"
     }
+  },
+  "aiChat": {
+    "open": "Open calendar assistant",
+    "close": "Close",
+    "title": "Calendar assistant",
+    "placeholder": "Ask about events, dates and grades…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "empty": "For example: what's planned for grade 8 next week?",
+    "errors": {
+      "quota_exceeded": "You reached the daily limit ({limit} messages). Try again tomorrow",
+      "ai_unavailable": "The AI service is unavailable right now. Try again in a moment",
+      "ai_disabled": "The AI service is not configured",
+      "invalid_input": "Write a question of up to 500 characters"
+    }
   }
 }
