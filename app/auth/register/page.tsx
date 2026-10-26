@@ -31,7 +31,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         </p>
         <GuestViewButton
           label="המשך כאורח (צפייה בלוח)"
-          href={school ? `/${school.slug}` : undefined}
+          href={school ? `/schedule?school=${school.slug}` : undefined}
         />
       </div>
     </div>

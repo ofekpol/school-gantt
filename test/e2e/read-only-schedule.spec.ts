@@ -3,8 +3,7 @@ import { test, expect } from "@playwright/test";
 /**
  * Read-only public schedule: /auth/login → /schedule → weekly/monthly only,
  * filters still work, "Log in" returns to /auth/login. No DB write needed —
- * uses the demo seed's single school, same as the other unauthenticated
- * public-viewer specs.
+ * picks the demo seed's school from the /schedule school picker.
  */
 test.skip(
   !process.env.DATABASE_URL,
@@ -15,7 +14,10 @@ test("READONLY: login screen links to a 2-tab read-only schedule with working fi
   await page.goto("/auth/login");
 
   await page.getByRole("link", { name: "המשך כאורח (צפייה בלוח)" }).click();
-  await expect(page).toHaveURL(/\/schedule$/);
+  // The e2e DB holds several schools (demo + second + integration fixtures), so
+  // /schedule shows a picker first.
+  await page.getByRole("link", { name: "Demo School" }).click();
+  await expect(page).toHaveURL(/\/schedule\?school=demo-school$/);
 
   // Exactly weekly + monthly tabs, no agenda.
   const weeklyTab = page.getByRole("button", { name: "שבועי" });
@@ -40,7 +42,7 @@ test("READONLY: login screen links to a 2-tab read-only schedule with working fi
   await expect(async () => {
     await monthlyTab.waitFor({ state: "visible" });
     await monthlyTab.click();
-    await expect(page).toHaveURL(/\/schedule$/, { timeout: 5_000 });
+    await expect(page).toHaveURL(/\/schedule\?school=demo-school$/, { timeout: 5_000 });
     // YearCalendarGrid renders navigation buttons with these Hebrew labels.
     await expect(page.getByRole("button", { name: "חודש קודם" })).toBeVisible();
   }).toPass({ timeout: 20_000 });

@@ -357,7 +357,10 @@
   "schedule": {
     "weekly": "שבועי",
     "monthly": "חודשי",
-    "login": "התחברות"
+    "login": "התחברות",
+    "schoolPicker": {
+      "title": "בחרו בית ספר"
+    }
   },
   "profile": {
     "title": "הפרופיל שלי",

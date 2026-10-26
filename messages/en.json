@@ -357,7 +357,10 @@
   "schedule": {
     "weekly": "Weekly",
     "monthly": "Monthly",
-    "login": "Log in"
+    "login": "Log in",
+    "schoolPicker": {
+      "title": "Choose a school"
+    }
   },
   "profile": {
     "title": "My profile",

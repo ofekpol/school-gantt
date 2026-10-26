@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ReadOnlyViewerShell } from "@/components/ReadOnlyViewerShell";
-import { listSchools } from "@/lib/db/schools";
+import { SchoolPicker } from "@/components/public/SchoolPicker";
+import { listSchools, resolveSchoolFromParam } from "@/lib/db/schools";
 import { loadPublicViewerData } from "@/lib/views/public-viewer-data";
 import { parsePublicViewerParams } from "@/lib/views/public-viewer";
 
@@ -13,8 +14,11 @@ interface PageProps {
 
 export default async function ReadOnlySchedulePage({ searchParams }: PageProps) {
   const sp = await searchParams;
-  const [school] = await listSchools();
-  if (!school) notFound();
+  const requested = await resolveSchoolFromParam(sp.school);
+  const schools = requested ? [requested] : await listSchools();
+  if (schools.length === 0) notFound();
+  if (schools.length > 1) return <SchoolPicker schools={schools} />;
+  const [school] = schools;
 
   const data = await loadPublicViewerData(school.slug);
   if (!data) notFound();

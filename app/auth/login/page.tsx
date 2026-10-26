@@ -71,7 +71,7 @@ export default async function LoginPage({
 
         <GuestViewButton
           label="המשך כאורח (צפייה בלוח)"
-          href={school ? `/${school.slug}` : undefined}
+          href={school ? `/schedule?school=${school.slug}` : undefined}
         />
       </div>
     </div>
