@@ -2,14 +2,14 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make the app safe and fully working with 2+ schools (strict separation), keep a permanent demo school on staging, and make onboarding school #2 a one-command, rehearsed step.
+**Goal:** Make the app safe and fully working with 2+ schools (strict separation), and make onboarding school #2 a one-command, rehearsed step.
 
 **Architecture:** RLS via `withSchool` already isolates every school-scoped table. This plan closes the holes outside RLS:
 - give the global `pending_registrations` table a `school_id`;
 - guard the service-role side effect in `updateStaffUser`;
 - remove the "first school wins" `/schedule`.
 
-Signup carries school context from a `?school=<slug>` link. The staging refresh becomes manual and re-seeds `demo-school` afterwards.
+Signup carries school context from a `?school=<slug>` link. The staging refresh becomes manual. Staging has no permanent demo school: the second tenant there is a school provisioned with `provision-school.ts` as the onboarding rehearsal.
 
 **Tech Stack:** Next.js 15 App Router, Drizzle + pg, Supabase Auth, Zod, Vitest (unit + real-Postgres integration), Playwright, GitHub Actions.
 
@@ -36,7 +36,7 @@ Signup carries school context from a `?school=<slug>` link. The staging refresh 
 
 ---
 
-### Task 1: Staging refresh is manual and re-seeds the demo school
+### Task 1: Staging refresh is manual; seed refuses prod
 
 **Files:**
 - Modify: `.github/workflows/refresh-staging-db.yml`
@@ -62,21 +62,13 @@ Signup carries school context from a `?school=<slug>` link. The staging refresh 
 - [ ] **Step 5:** Run the test. Expected: PASS.
 - [ ] **Step 6: Workflow changes.**
   - Delete the `schedule:` block (lines 4–5) and keep `workflow_dispatch:`.
-  - Append a step after "Re-apply staging-only migrations":
-    ```yaml
-          - name: Seed demo school
-            env:
-              DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-              NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-              SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
-            run: pnpm seed
-    ```
+  - No seed step: the workflow doesn't need staging Supabase secrets.
 - [ ] **Step 7: OPERATIONS.md §7 "Data refresh".**
-  - It is now manual only (`gh workflow run refresh-staging-db.yml`) and re-seeds `demo-school` after restore.
-  - List the two new required secrets.
-  - Demo logins: `admin@demo-school.test`, `grade7..12@demo-school.test`, `counselor@`, `viewer@`, all with the seed temp password and a forced change on first login.
+  - It is now manual only (`gh workflow run refresh-staging-db.yml`).
+  - Debugging on staging uses the copied prod school directly.
+  - `pnpm seed` against staging is optional, only for when role-specific test logins are needed.
   - "Anything created on staging survives until the next manual refresh."
-- [ ] **Step 8: Commit.** `chore: make staging refresh manual and re-seed demo school`.
+- [ ] **Step 8: Commit.** `chore: make staging refresh manual; seed refuses prod`.
 
 ---
 
@@ -288,10 +280,10 @@ Signup carries school context from a `?school=<slug>` link. The staging refresh 
 - [ ] **Step 2:** Run `pnpm test:e2e:full`. Expected: all green.
 - [ ] **Step 3: Run the `typescript-reviewer` agent on the branch diff** and address the findings.
 - [ ] **Step 4: Prod data check** (read-only, Supabase MCP `execute_sql` on prod). `SELECT count(*) FROM staff_users WHERE school_id IS NULL` lists legacy orphan email signups. Report the count to the user; they stay stuck exactly as before, and an admin can re-invite them. No data change without the user's OK.
-- [ ] **Step 5: Ask the user** to add the GitHub secrets `STAGING_SUPABASE_URL` and `STAGING_SUPABASE_SERVICE_ROLE_KEY`. Then, with their go-ahead, merge to `staging`, run `gh workflow run refresh-staging-db.yml`, and watch the run.
+- [ ] **Step 5:** With the user's go-ahead, merge to `staging`. Then rehearse onboarding on staging: run `pnpm provision:school --slug=rehearsal-school ...` with the env pointed at staging (Task 7 runbook).
 - [ ] **Step 6: Staging check in the built-in browser.**
   - `/schedule` shows both schools.
-  - As `admin@demo-school.test`: `/admin/staff` shows only demo staff, and the pending list doesn't include the prod school's pending rows.
-  - `/<prod-slug>` and `/demo-school` each show only their own events.
+  - As the `rehearsal-school` admin: `/admin/staff` shows only its own staff, and the pending list doesn't include the prod school's pending rows.
+  - `/<prod-slug>` and `/rehearsal-school` each show only their own events.
   - Run Supabase `get_advisors` (security) on staging.
 - [ ] **Step 7: Report to the user.** Promotion `staging` → `main` waits for their go-ahead.

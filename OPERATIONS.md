@@ -123,13 +123,15 @@ gh workflow run refresh-staging-db.yml --ref staging
 
 Required GitHub secrets: `PROD_DATABASE_URL`, `STAGING_DATABASE_URL` (Supabase **session pooler** URIs — runners are IPv4-only). The script only reads from prod and refuses any target that isn't the staging project.
 
-**Demo school on staging:** a refresh replaces all of staging (including the `demo-school` tenant and its logins) with prod's data, so re-create it by hand afterwards. Point `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` at the **staging** project, then:
+**Demo school on staging (optional):** staging is a copy of prod, so debug against the copied prod school directly. A refresh wipes any `demo-school` tenant. Seed it again only when you need the role-specific test logins (admin, grade editors, counselor, viewer). Point `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` at the **staging** project, then:
 
 ```bash
 pnpm seed
 ```
 
-`db/seed.ts` refuses any database or Supabase project that isn't local or staging. Demo logins are the seed accounts listed under "Default credentials after `pnpm seed`" above (forced password change on first login). If the nightly schedule is ever turned back on, add a seed step to the workflow first (secrets `STAGING_SUPABASE_URL` + `STAGING_SUPABASE_SERVICE_ROLE_KEY`), or the demo school disappears every night.
+`db/seed.ts` refuses any database or Supabase project that isn't local or staging. Demo logins are the seed accounts listed under "Default credentials after `pnpm seed`" above (forced password change on first login).
+
+**Second school on staging:** for manual cross-school checks, provision one with `scripts/provision-school.ts` against staging (the onboarding rehearsal, see "Onboarding checklist for a new school"). Redo it after each refresh. Automated isolation coverage doesn't depend on staging: the integration suite uses its own two test schools, and `test/e2e/multi-school.spec.ts` creates its own `second-school`.
 
 Running `pnpm test:integration` with `TEST_DATABASE_URL` pointed at staging leaves test rows on staging until the next refresh.
 

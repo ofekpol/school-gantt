@@ -1,10 +1,8 @@
 name: Refresh staging DB
 
 on:
-  # Manual only: staging keeps the demo school (and anything tested on it) until the next refresh.
-  # A refresh wipes the demo school; re-create it by hand with `pnpm seed` (see OPERATIONS.md §7).
-  # Before re-adding a schedule, add a seed step here (needs STAGING_SUPABASE_URL +
-  # STAGING_SUPABASE_SERVICE_ROLE_KEY secrets) or the demo school disappears every night.
+  # Manual only: anything created on staging (e.g. a provisioned rehearsal school) survives
+  # until the next refresh, which replaces staging with prod's data (see OPERATIONS.md §7).
   workflow_dispatch:
 
 concurrency:
