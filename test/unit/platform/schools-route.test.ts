@@ -112,4 +112,11 @@ describe("/api/v1/platform/schools", () => {
     expect(body.magicLinkUrl).toBe(PROVISIONED.magicLinkUrl);
     expect(sendWelcomeEmailMock).not.toHaveBeenCalled();
   });
+
+  it("falls back to the request origin for the magic link when NEXT_PUBLIC_APP_URL is unset", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "");
+    provisionSchoolMock.mockResolvedValue(PROVISIONED);
+    await POST(makeRequest(VALID_BODY));
+    expect(provisionSchoolMock).toHaveBeenCalledWith(expect.anything(), "http://localhost");
+  });
 });

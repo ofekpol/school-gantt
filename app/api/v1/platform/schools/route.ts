@@ -51,7 +51,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   let result: ProvisionSchoolResult;
   try {
-    result = await provisionSchool(parsed.data);
+    result = await provisionSchool(parsed.data, process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
     if (msg.includes("already exists")) {
