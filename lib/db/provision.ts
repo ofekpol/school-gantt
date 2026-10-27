@@ -1,6 +1,7 @@
 // NOTE: no `import "server-only"` — this module is invoked by scripts/provision-school.ts
 // via tsx outside the Next.js server runtime. It is also safe to call from server-only
 // Next.js code (Server Components / route handlers); never import from a Client Component.
+import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { ProvisionSchoolInput } from "@/lib/validations/school";
 import { db, supabaseAdmin, withSchool } from "./client";
@@ -62,16 +63,26 @@ async function insertDefaultEventTypes(tx: Tx, schoolId: string): Promise<void> 
   }
 }
 
+const AUTH_USERS_PER_PAGE = 200;
+
+/** Walk every listUsers page; the Auth admin API has no lookup-by-email. */
+async function findAuthUserIdByEmail(email: string): Promise<string | null> {
+  for (let page = 1; ; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage: AUTH_USERS_PER_PAGE,
+    });
+    if (error) throw new Error(`listUsers: ${error.message}`);
+    const found = data.users.find((u) => u.email === email);
+    if (found) return found.id;
+    if (data.users.length < AUTH_USERS_PER_PAGE) return null;
+  }
+}
+
 /** Resolve a Supabase Auth user by email; create if absent. No password — magic-link only. */
 async function ensureAuthUserPasswordless(email: string): Promise<string> {
-  // listUsers is paginated; 200/page is enough for small prod projects.
-  const { data: existing, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-  if (listErr) throw new Error(`listUsers: ${listErr.message}`);
-  const found = existing.users.find((u) => u.email === email);
-  if (found) return found.id;
+  const existingId = await findAuthUserIdByEmail(email);
+  if (existingId) return existingId;
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -136,13 +147,30 @@ export async function provisionSchool(
 
   const { id: schoolId, accessToken } = await insertSchool(input);
 
-  const { adminAuthUserId } = await withSchool(schoolId, async (tx) => {
-    await insertDefaultEventTypes(tx, schoolId);
-    const authId = await insertAdminStaffUser(tx, schoolId, input);
-    return { adminAuthUserId: authId };
-  });
+  let adminAuthUserId: string;
+  try {
+    adminAuthUserId = await withSchool(schoolId, async (tx) => {
+      await insertDefaultEventTypes(tx, schoolId);
+      return insertAdminStaffUser(tx, schoolId, input);
+    });
+  } catch (err) {
+    // The transaction rolled back, so only the bare school row is left; drop it so the
+    // slug is free to retry. A just-created Auth user stays and is reused on retry.
+    await db.delete(schema.schools).where(eq(schema.schools.id, schoolId));
+    throw err;
+  }
 
-  const { magicLinkUrl, magicLinkExpiresAt } = await generateAdminMagicLink(input.adminEmail, appUrl);
+  let magicLink: { magicLinkUrl: string; magicLinkExpiresAt: string };
+  try {
+    magicLink = await generateAdminMagicLink(input.adminEmail, appUrl);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `school was created (${input.slug}) but its admin sign-in link failed: ${reason}. ` +
+        `The admin can sign in with "forgot password" or Google instead.`,
+    );
+  }
+  const { magicLinkUrl, magicLinkExpiresAt } = magicLink;
 
   return { schoolId, accessToken, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
 }
