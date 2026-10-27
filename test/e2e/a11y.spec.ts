@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { DEMO_SCHOOL_PATH } from "../../db/demo-school";
 
 /**
  * axe-core sweep — Phase 8 quality gate.
@@ -16,10 +17,10 @@ import AxeBuilder from "@axe-core/playwright";
 const PUBLIC_ROUTES = [
   { name: "home", url: "/" },
   // Note: /[school]/* routes need a seeded school. Wired here to demonstrate
-  // shape; the actual checks rely on the demo seed (slug=demo-school).
-  { name: "agenda (demo-school)", url: "/demo-school/agenda" },
-  { name: "gantt (demo-school)", url: "/demo-school" },
-  { name: "calendar (demo-school)", url: "/demo-school/calendar" },
+  // shape; the actual checks rely on the demo seed (demo-school, fixed token in db/demo-school.ts).
+  { name: "agenda (demo-school)", url: `${DEMO_SCHOOL_PATH}/agenda` },
+  { name: "gantt (demo-school)", url: DEMO_SCHOOL_PATH },
+  { name: "calendar (demo-school)", url: `${DEMO_SCHOOL_PATH}/calendar` },
 ];
 
 for (const route of PUBLIC_ROUTES) {

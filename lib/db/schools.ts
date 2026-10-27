@@ -1,9 +1,9 @@
 import "server-only";
 import { cache } from "react";
-import { asc, eq } from "drizzle-orm";
+import { eq, type SQL } from "drizzle-orm";
 import { db, rethrowWithDatabaseHint } from "@/lib/db/client";
 import { schools } from "@/lib/db/schema";
-import { SchoolSlugSchema } from "@/lib/validations/school";
+import { SchoolAccessTokenSchema } from "@/lib/validations/school";
 
 export interface PublicSchoolRecord {
   id: string;
@@ -11,19 +11,19 @@ export interface PublicSchoolRecord {
   name: string;
   locale: string;
   timezone: string;
+  /** Secret school link token; only ever shown to that school's own admins / link holders. */
+  accessToken: string;
 }
 
 /**
- * Resolves a school by URL slug. The `schools` table has no RLS (it is the
- * tenant root), so this is the one place we can read without `withSchool` —
- * because we need the school_id *before* we can scope subsequent queries.
+ * The `schools` table has no RLS (it is the tenant root), so this is the one
+ * place we can read without `withSchool` — because we need the school_id
+ * *before* we can scope subsequent queries.
  *
  * Lives in `lib/db/` per CLAUDE.md "Multi-Tenancy (Critical)" — the
  * unrestricted `db` client must only be imported inside this directory.
  */
-export async function getSchoolBySlug(
-  slug: string,
-): Promise<PublicSchoolRecord | null> {
+async function findSchool(where: SQL): Promise<PublicSchoolRecord | null> {
   let row: PublicSchoolRecord | undefined;
   try {
     [row] = await db
@@ -33,9 +33,10 @@ export async function getSchoolBySlug(
         name: schools.name,
         locale: schools.locale,
         timezone: schools.timezone,
+        accessToken: schools.accessToken,
       })
       .from(schools)
-      .where(eq(schools.slug, slug))
+      .where(where)
       .limit(1);
   } catch (error) {
     rethrowWithDatabaseHint(error, "Failed to load school");
@@ -45,13 +46,15 @@ export async function getSchoolBySlug(
 }
 
 /**
- * Resolves an untrusted `?school=` value (URL param, signup metadata) to a
- * school id. Anything malformed or unknown is "no school" — never an error.
+ * Resolves an untrusted school link token (`/<token>` route param, `?school=`
+ * sign-up link, signup metadata) to its school. Slugs are guessable and are
+ * deliberately NOT accepted: holding the secret link is the only way in.
+ * Anything malformed or unknown is "no school" — never an error.
  */
 export async function resolveSchoolFromParam(raw: unknown): Promise<PublicSchoolRecord | null> {
-  const parsed = SchoolSlugSchema.safeParse(raw);
+  const parsed = SchoolAccessTokenSchema.safeParse(raw);
   if (!parsed.success) return null;
-  return getSchoolBySlug(parsed.data);
+  return findSchool(eq(schools.accessToken, parsed.data));
 }
 
 export async function resolveSchoolIdFromParam(raw: unknown): Promise<string | null> {
@@ -63,48 +66,6 @@ export async function resolveSchoolIdFromParam(raw: unknown): Promise<string | n
  * already has `user.schoolId` and needs the human-readable name. Cached per
  * request so the staff/admin layout header and the page share one query.
  */
-export const getSchoolById = cache(resolveSchoolById);
-
-async function resolveSchoolById(
-  id: string,
-): Promise<PublicSchoolRecord | null> {
-  let row: PublicSchoolRecord | undefined;
-  try {
-    [row] = await db
-      .select({
-        id: schools.id,
-        slug: schools.slug,
-        name: schools.name,
-        locale: schools.locale,
-        timezone: schools.timezone,
-      })
-      .from(schools)
-      .where(eq(schools.id, id))
-      .limit(1);
-  } catch (error) {
-    rethrowWithDatabaseHint(error, "Failed to load school");
-  }
-
-  return row ?? null;
-}
-
-/**
- * Lists all schools, alphabetical by name. Used by the unauthenticated
- * /schedule page: one school renders directly, several show a picker.
- */
-export async function listSchools(): Promise<PublicSchoolRecord[]> {
-  try {
-    return await db
-      .select({
-        id: schools.id,
-        slug: schools.slug,
-        name: schools.name,
-        locale: schools.locale,
-        timezone: schools.timezone,
-      })
-      .from(schools)
-      .orderBy(asc(schools.name));
-  } catch (error) {
-    rethrowWithDatabaseHint(error, "Failed to list schools");
-  }
-}
+export const getSchoolById = cache(
+  (id: string): Promise<PublicSchoolRecord | null> => findSchool(eq(schools.id, id)),
+);

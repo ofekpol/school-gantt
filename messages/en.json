@@ -88,6 +88,14 @@
   },
   "admin": {
     "staff": {
+      "schoolLinks": {
+        "title": "School links",
+        "hint": "Share only with your school community. Anyone with a link sees this school's calendar only; sign-ups through it wait for your approval.",
+        "signup": "Staff sign-up",
+        "guest": "Guest view",
+        "copy": "Copy",
+        "copied": "Copied"
+      },
       "title": "Staff Management",
       "subtitle": "Search, filter, and manage staff permissions in one place.",
       "activeStaff": "Active Staff",
@@ -358,8 +366,9 @@
     "weekly": "Weekly",
     "monthly": "Monthly",
     "login": "Log in",
-    "schoolPicker": {
-      "title": "Choose a school"
+    "linkRequired": {
+      "title": "School link required",
+      "body": "To view the event calendar, open the link your school sent you."
     }
   },
   "profile": {

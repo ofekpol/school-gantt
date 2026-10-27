@@ -6,7 +6,7 @@ import { useState } from "react";
 interface GoogleSignInButtonProps {
   next?: string;
   token?: string;
-  /** School slug from a `?school=` sign-up link; files a pending registration under it. */
+  /** Secret school link token from `?school=`; files a pending registration under that school. */
   school?: string;
   label?: string;
 }

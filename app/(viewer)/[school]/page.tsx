@@ -12,14 +12,14 @@ interface PageProps {
 }
 
 export default async function GanttPage({ params, searchParams }: PageProps) {
-  const { school: slug } = await params;
+  const { school: accessToken } = await params;
   const sp = await searchParams;
-  const data = await loadPublicViewerData(slug);
+  const data = await loadPublicViewerData(accessToken);
   if (!data) notFound();
 
   return (
     <PublicViewerShell
-      schoolSlug={slug}
+      accessToken={data.school.accessToken}
       schoolName={data.school.name}
       initialView="gantt"
       initialParams={withGanttDefaultZoom(parsePublicViewerParams(toUrlSearchParams(sp)), sp)}

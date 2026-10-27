@@ -38,6 +38,8 @@ export type ProvisionSchoolInput = z.infer<typeof ProvisionSchoolInput>;
 
 export interface ProvisionSchoolResult {
   schoolId: string;
+  /** Secret school link token for `/schedule?school=` and `/auth/login?school=` links. */
+  accessToken: string;
   adminAuthUserId: string;
   magicLinkUrl: string;
   /** ISO 8601. Supabase magic links default to 1 hour. */
@@ -47,7 +49,7 @@ export interface ProvisionSchoolResult {
 type Tx = NodePgDatabase<typeof schema>;
 
 /** Insert the tenant root row. Throws when slug already taken — never clobbers. */
-async function insertSchool(input: ProvisionSchoolInput): Promise<string> {
+async function insertSchool(input: ProvisionSchoolInput): Promise<{ id: string; accessToken: string }> {
   const inserted = await db
     .insert(schema.schools)
     .values({
@@ -57,11 +59,11 @@ async function insertSchool(input: ProvisionSchoolInput): Promise<string> {
       timezone: input.timezone,
     })
     .onConflictDoNothing({ target: schema.schools.slug })
-    .returning({ id: schema.schools.id });
+    .returning({ id: schema.schools.id, accessToken: schema.schools.accessToken });
   if (inserted.length === 0) {
     throw new Error(`school with slug "${input.slug}" already exists — refusing to clobber`);
   }
-  return inserted[0].id;
+  return inserted[0];
 }
 
 async function insertDefaultEventTypes(tx: Tx, schoolId: string): Promise<void> {
@@ -139,7 +141,7 @@ export async function provisionSchool(
 ): Promise<ProvisionSchoolResult> {
   const input = ProvisionSchoolInput.parse(rawInput);
 
-  const schoolId = await insertSchool(input);
+  const { id: schoolId, accessToken } = await insertSchool(input);
 
   const { adminAuthUserId } = await withSchool(schoolId, async (tx) => {
     await insertDefaultEventTypes(tx, schoolId);
@@ -149,5 +151,5 @@ export async function provisionSchool(
 
   const { magicLinkUrl, magicLinkExpiresAt } = await generateAdminMagicLink(input.adminEmail);
 
-  return { schoolId, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
+  return { schoolId, accessToken, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
 }

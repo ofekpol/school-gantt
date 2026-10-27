@@ -82,9 +82,11 @@ pnpm dev               # http://localhost:3000
 Useful URLs once the demo seed is in place:
 
 - `/` — school index landing
-- `/demo-school` — Gantt view
-- `/demo-school/agenda` — mobile agenda
-- `/demo-school/calendar` — printable yearly calendar
+- `/<token>` — Gantt view
+- `/<token>/agenda` — mobile agenda
+- `/<token>/calendar` — printable yearly calendar
+
+`<token>` is the school's secret link token (`schools.access_token`). The demo seed pins `demo-school` to the fixed token in `db/demo-school.ts` (`dedede…`, 64 chars); slugs such as `/demo-school` return 404.
 - `/login` — sign in
 - `/dashboard` — editor home (after sign in)
 - `/admin/queue` — approval queue (admin only)
@@ -187,7 +189,7 @@ Events from the previous year remain readable but read-only.
 
 - `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` grant unrestricted DB access — never expose in client bundles, never log.
 - The `db` client (`lib/db/client.ts`) imports `supabaseAdmin` and bypasses RLS. ESLint bans importing `supabaseAdmin` outside `lib/db/` (overridden under `lib/db/**`, `db/seed.ts`, and `db/migrations/`).
-- Every school-data query must run inside `db.withSchool(schoolId, fn)`. Two known exceptions live in `lib/db/schools.ts` (slug lookup) and `lib/ical/subscriptions.ts` (token lookup) — both are keyed on a cryptographically-scoped value, document the why inline, and never read another tenant's data.
+- Every school-data query must run inside `db.withSchool(schoolId, fn)`. Two known exceptions live in `lib/db/schools.ts` (school link token lookup) and `lib/ical/subscriptions.ts` (iCal token lookup) — both are keyed on a cryptographically-scoped value, document the why inline, and never read another tenant's data.
 - All status transitions go through `lib/events/approval.ts`. Never set `events.status` directly in a route handler.
 
 ## 12. Provisioning a new school (production tenant)
@@ -206,7 +208,7 @@ Flags:
 
 | Flag | Required | Notes |
 |------|----------|-------|
-| `--slug` | yes | URL segment; `^[a-z0-9-]+$` |
+| `--slug` | yes | Internal name; `^[a-z0-9-]+$`. Never part of a public URL (guessable) |
 | `--name` | yes | Display name (Hebrew OK) |
 | `--admin-email` | yes | First admin's real email. Must not already be staff in another school (one login = one school) |
 | `--admin-name` | yes | First admin's full name |
@@ -228,10 +230,22 @@ Rehearse on staging first (point the env at staging); the next manual staging re
 
 1. `pnpm provision:school --slug=<slug> --name=... --admin-email=... --admin-name=...` with prod env loaded.
 2. The admin signs in through the magic link and reviews `/admin/event-types`.
-3. Give the school two links:
-   - Staff sign-up: `https://<app>/auth/login?school=<slug>`. Google or email sign-ups through it land in **that** school's pending list (`/admin/staff`). Sign-ups without the link have no school and no admin sees them. Invites (`/admin/staff`) work regardless.
-   - Public schedule: `https://<app>/<slug>` (full viewer) or `https://<app>/schedule?school=<slug>` (read-only). With 2+ schools, plain `/schedule` shows a school picker.
-4. Smoke-check `/<slug>`, `/<slug>/calendar`, `/<slug>/agenda` after the first event is published.
+3. Give the school its links. The CLI prints them, and the school's admin can copy them any time from **School links** on `/admin/staff`. Both carry the school's secret link token (`schools.access_token`, 64 hex chars, random per school):
+   - Staff sign-up: `https://<app>/auth/login?school=<token>`. Google or email sign-ups through it land in **that** school's pending list (`/admin/staff`) and need admin approval. Sign-ups without a valid token have no school and no admin sees them. Invites (`/admin/staff`) work regardless.
+   - Guest view (read-only, no account): `https://<app>/schedule?school=<token>`. The full viewer is `https://<app>/<token>` (`/calendar`, `/agenda`).
+   - A slug never opens a school: `/<slug>`, `?school=<slug>` and plain `/schedule` show nothing about any school. Share links only with that school's community — whoever holds a link sees that one school's calendar.
+4. Smoke-check `/<token>`, `/<token>/calendar`, `/<token>/agenda` after the first event is published.
+
+**Look up a school's token** (prod SQL editor): `SELECT slug, access_token FROM schools WHERE slug = '<slug>';`
+
+**Rotate a leaked link** (old links stop working at once; re-send the new ones):
+
+```sql
+UPDATE schools SET access_token = replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '')
+WHERE slug = '<slug>';
+```
+
+Staging refreshes copy `schools.access_token` from prod, so prod links also open the staging copy (staging sits behind Vercel login).
 
 Production cutover (one-time, per new Supabase project):
 

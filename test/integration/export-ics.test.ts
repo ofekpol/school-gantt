@@ -10,8 +10,8 @@ import type { NextRequest } from "next/server";
 
 /**
  * Phase — public `.ics` export route integration tests.
- * The route must return a valid VCALENDAR for a known school (no auth, no
- * token) and 404 for an unknown slug, reusing the agenda projection + iCal
+ * The route must return a valid VCALENDAR for a school's link token (no auth)
+ * and 404 for an unknown school, reusing the agenda projection + iCal
  * serializer under RLS (withSchool).
  */
 
@@ -73,8 +73,14 @@ async function makeApprovedEvent(opts: {
 }
 
 describe.skipIf(skipIfNoTestDb)("EXPORT-ICS-01: valid school", () => {
+  let tokenA = "";
+
   beforeAll(async () => {
     if (shouldSkip()) return;
+    [{ accessToken: tokenA }] = await testDb!
+      .select({ accessToken: schema.schools.accessToken })
+      .from(schema.schools)
+      .where(eq(schema.schools.id, testSchoolA));
     const editorId = await ensureEditor(testSchoolA);
     const type = await eventTypeFor(testSchoolA);
     await makeApprovedEvent({
@@ -87,7 +93,7 @@ describe.skipIf(skipIfNoTestDb)("EXPORT-ICS-01: valid school", () => {
   });
 
   it("returns 200 with a valid VCALENDAR body and attachment headers", async () => {
-    const res = await GET(req("?school=test-a"));
+    const res = await GET(req(`?school=${tokenA}`));
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("text/calendar; charset=utf-8");
     expect(res.headers.get("Content-Disposition")).toContain("attachment");
@@ -100,8 +106,8 @@ describe.skipIf(skipIfNoTestDb)("EXPORT-ICS-01: valid school", () => {
   });
 
   it("grade filter narrows the event set", async () => {
-    const all = await (await GET(req("?school=test-a"))).text();
-    const g11Only = await (await GET(req("?school=test-a&grades=11"))).text();
+    const all = await (await GET(req(`?school=${tokenA}`))).text();
+    const g11Only = await (await GET(req(`?school=${tokenA}&grades=11`))).text();
     const countVevents = (s: string) => (s.match(/BEGIN:VEVENT/g) ?? []).length;
     // The grade-10 fixture is present unfiltered but excluded by grades=11.
     expect(all).toContain("EXPORT visible event");
@@ -111,7 +117,7 @@ describe.skipIf(skipIfNoTestDb)("EXPORT-ICS-01: valid school", () => {
 });
 
 describe.skipIf(skipIfNoTestDb)("EXPORT-ICS-02: unknown school", () => {
-  it("returns 404 for an unknown slug", async () => {
+  it("returns 404 for an unknown school", async () => {
     const res = await GET(req("?school=does-not-exist-zzz"));
     expect(res.status).toBe(404);
   });

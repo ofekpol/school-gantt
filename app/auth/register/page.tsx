@@ -19,11 +19,11 @@ export default async function RegisterPage({ searchParams }: PageProps) {
           <h1 className="text-2xl font-bold">הרשמה למערכת</h1>
           <p className="text-muted-foreground text-sm">{school ? school.name : "צרו חשבון חדש"}</p>
         </div>
-        <RegisterForm inviteToken={token} school={school?.slug} />
+        <RegisterForm inviteToken={token} school={school?.accessToken} />
         <p className="text-center text-sm text-muted-foreground">
           כבר יש לכם חשבון?{" "}
           <Link
-            href={{ pathname: "/auth/login", query: authLinkQuery(token, school?.slug) }}
+            href={{ pathname: "/auth/login", query: authLinkQuery(token, school?.accessToken) }}
             className="underline hover:text-foreground"
           >
             כניסה
@@ -31,7 +31,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
         </p>
         <GuestViewButton
           label="המשך כאורח (צפייה בלוח)"
-          href={school ? `/schedule?school=${school.slug}` : undefined}
+          href={school ? `/schedule?school=${school.accessToken}` : undefined}
         />
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { DEMO_SCHOOL_PATH } from "../../db/demo-school";
 
 /**
  * PRD §14 — Approval: "An administrator can approve or reject from the
@@ -76,7 +77,7 @@ test("APPROVAL-PRD14: editor publishes an event, public view shows it within 5 s
     // the server fresh, so the event should appear on the next page load.
     const publicPage = await publicContext.newPage();
     await expect(async () => {
-      await publicPage.goto("/demo-school/agenda?cb=" + Date.now());
+      await publicPage.goto(`${DEMO_SCHOOL_PATH}/agenda?cb=${Date.now()}`);
       await expect(publicPage.getByText(title)).toBeVisible({ timeout: 2_000 });
     }).toPass({ timeout: 10_000 });
 

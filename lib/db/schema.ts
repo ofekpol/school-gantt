@@ -48,6 +48,11 @@ export const schools = pgTable("schools", {
   name: text().notNull(),
   locale: varchar({ length: 8 }).notNull().default("he"),
   timezone: varchar({ length: 64 }).notNull().default("Asia/Jerusalem"),
+  /** Secret school link token (migration 0017) — the only key to public views and `?school=` sign-ups. */
+  accessToken: text("access_token")
+    .notNull()
+    .unique("schools_access_token_key")
+    .default(sql`replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '')`),
   /** Nullable FK to academic_years; set after year is inserted to avoid circular. */
   activeAcademicYearId: uuid("active_academic_year_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

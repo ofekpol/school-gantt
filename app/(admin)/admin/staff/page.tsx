@@ -1,9 +1,11 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Clock, MailPlus, UserCheck, Users } from "lucide-react";
+import { Clock, Link2, MailPlus, UserCheck, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { getStaffUser } from "@/lib/auth/session";
 import { listStaffUsers } from "@/lib/db/staff";
+import { getSchoolById } from "@/lib/db/schools";
 import { listInvitesForSchool } from "@/lib/db/invites";
 import { listPendingRegistrations } from "@/lib/db/pending";
 import { listEventTypes } from "@/lib/admin/event-types";
@@ -12,6 +14,7 @@ import { PendingRequestsTable } from "@/components/admin/PendingRequestsTable";
 import { InviteForm } from "@/components/admin/InviteForm";
 import { AddStaffForm } from "@/components/admin/AddStaffForm";
 import { InviteTable } from "@/components/admin/InviteTable";
+import { SchoolLinks } from "@/components/admin/SchoolLinks";
 
 /**
  * Admin staff management page — Server Component.
@@ -23,12 +26,15 @@ export default async function AdminStaffPage() {
   if (!user?.schoolId) redirect("/auth/login");
   if (user.role !== "admin") redirect("/dashboard");
 
-  const [staff, eventTypes, pendingRegs, invites] = await Promise.all([
+  const [staff, eventTypes, pendingRegs, invites, school, requestHeaders] = await Promise.all([
     listStaffUsers(user.schoolId),
     listEventTypes(user.schoolId),
     listPendingRegistrations(user.schoolId),
     listInvitesForSchool(user.schoolId),
+    getSchoolById(user.schoolId),
+    headers(),
   ]);
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? `${requestHeaders.get("x-forwarded-proto") ?? "https"}://${requestHeaders.get("host")}`;
 
   const t = await getTranslations("admin.staff");
   const activeCount = staff.filter((member) => !member.deactivatedAt).length;
@@ -81,6 +87,16 @@ export default async function AdminStaffPage() {
         <h2 className="text-lg font-semibold">{t("create")}</h2>
         <AddStaffForm eventTypes={eventTypes} />
       </section>
+
+      {school && (
+        <section className="sg-staff-card space-y-3 rounded-xl border bg-white p-4">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Link2 className="size-4" />
+            {t("schoolLinks.title")}
+          </h2>
+          <SchoolLinks accessToken={school.accessToken} origin={origin} />
+        </section>
+      )}
 
       <section className="sg-staff-card space-y-4 rounded-xl border bg-white p-4">
         <SectionHeader
