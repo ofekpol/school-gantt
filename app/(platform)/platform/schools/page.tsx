@@ -5,6 +5,7 @@ import { requirePlatformAdmin } from "@/lib/auth/platform-admin";
 import { listAllSchools } from "@/lib/db/schools";
 import { ProvisionSchoolForm } from "@/components/platform/ProvisionSchoolForm";
 import { SchoolLinks } from "@/components/admin/SchoolLinks";
+import { ExternalLink } from "lucide-react";
 
 /** Platform admin page: provisions new schools and lists every school's share links. */
 export default async function PlatformSchoolsPage() {
@@ -40,9 +41,20 @@ export default async function PlatformSchoolsPage() {
         <h2 className="text-lg font-semibold">{t("listTitle", { count: schools.length })}</h2>
         {schools.map((school) => (
           <article key={school.id} className="space-y-3 rounded-xl border bg-white p-4">
-            <h3 className="font-semibold">
-              {school.name} <span className="text-sm font-normal text-neutral-600" dir="ltr">({school.slug})</span>
-            </h3>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-semibold">
+                {school.name} <span className="text-sm font-normal text-neutral-600" dir="ltr">({school.slug})</span>
+              </h3>
+              <a
+                href={`/${school.accessToken}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-neutral-100"
+              >
+                <ExternalLink className="size-4" aria-hidden />
+                {t("open")}
+              </a>
+            </div>
             <SchoolLinks accessToken={school.accessToken} origin={origin} />
           </article>
         ))}
