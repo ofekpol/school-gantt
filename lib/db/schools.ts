@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { eq, type SQL } from "drizzle-orm";
+import { asc, eq, type SQL } from "drizzle-orm";
 import { db, rethrowWithDatabaseHint } from "@/lib/db/client";
 import { schools } from "@/lib/db/schema";
 import { SchoolAccessTokenSchema } from "@/lib/validations/school";
@@ -23,18 +23,20 @@ export interface PublicSchoolRecord {
  * Lives in `lib/db/` per CLAUDE.md "Multi-Tenancy (Critical)" — the
  * unrestricted `db` client must only be imported inside this directory.
  */
+const SCHOOL_COLUMNS = {
+  id: schools.id,
+  slug: schools.slug,
+  name: schools.name,
+  locale: schools.locale,
+  timezone: schools.timezone,
+  accessToken: schools.accessToken,
+};
+
 async function findSchool(where: SQL): Promise<PublicSchoolRecord | null> {
   let row: PublicSchoolRecord | undefined;
   try {
     [row] = await db
-      .select({
-        id: schools.id,
-        slug: schools.slug,
-        name: schools.name,
-        locale: schools.locale,
-        timezone: schools.timezone,
-        accessToken: schools.accessToken,
-      })
+      .select(SCHOOL_COLUMNS)
       .from(schools)
       .where(where)
       .limit(1);
@@ -69,3 +71,15 @@ export async function resolveSchoolIdFromParam(raw: unknown): Promise<string | n
 export const getSchoolById = cache(
   (id: string): Promise<PublicSchoolRecord | null> => findSchool(eq(schools.id, id)),
 );
+
+/**
+ * Every school with its secret link token, alphabetical by name.
+ * Platform admins only (/platform/schools) — never expose to a school's users.
+ */
+export async function listAllSchools(): Promise<PublicSchoolRecord[]> {
+  try {
+    return await db.select(SCHOOL_COLUMNS).from(schools).orderBy(asc(schools.name));
+  } catch (error) {
+    rethrowWithDatabaseHint(error, "Failed to list schools");
+  }
+}

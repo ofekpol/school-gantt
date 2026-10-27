@@ -339,3 +339,9 @@ export const pendingRegistrations = pgTable("pending_registrations", {
   reviewedBy: uuid("reviewed_by").references(() => staffUsers.id),
   reviewOutcome: varchar("review_outcome", { length: 16 }),
 });
+
+// Supabase Auth users allowed to provision schools (/platform/schools). Not tenant data.
+export const platformAdmins = pgTable("platform_admins", {
+  authUserId: uuid("auth_user_id").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

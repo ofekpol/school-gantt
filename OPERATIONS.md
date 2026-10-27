@@ -224,11 +224,25 @@ Behavior:
 - Admin Supabase Auth user is created **without a password** — first sign-in is via the emailed magic link (1 h expiry, Supabase default).
 - After first sign-in the admin invites further staff via `/admin/staff` (the standard invite flow); the CLI never creates editors directly.
 
+### From the deployed app (`/platform/schools`)
+
+Platform admins can do the same without a local script: `/platform/schools` has a form (slug, name, admin email/name, language) that runs the same `provisionSchool()` and emails the magic link. When Resend is unconfigured or fails, the page shows the link to pass on by hand. It also lists every school with its sign-up and guest links. Anyone else gets a 404.
+
+Platform admins are rows in `platform_admins` (Supabase Auth user ids), not a role or env var, so adding one needs no redeploy. They don't need to be staff in any school. To add one (SQL editor of the target project; the user must have signed in once):
+
+```sql
+INSERT INTO platform_admins (auth_user_id)
+SELECT id FROM auth.users WHERE email = '<email>'
+ON CONFLICT DO NOTHING;
+```
+
+Remove with `DELETE FROM platform_admins WHERE auth_user_id = (SELECT id FROM auth.users WHERE email = '<email>');`.
+
 ### Onboarding checklist for a new school
 
 Rehearse on staging first (point the env at staging); the next manual staging refresh wipes it.
 
-1. `pnpm provision:school --slug=<slug> --name=... --admin-email=... --admin-name=...` with prod env loaded.
+1. Create the school on `/platform/schools`, or run `pnpm provision:school --slug=<slug> --name=... --admin-email=... --admin-name=...` with prod env loaded.
 2. The admin signs in through the magic link and reviews `/admin/event-types`.
 3. Give the school its links. The CLI prints them, and the school's admin can copy them any time from **School links** on `/admin/staff`. Both carry the school's secret link token (`schools.access_token`, 64 hex chars, random per school):
    - Staff sign-up: `https://<app>/auth/login?school=<token>`. Google or email sign-ups through it land in **that** school's pending list (`/admin/staff`) and need admin approval. Sign-ups without a valid token have no school and no admin sees them. Invites (`/admin/staff`) work regardless.

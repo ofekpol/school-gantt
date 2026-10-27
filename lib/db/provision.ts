@@ -2,8 +2,7 @@
 // via tsx outside the Next.js server runtime. It is also safe to call from server-only
 // Next.js code (Server Components / route handlers); never import from a Client Component.
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { z } from "zod";
-import { SchoolSlugSchema } from "@/lib/validations/school";
+import { ProvisionSchoolInput } from "@/lib/validations/school";
 import { db, supabaseAdmin, withSchool } from "./client";
 import * as schema from "./schema";
 
@@ -25,16 +24,7 @@ export const DEFAULT_EVENT_TYPES = [
   { key: "general", labelHe: "כללי", labelEn: "General", colorHex: "#aec7e8", glyph: "G", sortOrder: 11 },
 ] as const;
 
-export const ProvisionSchoolInput = z.object({
-    slug: SchoolSlugSchema,
-    name: z.string().min(1).max(200),
-    locale: z.enum(["he", "en"]).default("he"),
-    timezone: z.string().default("Asia/Jerusalem"),
-    adminEmail: z.string().email().max(255),
-    adminName: z.string().min(1).max(200),
-  });
-
-export type ProvisionSchoolInput = z.infer<typeof ProvisionSchoolInput>;
+export { ProvisionSchoolInput };
 
 export interface ProvisionSchoolResult {
   schoolId: string;
