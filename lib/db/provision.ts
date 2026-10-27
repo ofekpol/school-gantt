@@ -2,8 +2,7 @@
 // via tsx outside the Next.js server runtime. It is also safe to call from server-only
 // Next.js code (Server Components / route handlers); never import from a Client Component.
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { z } from "zod";
-import { SchoolSlugSchema } from "@/lib/validations/school";
+import { ProvisionSchoolInput } from "@/lib/validations/school";
 import { db, supabaseAdmin, withSchool } from "./client";
 import * as schema from "./schema";
 
@@ -25,16 +24,7 @@ export const DEFAULT_EVENT_TYPES = [
   { key: "general", labelHe: "כללי", labelEn: "General", colorHex: "#aec7e8", glyph: "G", sortOrder: 11 },
 ] as const;
 
-export const ProvisionSchoolInput = z.object({
-    slug: SchoolSlugSchema,
-    name: z.string().min(1).max(200),
-    locale: z.enum(["he", "en"]).default("he"),
-    timezone: z.string().default("Asia/Jerusalem"),
-    adminEmail: z.string().email().max(255),
-    adminName: z.string().min(1).max(200),
-  });
-
-export type ProvisionSchoolInput = z.infer<typeof ProvisionSchoolInput>;
+export { ProvisionSchoolInput };
 
 export interface ProvisionSchoolResult {
   schoolId: string;
@@ -113,8 +103,8 @@ async function insertAdminStaffUser(
 
 async function generateAdminMagicLink(
   adminEmail: string,
+  appUrl: string | undefined,
 ): Promise<{ magicLinkUrl: string; magicLinkExpiresAt: string }> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (!appUrl) throw new Error("NEXT_PUBLIC_APP_URL is required to build the magic-link redirect");
   const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
     type: "magiclink",
@@ -135,9 +125,12 @@ async function generateAdminMagicLink(
  * Provision a brand-new tenant: school row + 11 event types + admin staff user.
  * Idempotency: conflicts on slug throw — we never clobber an existing school.
  * Caller is responsible for emailing the returned magicLinkUrl to the admin.
+ * `appUrl` is the magic link's redirect origin; defaults to NEXT_PUBLIC_APP_URL
+ * (unset on Vercel Preview, where the route passes the request origin).
  */
 export async function provisionSchool(
   rawInput: ProvisionSchoolInput,
+  appUrl: string | undefined = process.env.NEXT_PUBLIC_APP_URL,
 ): Promise<ProvisionSchoolResult> {
   const input = ProvisionSchoolInput.parse(rawInput);
 
@@ -149,7 +142,7 @@ export async function provisionSchool(
     return { adminAuthUserId: authId };
   });
 
-  const { magicLinkUrl, magicLinkExpiresAt } = await generateAdminMagicLink(input.adminEmail);
+  const { magicLinkUrl, magicLinkExpiresAt } = await generateAdminMagicLink(input.adminEmail, appUrl);
 
   return { schoolId, accessToken, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
 }

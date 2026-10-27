@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getStaffUser } from "@/lib/auth/session";
 import { getSchoolById } from "@/lib/db/schools";
+import { isPlatformAdmin } from "@/lib/db/platform-admins";
 import { AppHeader } from "@/components/AppHeader";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { StaffEntryLoading } from "@/components/staff/StaffEntryLoading";
@@ -29,7 +30,7 @@ async function StaffLayoutContent({ children }: { children: ReactNode }) {
   if (user.status === "deactivated") redirect("/auth/deactivated");
   if (user.mustChangePassword) redirect("/auth/change-password");
   const [navLinks, currentPath, t, school] = await Promise.all([
-    buildNavLinks(user.role),
+    isPlatformAdmin(user.id).then((platform) => buildNavLinks(user.role, platform)),
     getCurrentPath(),
     getTranslations("nav"),
     user.schoolId ? getSchoolById(user.schoolId) : null,

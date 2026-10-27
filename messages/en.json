@@ -37,6 +37,7 @@
     "dashboard": "Dashboard",
     "staff": "Staff",
     "eventTypes": "Event Types",
+    "platform": "Schools",
     "profile": "Profile",
     "logout": "Sign out",
     "gantt": "Gantt",
@@ -446,6 +447,30 @@
       "selectType": "Select event type",
       "moreOptions": "More options",
       "responsiblePlaceholder": "Responsible person, if needed"
+    }
+  },
+  "platform": {
+    "schools": {
+      "title": "Schools",
+      "subtitle": "Set up a new school. No redeploy needed.",
+      "createTitle": "New school",
+      "listTitle": "All schools ({count})",
+      "slug": "Slug",
+      "name": "School name",
+      "adminEmail": "Admin email",
+      "adminName": "Admin name",
+      "locale": "Language",
+      "localeHe": "עברית",
+      "localeEn": "English",
+      "open": "Open",
+      "slugHint": "Internal id: lowercase letters, digits and hyphens. Not part of any public link.",
+      "submit": "Create school",
+      "success": "School {slug} created.",
+      "emailSent": "A sign-in link was emailed to the admin.",
+      "emailNotSent": "The email was not sent. Give the admin this sign-in link (valid for 1 hour):",
+      "duplicateSlug": "That slug is already taken.",
+      "invalid": "Check the fields.",
+      "error": "Setup failed. Try again."
     }
   }
 }
