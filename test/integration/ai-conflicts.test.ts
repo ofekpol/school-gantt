@@ -138,10 +138,17 @@ describe.skipIf(skipIfNoTestDb)("AI-CONFLICTS: findConflicts", () => {
     expect((await findConflicts(testSchoolA, [c])).get(c.clientId) ?? []).toEqual([]);
   });
 
-  it("skips incomplete candidates", async () => {
+  it("still flags a duplicate when the times are incomplete", async () => {
     if (shouldSkip()) return;
     await publish(testSchoolA, staffA, typeA, `${PREFIX}טיול שנתי`, "2031-03-12T10:00:00+02:00", "2031-03-12T11:00:00+02:00", [8]);
     const c = cand({ endTime: null });
+    expect((await findConflicts(testSchoolA, [c])).get(c.clientId)?.map((w) => w.code)).toEqual(["duplicate"]);
+  });
+
+  it("skips candidates without a date", async () => {
+    if (shouldSkip()) return;
+    await publish(testSchoolA, staffA, typeA, `${PREFIX}טיול שנתי`, "2031-03-12T10:00:00+02:00", "2031-03-12T11:00:00+02:00", [8]);
+    const c = cand({ startDate: null, dateHint: { day: 12, month: 3 } });
     expect((await findConflicts(testSchoolA, [c])).get(c.clientId) ?? []).toEqual([]);
   });
 });

@@ -18,8 +18,8 @@ interface Window {
   clientId: string;
   title: string;
   date: string;
-  start: Date;
-  end: Date;
+  /** Instant range; null while times are incomplete (duplicate check only). */
+  range: { start: Date; end: Date } | null;
   grades: number[];
 }
 
@@ -30,12 +30,18 @@ function titleKey(title: string): string {
 
 function toWindows(candidates: CandidateEvent[]): Window[] {
   return candidates.flatMap((c) => {
-    const range = candidateTimeRange(c);
-    if (!range || !c.startDate) return [];
-    const start = new Date(range.startAt);
-    const end = new Date(range.endAt);
-    return [{ clientId: c.clientId, title: c.title, date: c.startDate, start, end, grades: c.grades }];
+    if (!c.startDate) return [];
+    const r = candidateTimeRange(c);
+    const range = r ? { start: new Date(r.startAt), end: new Date(r.endAt) } : null;
+    return [{ clientId: c.clientId, title: c.title, date: c.startDate, range, grades: c.grades }];
   });
+}
+
+/** Bounds covering every window: its time range, or its whole Jerusalem day. */
+function windowBounds(w: Window): [number, number] {
+  if (w.range) return [w.range.start.getTime(), w.range.end.getTime()];
+  const dayStart = Date.parse(`${w.date}T00:00:00Z`);
+  return [dayStart, dayStart + 24 * 60 * 60 * 1000];
 }
 
 async function loadExisting(schoolId: string, from: Date, to: Date): Promise<ExistingEvent[]> {
@@ -71,7 +77,7 @@ function warningsFor(w: Window, existing: ExistingEvent[]): AdderWarning[] {
       out.push({ code: "duplicate", eventId: e.id, title: e.title, date: w.date });
       continue;
     }
-    const intersects = w.start < e.endAt && w.end > e.startAt;
+    const intersects = w.range !== null && w.range.start < e.endAt && w.range.end > e.startAt;
     if (intersects && e.grades.some((g) => w.grades.includes(g))) {
       out.push({
         code: "overlap",
@@ -88,7 +94,8 @@ function warningsFor(w: Window, existing: ExistingEvent[]): AdderWarning[] {
 
 /**
  * Duplicate and overlap warnings per candidate (keyed by clientId), against
- * the school's approved, non-deleted events. Incomplete candidates are skipped.
+ * the school's approved, non-deleted events. Candidates without a date are
+ * skipped; without full times they get the duplicate check only.
  */
 export async function findConflicts(
   schoolId: string,
@@ -99,8 +106,9 @@ export async function findConflicts(
   if (windows.length === 0) return result;
   // Widen by a day so same-date duplicates at other times are found too.
   const day = 24 * 60 * 60 * 1000;
-  const from = new Date(Math.min(...windows.map((w) => w.start.getTime())) - day);
-  const to = new Date(Math.max(...windows.map((w) => w.end.getTime())) + day);
+  const bounds = windows.map(windowBounds);
+  const from = new Date(Math.min(...bounds.map(([start]) => start)) - day);
+  const to = new Date(Math.max(...bounds.map(([, end]) => end)) + day);
   const existing = await loadExisting(schoolId, from, to);
   for (const w of windows) {
     const warnings = warningsFor(w, existing);

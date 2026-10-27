@@ -187,3 +187,16 @@ describe("normalizeExtracted — grades, type, title", () => {
     expect([c.location, c.description]).toEqual(["", ""]);
   });
 });
+
+describe("normalizeExtracted — length caps (free-text guard)", () => {
+  it("caps title at 120, location at 255, description at 500 characters", () => {
+    const c = normalizeExtracted(
+      ex({ title: "א".repeat(300), location: "ב".repeat(400), description: "ג".repeat(2000) }),
+      ctx,
+      "c",
+    );
+    expect(c.title).toHaveLength(120);
+    expect(c.location).toHaveLength(255);
+    expect(c.description).toHaveLength(500);
+  });
+});

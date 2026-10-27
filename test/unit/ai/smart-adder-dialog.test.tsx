@@ -72,7 +72,9 @@ describe("SmartAdderDialog", () => {
   });
 
   it("filling a missing field via edit makes the card publishable", async () => {
-    fetchMock.mockReturnValueOnce(json(200, { candidates: [cand({ clientId: "b", grades: [] })] }));
+    fetchMock
+      .mockReturnValueOnce(json(200, { candidates: [cand({ clientId: "b", grades: [] })] }))
+      .mockReturnValueOnce(json(200, { warnings: {} }));
     renderDialog();
     const user = await parse();
     const card = await screen.findByTestId("adder-card-b");
@@ -99,6 +101,30 @@ describe("SmartAdderDialog", () => {
     expect(screen.queryByTestId("adder-card-a")).not.toBeInTheDocument();
     expect(screen.getByTestId("adder-card-b")).toBeInTheDocument();
     expect(onPublished).not.toHaveBeenCalled();
+  });
+
+  it("does not close on a backdrop click (keeps the pasted text)", async () => {
+    const onClose = vi.fn();
+    render(<SmartAdderDialog open onClose={onClose} onPublished={vi.fn()} eventTypes={eventTypes} allowedGrades={[7, 8]} />);
+    await userEvent.setup().click(screen.getByRole("dialog"));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("re-checks duplicates after a card is saved", async () => {
+    const dup = { code: "duplicate", eventId: "e1", title: "טיול שנתי", date: "2026-11-12" };
+    fetchMock
+      .mockReturnValueOnce(json(200, { candidates: [cand({ clientId: "b", startDate: null, warnings: [{ code: "missing_year" }] })] }))
+      .mockReturnValueOnce(json(200, { warnings: { b: [dup] } }));
+    renderDialog();
+    const user = await parse();
+    const card = await screen.findByTestId("adder-card-b");
+    await user.click(within(card).getByRole("button", { name: "edit" }));
+    await user.type(within(card).getByLabelText("fields.date"), "2026-11-12");
+    await user.click(within(card).getByRole("button", { name: "save" }));
+    expect(await within(card).findByRole("link", { name: "openExisting" })).toBeInTheDocument();
+    const checkCall = fetchMock.mock.calls.find(([url]) => url === "/api/v1/ai/check-conflicts");
+    expect(JSON.parse(checkCall![1].body).candidates[0]).toMatchObject({ clientId: "b", startDate: "2026-11-12" });
+    expect(within(card).getByRole("checkbox", { name: /include/ })).not.toBeChecked();
   });
 
   it("calls onPublished when every checked card succeeds", async () => {

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Sparkles, X } from "lucide-react";
 import type { EventType } from "@/components/wizard/WizardShell";
 import { isCandidateComplete, toPublishPayload } from "@/lib/ai/adder/complete";
-import type { CandidateEvent } from "@/lib/ai/adder/types";
+import type { AdderWarning, CandidateEvent } from "@/lib/ai/adder/types";
 import { SmartAdderCard } from "./SmartAdderCard";
 
 const MAX_CHARS = 3000;
@@ -49,7 +49,8 @@ export function SmartAdderDialog({ open, onClose, onPublished, eventTypes, allow
   const [candidates, setCandidates] = useState<CandidateEvent[] | null>(null);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
-  useEscape(open, onClose);
+  // Escape and the backdrop never discard pasted text or reviewed cards.
+  useEscape(open && candidates === null && !text.trim(), onClose);
 
   if (!open) return null;
 
@@ -79,6 +80,25 @@ export function SmartAdderDialog({ open, onClose, onPublished, eventTypes, allow
     setCandidates(found);
   }
 
+  const replaceCard = (next: CandidateEvent) =>
+    setCandidates((list) => (list ?? []).map((x) => (x.clientId === next.clientId ? next : x)));
+
+  /** Saves an edited card, then re-checks it against the calendar (dates may have changed). */
+  async function saveCard(next: CandidateEvent) {
+    replaceCard(next);
+    const res = await fetch("/api/v1/ai/check-conflicts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ candidates: [next] }),
+    }).catch(() => null);
+    if (!res?.ok) return;
+    const { warnings } = (await res.json()) as { warnings: Record<string, AdderWarning[]> };
+    const fresh = warnings[next.clientId] ?? [];
+    const kept = next.warnings.filter((w) => w.code !== "duplicate" && w.code !== "overlap");
+    replaceCard({ ...next, warnings: [...kept, ...fresh] });
+    if (fresh.some((w) => w.code === "duplicate")) setChecked((m) => ({ ...m, [next.clientId]: false }));
+  }
+
   async function publishOne(c: CandidateEvent): Promise<boolean> {
     const res = await fetch("/api/v1/events/publish", {
       method: "POST",
@@ -103,9 +123,9 @@ export function SmartAdderDialog({ open, onClose, onPublished, eventTypes, allow
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="smart-adder-title" dir="rtl" onClick={onClose}
+    <div role="dialog" aria-modal="true" aria-labelledby="smart-adder-title" dir="rtl"
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/20 px-3 py-10">
-      <div className="sg-card w-full max-w-2xl rounded-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="sg-card w-full max-w-2xl rounded-2xl">
         <header className="flex items-center justify-between border-b border-[var(--sg-hairline)] px-5 py-4">
           <h2 id="smart-adder-title" className="flex items-center gap-2 text-xl font-semibold">
             <Sparkles className="size-5 text-sky-600" aria-hidden="true" />
@@ -135,7 +155,7 @@ export function SmartAdderDialog({ open, onClose, onPublished, eventTypes, allow
                 <SmartAdderCard key={c.clientId} candidate={c} eventTypes={eventTypes} allowedGrades={allowedGrades}
                   checked={checked[c.clientId] === true} error={cardErrors[c.clientId]}
                   onCheckedChange={(value) => setChecked((m) => ({ ...m, [c.clientId]: value }))}
-                  onChange={(next) => setCandidates((list) => (list ?? []).map((x) => (x.clientId === next.clientId ? next : x)))} />
+                  onChange={(next) => void saveCard(next)} />
               ))}
             </>
           )}

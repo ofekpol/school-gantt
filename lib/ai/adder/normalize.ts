@@ -17,6 +17,13 @@ export interface NormalizeContext {
   today: string;
 }
 
+/** Caps on model-written text so the adder can't be used to return long free text. */
+const MAX_TITLE = 120;
+const MAX_LOCATION = 255;
+const MAX_DESCRIPTION = 500;
+
+const cap = (value: string | null, max: number) => (value ?? "").trim().slice(0, max);
+
 interface DateResult {
   startDate: string | null;
   endDate: string | null;
@@ -62,9 +69,9 @@ export function normalizeExtracted(
   ctx: NormalizeContext,
   clientId: string,
 ): CandidateEvent {
-  const title = ex.title.trim();
+  const title = cap(ex.title, MAX_TITLE);
   const dates = resolveDates(ex);
-  const allDay = ex.allDay === true ? true : ex.allDay;
+  const allDay = ex.allDay;
   const startTime = allDay === true ? null : normalizeTime(ex.startTime);
   const endTime = allDay === true ? null : normalizeTime(ex.endTime);
   const grades = ex.allGrades ? [...ALL_GRADES] : cleanGrades(ex.grades);
@@ -93,8 +100,8 @@ export function normalizeExtracted(
     allDay,
     grades,
     eventTypeId,
-    location: ex.location?.trim() ?? "",
-    description: ex.description?.trim() ?? "",
+    location: cap(ex.location, MAX_LOCATION),
+    description: cap(ex.description, MAX_DESCRIPTION),
     warnings,
   };
 }
