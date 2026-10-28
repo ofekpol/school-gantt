@@ -1,8 +1,11 @@
 import "server-only";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import { supabaseAdmin } from "@/lib/db/supabase-admin";
-import { editorScopes, schools, staffUsers } from "@/lib/db/schema";
+import { editorScopes, icalSubscriptions, schools, staffUsers } from "@/lib/db/schema";
+
+// ~100 years; GoTrue has no "forever" ban.
+const DEACTIVATED_BAN_DURATION = "876000h";
 
 export interface StaffUserRecord {
   id: string;
@@ -211,7 +214,7 @@ export async function updateStaffUser(
 ): Promise<void> {
   await withSchool(schoolId, async (tx) => {
     // RLS hides other schools' staff. Bail before the scope rewrite and the
-    // service-role signOut below, which RLS does not protect.
+    // service-role ban below, which RLS does not protect.
     const [target] = await tx
       .select({ id: staffUsers.id })
       .from(staffUsers)
@@ -265,11 +268,21 @@ export async function updateStaffUser(
         if (all.length > 0) await tx.insert(editorScopes).values(all);
       }
     }
-  });
 
-  if (fields.deactivated) {
-    await supabaseAdmin.auth.admin.signOut(staffUserId, "global");
-  }
+    if (fields.deactivated) {
+      await tx
+        .update(icalSubscriptions)
+        .set({ revokedAt: new Date() })
+        .where(and(eq(icalSubscriptions.staffUserId, staffUserId), isNull(icalSubscriptions.revokedAt)));
+    }
+    // Last step inside the tx, so a failed ban rolls the status change back.
+    if (fields.deactivated !== undefined) {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(staffUserId, {
+        ban_duration: fields.deactivated ? DEACTIVATED_BAN_DURATION : "none",
+      });
+      if (error) throw new Error(`ban update for ${staffUserId}: ${error.message}`);
+    }
+  });
 }
 
 export async function getStaffUserByEmail(
@@ -286,26 +299,6 @@ export async function getStaffUserByEmail(
     .where(eq(staffUsers.email, email))
     .limit(1);
   return row ?? null;
-}
-
-export async function getStaffUserRecordByEmail(email: string): Promise<StaffUserRecord | null> {
-  const [row] = await db
-    .select({
-      id: staffUsers.id,
-      schoolId: staffUsers.schoolId,
-      schoolSlug: schools.slug,
-      role: staffUsers.role,
-      status: staffUsers.status,
-      email: staffUsers.email,
-      fullName: staffUsers.fullName,
-      mustChangePassword: staffUsers.mustChangePassword,
-    })
-    .from(staffUsers)
-    .leftJoin(schools, eq(staffUsers.schoolId, schools.id))
-    .where(eq(staffUsers.email, email))
-    .limit(1);
-  if (!row) return null;
-  return row as StaffUserRecord;
 }
 
 export async function incrementLoginAttempts(

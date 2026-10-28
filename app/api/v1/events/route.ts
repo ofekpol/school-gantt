@@ -20,6 +20,7 @@ export async function GET(): Promise<NextResponse> {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (user.status !== "active") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const events = await getEditorDashboardEvents(user.schoolId!, user.id);
   return NextResponse.json({ events }, { status: 200 });
 }

@@ -12,9 +12,11 @@ vi.mock("@/lib/auth/session", () => ({
   getStaffUser: (...args: unknown[]) => getStaffUserMock(...args),
 }));
 
-const signOutMock = vi.fn();
+const updateUserByIdMock = vi.fn(async () => ({ data: {}, error: null }));
 vi.mock("@/lib/db/supabase-admin", () => ({
-  supabaseAdmin: { auth: { admin: { signOut: (...args: unknown[]) => signOutMock(...args) } } },
+  supabaseAdmin: {
+    auth: { admin: { updateUserById: (...args: unknown[]) => updateUserByIdMock(...(args as [])) } },
+  },
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,7 +39,7 @@ describe.skipIf(skipIfNoTestDb)("XSCHOOL-STAFF: updateStaffUser across schools",
     });
   });
 
-  beforeEach(() => signOutMock.mockReset());
+  beforeEach(() => updateUserByIdMock.mockClear());
 
   async function rowA() {
     const [row] = await testDb!.select().from(schema.staffUsers).where(eq(schema.staffUsers.id, editorA));
@@ -65,17 +67,17 @@ describe.skipIf(skipIfNoTestDb)("XSCHOOL-STAFF: updateStaffUser across schools",
     expect((await scopesA()).map((s) => s.value)).toEqual(["9"]);
   });
 
-  it("deactivate from school B never calls signOut", async () => {
+  it("deactivate from school B never bans the user", async () => {
     await expect(updateStaffUser(testSchoolB, editorA, { deactivated: true })).rejects.toMatchObject({
       status: 404,
     });
-    expect(signOutMock).not.toHaveBeenCalled();
+    expect(updateUserByIdMock).not.toHaveBeenCalled();
     expect((await rowA()).status).toBe("active");
   });
 
-  it("deactivate from school A still signs the user out", async () => {
+  it("deactivate from school A bans the user", async () => {
     await updateStaffUser(testSchoolA, editorA, { deactivated: true });
-    expect(signOutMock).toHaveBeenCalledWith(editorA, "global");
+    expect(updateUserByIdMock).toHaveBeenCalledWith(editorA, { ban_duration: "876000h" });
     await updateStaffUser(testSchoolA, editorA, { deactivated: false });
   });
 });

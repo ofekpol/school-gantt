@@ -45,8 +45,11 @@ const INPUT = {
 const fakeTx = { insert: () => ({ values: async () => undefined }) };
 
 function usersPage(count: number, emailAt?: { index: number; email: string; id: string }) {
-  const users = Array.from({ length: count }, (_, i) => ({ id: `u${i}`, email: `u${i}@x.test` }));
-  if (emailAt) users[emailAt.index] = { id: emailAt.id, email: emailAt.email };
+  const users: Array<{ id: string; email: string; email_confirmed_at?: string | null }> = Array.from(
+    { length: count },
+    (_, i) => ({ id: `u${i}`, email: `u${i}@x.test` }),
+  );
+  if (emailAt) users[emailAt.index] = { id: emailAt.id, email: emailAt.email, email_confirmed_at: "2026-01-01T00:00:00Z" };
   return { data: { users }, error: null };
 }
 
@@ -70,6 +73,19 @@ describe("provisionSchool", () => {
     expect(result.adminAuthUserId).toBe("existing-id");
     expect(createUserMock).not.toHaveBeenCalled();
     expect(listUsersMock).toHaveBeenNthCalledWith(2, { page: 2, perPage: 200 });
+  });
+
+  it("refuses to reuse an unconfirmed auth user someone may have pre-registered", async () => {
+    listUsersMock.mockResolvedValueOnce({
+      data: { users: [{ id: "squatter", email: INPUT.adminEmail, email_confirmed_at: null }] },
+      error: null,
+    });
+
+    await expect(provisionSchool(INPUT, "https://app.test")).rejects.toThrow(/unconfirmed/);
+
+    expect(createUserMock).not.toHaveBeenCalled();
+    expect(generateLinkMock).not.toHaveBeenCalled();
+    expect(deleteWhereMock).toHaveBeenCalled();
   });
 
   it("creates the auth user when no page has the email", async () => {

@@ -16,7 +16,6 @@ const createFromInviteMock = vi.fn();
 vi.mock("@/lib/db/staff", () => ({
   getStaffUserByAuthId: (...args: unknown[]) => getStaffByAuthIdMock(...args),
   getStaffUserByEmail: (...args: unknown[]) => getStaffMock(...args),
-  getStaffUserRecordByEmail: async () => null,
   createStaffUserFromInvite: (...args: unknown[]) => createFromInviteMock(...args),
   incrementLoginAttempts: (...args: unknown[]) => incrementLoginAttemptsMock(...args),
   resetLoginAttempts: (...args: unknown[]) => resetLoginAttemptsMock(...args),
