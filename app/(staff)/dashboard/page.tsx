@@ -92,11 +92,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   return (
     <main className="pb-12">
-      <div className="flex items-center justify-between px-6 pt-6">
+      <div className="px-6 pt-6">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
-        {user.role !== "viewer" && isAiEnabled() && (
-          <SmartAdderButton eventTypes={eventTypeList} allowedGrades={allowedGrades} />
-        )}
       </div>
 
       {school && (
@@ -112,6 +109,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           gradeColors={gradeColors}
           canCreateEvents={user.role !== "viewer"}
           initialEventId={typeof sp.event === "string" ? sp.event : undefined}
+          createActions={
+            isAiEnabled() ? (
+              <SmartAdderButton eventTypes={eventTypeList} allowedGrades={allowedGrades} />
+            ) : undefined
+          }
         />
       )}
 
