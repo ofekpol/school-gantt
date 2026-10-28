@@ -89,7 +89,8 @@ function reportResult(flags: ParsedFlags, result: ProvisionSchoolResult): void {
   console.log("");
   console.log("School provisioned successfully:");
   console.log(`  schoolId         = ${result.schoolId}`);
-  console.log(`  public URL       = ${appUrl}/${flags.input.slug}`);
+  console.log(`  staff sign-up    = ${appUrl}/auth/login?school=${result.accessToken}`);
+  console.log(`  guest view       = ${appUrl}/schedule?school=${result.accessToken}`);
   console.log(`  admin email      = ${flags.input.adminEmail}`);
   console.log(`  admin authId     = ${result.adminAuthUserId}`);
   console.log(`  magic link       = ${result.magicLinkUrl}`);

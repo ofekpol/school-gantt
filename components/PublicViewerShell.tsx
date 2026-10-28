@@ -38,7 +38,7 @@ const PublicAgendaView = dynamic(() =>
 );
 
 interface Props {
-  schoolSlug: string;
+  accessToken: string;
   schoolName: string;
   initialView: PublicViewerView;
   initialParams: PublicViewerParams;
@@ -50,7 +50,7 @@ interface Props {
 }
 
 export function PublicViewerShell({
-  schoolSlug,
+  accessToken,
   schoolName,
   initialView,
   initialParams,
@@ -65,7 +65,7 @@ export function PublicViewerShell({
   const agenda = useTranslations("agenda");
   const [view, setViewState] = useState(initialView);
   const [params, setParamsState] = useState(initialParams);
-  const events = usePublicViewerEvents({ schoolSlug, initialEvents, initialEventsSignature });
+  const events = usePublicViewerEvents({ accessToken, initialEvents, initialEventsSignature });
   const [printMonthKey, setPrintMonthKey] = useState(() =>
     monthKeyForDate(parseWeekParam(initialParams.week ?? undefined)),
   );
@@ -98,22 +98,22 @@ export function PublicViewerShell({
 
   useEffect(() => {
     const syncFromLocation = () => {
-      setViewState(viewFromPath(window.location.pathname, schoolSlug));
+      setViewState(viewFromPath(window.location.pathname, accessToken));
       setParamsState(parsePublicViewerParams(new URLSearchParams(window.location.search)));
     };
     window.addEventListener("popstate", syncFromLocation);
     return () => window.removeEventListener("popstate", syncFromLocation);
-  }, [schoolSlug]);
+  }, [accessToken]);
 
   const updateUrl = useCallback(
     (nextView: PublicViewerView, nextParams: PublicViewerParams, mode: "push" | "replace") => {
       const query = serializePublicViewerParams(nextParams);
-      const path = pathForView(schoolSlug, nextView);
+      const path = pathForView(accessToken, nextView);
       const nextUrl = query ? `${path}?${query}` : path;
       if (mode === "push") window.history.pushState(null, "", nextUrl);
       else window.history.replaceState(null, "", nextUrl);
     },
-    [schoolSlug],
+    [accessToken],
   );
 
   const setView = useCallback(
@@ -186,7 +186,7 @@ export function PublicViewerShell({
           onChange={setView}
           action={
             <ExportToGoogleCalendarButton
-              schoolSlug={schoolSlug}
+              accessToken={accessToken}
               allGrades={ALL_GRADES}
               eventTypes={eventTypesForFilter}
               defaultGrades={params.grades}
@@ -291,15 +291,15 @@ type IdleCallbackWindow = Window & {
   requestIdleCallback?: (callback: IdleRequestCallback) => number;
 };
 
-function pathForView(schoolSlug: string, view: PublicViewerView): string {
-  if (view === "calendar") return `/${schoolSlug}/calendar`;
-  if (view === "agenda") return `/${schoolSlug}/agenda`;
-  return `/${schoolSlug}`;
+function pathForView(accessToken: string, view: PublicViewerView): string {
+  if (view === "calendar") return `/${accessToken}/calendar`;
+  if (view === "agenda") return `/${accessToken}/agenda`;
+  return `/${accessToken}`;
 }
 
-function viewFromPath(pathname: string, schoolSlug: string): PublicViewerView {
-  if (pathname === `/${schoolSlug}/calendar`) return "calendar";
-  if (pathname === `/${schoolSlug}/agenda`) return "agenda";
+function viewFromPath(pathname: string, accessToken: string): PublicViewerView {
+  if (pathname === `/${accessToken}/calendar`) return "calendar";
+  if (pathname === `/${accessToken}/agenda`) return "agenda";
   return "gantt";
 }
 

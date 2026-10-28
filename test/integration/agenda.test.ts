@@ -6,7 +6,6 @@ import { publishEvent } from "@/lib/events/approval";
 import { createDraft, updateDraft } from "@/lib/events/crud";
 import { getAgendaForSchool } from "@/lib/views/agenda";
 import { groupByWeek } from "@/lib/views/agenda-model";
-import { getSchoolBySlug } from "@/lib/db/schools";
 import { testDb, skipIfNoTestDb, shouldSkip, testSchoolA, testSchoolB } from "./setup";
 
 /**
@@ -77,18 +76,6 @@ async function makeApprovedEvent(opts: {
   await publishEvent(opts.schoolId, id, opts.editorId);
   return id;
 }
-
-describe.skipIf(skipIfNoTestDb)("AGENDA-01: getSchoolBySlug resolves test schools", () => {
-  it("returns the row for 'test-a'", async () => {
-    const row = await getSchoolBySlug("test-a");
-    expect(row?.id).toBe(testSchoolA);
-  });
-
-  it("returns null for an unknown slug", async () => {
-    const row = await getSchoolBySlug("does-not-exist-zzz");
-    expect(row).toBeNull();
-  });
-});
 
 describe.skipIf(skipIfNoTestDb)("AGENDA-02: only approved, non-deleted events appear", () => {
   let editorId: string;

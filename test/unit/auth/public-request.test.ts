@@ -9,6 +9,8 @@ describe("shouldBypassAuthRefresh", () => {
   it("keeps the root and staff routes behind middleware authentication", () => {
     expect(shouldBypassAuthRefresh("/")).toBe(false);
     expect(shouldBypassAuthRefresh("/dashboard")).toBe(false);
+    expect(shouldBypassAuthRefresh("/platform")).toBe(false);
+    expect(shouldBypassAuthRefresh("/platform/schools")).toBe(false);
   });
 
   it("bypasses middleware auth refresh for the read-only public schedule", () => {

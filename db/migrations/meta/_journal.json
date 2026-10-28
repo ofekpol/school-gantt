@@ -120,6 +120,20 @@
       "when": 1791590580000,
       "tag": "0016_pending_registrations_school",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791590640000,
+      "tag": "0017_school_access_token",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791590700000,
+      "tag": "0018_platform_admins",
+      "breakpoints": true
     }
   ]
 }

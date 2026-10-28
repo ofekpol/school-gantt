@@ -1,5 +1,6 @@
 import { chromium, type FullConfig } from "@playwright/test";
 import path from "path";
+import { Pool } from "pg";
 
 /**
  * Playwright global setup — creates persisted auth state files for DB-dependent tests.
@@ -14,6 +15,8 @@ import path from "path";
  */
 async function globalSetup(config: FullConfig) {
   if (process.env.ADMIN_E2E !== "1") return;
+
+  await clearForcedPasswordChange();
 
   const baseURL = config.projects[0].use.baseURL ?? "http://localhost:3000";
   const authDir = path.join(process.cwd(), "test/e2e/.auth");
@@ -46,6 +49,21 @@ async function globalSetup(config: FullConfig) {
     });
   } finally {
     await browser.close();
+  }
+}
+
+/**
+ * The demo seed forces a password change on first login, and the API answers 403
+ * until it happens. The suite logs in with the seed password as-is, so clear the flag.
+ */
+async function clearForcedPasswordChange(): Promise<void> {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  try {
+    await pool.query(
+      "UPDATE staff_users SET must_change_password = false WHERE email LIKE '%@demo-school.test'",
+    );
+  } finally {
+    await pool.end();
   }
 }
 
