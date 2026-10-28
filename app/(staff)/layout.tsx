@@ -7,6 +7,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { StaffEntryLoading } from "@/components/staff/StaffEntryLoading";
 import { buildNavLinks, getCurrentPath } from "@/lib/nav";
+import { StaffChatPanel } from "@/components/ai/StaffChatPanel";
+import { isAiEnabled } from "@/lib/ai/model";
 import { Suspense, type ReactNode } from "react";
 
 /**
@@ -52,6 +54,7 @@ async function StaffLayoutContent({ children }: { children: ReactNode }) {
         }
       />
       {children}
+      {isAiEnabled() && <StaffChatPanel />}
     </>
   );
 }

@@ -37,12 +37,12 @@
     "dashboard": "Dashboard",
     "staff": "Staff",
     "eventTypes": "Event Types",
-    "platform": "Schools",
     "profile": "Profile",
     "logout": "Sign out",
     "gantt": "Gantt",
     "agenda": "Agenda",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "platform": "Schools"
   },
   "grades": {
     "label_7": "ז",
@@ -89,14 +89,6 @@
   },
   "admin": {
     "staff": {
-      "schoolLinks": {
-        "title": "School links",
-        "hint": "Share only with your school community. Anyone with a link sees this school's calendar only; sign-ups through it wait for your approval.",
-        "signup": "Staff sign-up",
-        "guest": "Guest view",
-        "copy": "Copy",
-        "copied": "Copied"
-      },
       "title": "Staff Management",
       "subtitle": "Search, filter, and manage staff permissions in one place.",
       "activeStaff": "Active Staff",
@@ -169,7 +161,15 @@
       "revokeInvite": "Revoke",
       "revokeConfirm": "Revoke this invite?",
       "inviteRevoked": "Invite revoked",
-      "revokeError": "Failed to revoke invite"
+      "revokeError": "Failed to revoke invite",
+      "schoolLinks": {
+        "title": "School links",
+        "hint": "Share only with your school community. Anyone with a link sees this school's calendar only; sign-ups through it wait for your approval.",
+        "signup": "Staff sign-up",
+        "guest": "Guest view",
+        "copy": "Copy",
+        "copied": "Copied"
+      }
     },
     "eventTypes": {
       "title": "Event Types",
@@ -367,6 +367,9 @@
     "weekly": "Weekly",
     "monthly": "Monthly",
     "login": "Log in",
+    "schoolPicker": {
+      "title": "Choose a school"
+    },
     "linkRequired": {
       "title": "School link required",
       "body": "To view the event calendar, open the link your school sent you."
@@ -447,6 +450,79 @@
       "selectType": "Select event type",
       "moreOptions": "More options",
       "responsiblePlaceholder": "Responsible person, if needed"
+    }
+  },
+  "aiAdder": {
+    "open": "Smart add",
+    "title": "Smart event adder",
+    "close": "Close",
+    "inputLabel": "Paste or type the events",
+    "inputPlaceholder": "e.g. Grade 8 annual trip on 12/11/26 from 8:00 to 16:00",
+    "charCount": "{count}/{max} characters",
+    "detect": "Detect events",
+    "detecting": "Detecting…",
+    "found": "Found {count} events. Check them, edit if needed, and tick the ones to publish:",
+    "publish": "Publish {count} events",
+    "backToText": "Back to text",
+    "include": "Include '{title}' when publishing",
+    "edit": "Edit",
+    "save": "Save",
+    "cancelEdit": "Discard changes",
+    "untitled": "(untitled)",
+    "noDate": "No date",
+    "noTime": "No times",
+    "dateHint": "{date} – year missing",
+    "openExisting": "Open in calendar",
+    "fields": {
+      "title": "Title",
+      "type": "Event type",
+      "chooseType": "Choose a type",
+      "date": "Date",
+      "endDate": "End date",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "allDay": "All day",
+      "multiDay": "Several days",
+      "grades": "Grades",
+      "location": "Location",
+      "description": "Description",
+      "optional": "(optional)"
+    },
+    "warnings": {
+      "missing_title": "The event has no title",
+      "missing_date": "No date given – choose a date",
+      "invalid_date": "The detected date is not valid – choose a date",
+      "missing_year": "No year given – complete the date",
+      "missing_grades": "No grades given – choose grades",
+      "missing_time": "No times given – choose times or 'All day'",
+      "uncertain_type": "Unclear event type – choose a type",
+      "recurring": "Looks like a repeating event – add each occurrence separately",
+      "grade_out_of_scope": "You don't have permission for grades {grades} – they will be removed unless fixed",
+      "duplicate": "'{title}' already exists on {date} – you can edit it from the calendar",
+      "overlap": "Overlaps '{title}' ({grades}, {time})"
+    },
+    "errors": {
+      "no_events": "No events found in the text",
+      "quota_exceeded": "You reached the daily limit ({limit} requests). Try again tomorrow",
+      "ai_unavailable": "The AI service is unavailable right now. Try again in a moment",
+      "ai_disabled": "The AI service is not configured",
+      "invalid_input": "Enter text of up to 3000 characters",
+      "publish_failed": "Publishing failed – check the details and try again"
+    }
+  },
+  "aiChat": {
+    "open": "Open calendar assistant",
+    "close": "Close",
+    "title": "Calendar assistant",
+    "placeholder": "Ask about events, dates and grades…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "empty": "For example: what's planned for grade 8 next week?",
+    "errors": {
+      "quota_exceeded": "You reached the daily limit ({limit} messages). Try again tomorrow",
+      "ai_unavailable": "The AI service is unavailable right now. Try again in a moment",
+      "ai_disabled": "The AI service is not configured",
+      "invalid_input": "Write a question of up to 500 characters"
     }
   },
   "platform": {
