@@ -5,7 +5,6 @@ import {
   createStaffUserFromInvite,
   getStaffUserByAuthId,
   getStaffUserByEmail,
-  getStaffUserRecordByEmail,
   incrementLoginAttempts,
   resetLoginAttempts,
 } from "@/lib/db/staff";
@@ -53,6 +52,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
+  // Supabase checks the ban before the password, so this is not a failed attempt.
+  if (error?.code === "user_banned") {
+    return NextResponse.json(
+      { status: "deactivated", redirectTo: "/auth/deactivated" },
+      { status: 200 },
+    );
+  }
+
   if (error || !data.user) {
     if (staffUser) {
       await incrementLoginAttempts(staffUser.id, staffUser.loginAttempts);
@@ -74,11 +81,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     await resetLoginAttempts(staffUser.id);
   }
 
-  // Fall back to email-based lookup so users who authenticated via a different
-  // Supabase identity (e.g. email/password vs Google OAuth) still reach the dashboard.
-  let resolvedUser =
-    authedStaffUser ??
-    (data.user.email ? await getStaffUserRecordByEmail(data.user.email) : null);
+  // No email fallback: a staff row is bound to its auth id only.
+  let resolvedUser = authedStaffUser;
 
   // If still no staff record, check for a pending invite in user_metadata.
   // This handles the case where /auth/confirm was hit by an email scanner

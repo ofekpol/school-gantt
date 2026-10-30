@@ -16,7 +16,6 @@ const createFromInviteMock = vi.fn();
 vi.mock("@/lib/db/staff", () => ({
   getStaffUserByAuthId: (...args: unknown[]) => getStaffByAuthIdMock(...args),
   getStaffUserByEmail: (...args: unknown[]) => getStaffMock(...args),
-  getStaffUserRecordByEmail: async () => null,
   createStaffUserFromInvite: (...args: unknown[]) => createFromInviteMock(...args),
   incrementLoginAttempts: (...args: unknown[]) => incrementLoginAttemptsMock(...args),
   resetLoginAttempts: (...args: unknown[]) => resetLoginAttemptsMock(...args),
@@ -100,6 +99,25 @@ describe("POST /api/v1/auth/signin", () => {
     const body = await res.json();
     expect(body.error).toBe("invalid_credentials");
     expect(body.attemptsRemaining).toBe(7); // 10 - (2+1)
+  });
+
+  it("sends a banned user to the deactivated page without counting a failed attempt", async () => {
+    getStaffMock.mockResolvedValue({
+      id: "u1",
+      status: "deactivated",
+      loginAttempts: 2,
+      lockedUntil: null,
+    });
+    signInMock.mockResolvedValue({
+      data: { user: null },
+      error: { code: "user_banned", message: "User is banned" },
+    });
+
+    const res = await POST(makeRequest({ email: "a@b.com", password: "password123" }));
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).redirectTo).toBe("/auth/deactivated");
+    expect(incrementLoginAttemptsMock).not.toHaveBeenCalled();
   });
 
   it("returns 200 on successful staff sign in and redirects to dashboard", async () => {

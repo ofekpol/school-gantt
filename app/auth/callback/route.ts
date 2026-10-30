@@ -16,6 +16,11 @@ export async function GET(request: NextRequest) {
   const inviteToken = searchParams.get("invite_token");
   const next = safeRedirectPath(searchParams.get("next"), "/dashboard");
 
+  // Supabase rejects a banned Google sign-in before issuing a code.
+  if (searchParams.get("error_code") === "user_banned") {
+    return NextResponse.redirect(new URL("/auth/deactivated", origin));
+  }
+
   if (!code) {
     return NextResponse.redirect(new URL("/auth/login", origin));
   }

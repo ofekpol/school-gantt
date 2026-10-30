@@ -66,7 +66,9 @@ async function insertDefaultEventTypes(tx: Tx, schoolId: string): Promise<void> 
 const AUTH_USERS_PER_PAGE = 200;
 
 /** Walk every listUsers page; the Auth admin API has no lookup-by-email. */
-async function findAuthUserIdByEmail(email: string): Promise<string | null> {
+async function findAuthUserByEmail(
+  email: string,
+): Promise<{ id: string; email_confirmed_at?: string | null } | null> {
   for (let page = 1; ; page++) {
     const { data, error } = await supabaseAdmin.auth.admin.listUsers({
       page,
@@ -74,15 +76,24 @@ async function findAuthUserIdByEmail(email: string): Promise<string | null> {
     });
     if (error) throw new Error(`listUsers: ${error.message}`);
     const found = data.users.find((u) => u.email === email);
-    if (found) return found.id;
+    if (found) return found;
     if (data.users.length < AUTH_USERS_PER_PAGE) return null;
   }
 }
 
 /** Resolve a Supabase Auth user by email; create if absent. No password — magic-link only. */
 async function ensureAuthUserPasswordless(email: string): Promise<string> {
-  const existingId = await findAuthUserIdByEmail(email);
-  if (existingId) return existingId;
+  const existing = await findAuthUserByEmail(email);
+  if (existing) {
+    // Anyone can sign up with an email they don't own; until it is confirmed, its
+    // password may be a stranger's, and our magic link would confirm it for them.
+    if (!existing.email_confirmed_at) {
+      throw new Error(
+        `auth user ${email} exists but is unconfirmed — delete it in Supabase Auth, then retry`,
+      );
+    }
+    return existing.id;
+  }
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,

@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getStaffUserByAuthId, getStaffUserRecordByEmail, type StaffUserRecord } from "@/lib/db/staff";
+import { getStaffUserByAuthId, type StaffUserRecord } from "@/lib/db/staff";
 
 /**
  * Returns the authenticated Supabase auth user or null.
@@ -26,12 +26,8 @@ export type { StaffUserRecord };
 async function resolveStaffUser(): Promise<StaffUserRecord | null> {
   const authUser = await getSession();
   if (!authUser) return null;
-  const byId = await getStaffUserByAuthId(authUser.id);
-  if (byId) return byId;
-  // Fallback: look up by email. Handles the case where a user authenticates with a
-  // different Supabase identity (e.g. email/password) than the one used when their
-  // staff_users row was created (e.g. via Google OAuth with a different UUID).
-  return authUser.email ? getStaffUserRecordByEmail(authUser.email) : null;
+  // Bind by auth id only: an email match would let any account with that email inherit the row.
+  return getStaffUserByAuthId(authUser.id);
 }
 
 /**

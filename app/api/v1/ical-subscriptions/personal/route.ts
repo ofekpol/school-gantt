@@ -8,7 +8,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!user.schoolId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (user.mustChangePassword) {
+  if (user.status !== "active" || user.mustChangePassword) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
