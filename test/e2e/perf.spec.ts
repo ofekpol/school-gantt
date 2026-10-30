@@ -72,7 +72,7 @@ test("PERF: iCal feed responds under 500 ms", async () => {
   if (!process.env.PERF_TOKEN) {
     test.skip(true, "PERF_TOKEN unset — set to a valid iCal token");
   }
-  const api = await request.newContext({ baseURL: "http://localhost:3000" });
+  const api = await request.newContext({ baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000" });
   const t0 = Date.now();
   const res = await api.get(`/ical/${process.env.PERF_TOKEN}`);
   const elapsed = Date.now() - t0;
