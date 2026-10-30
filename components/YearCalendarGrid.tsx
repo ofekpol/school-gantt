@@ -215,7 +215,7 @@ export function YearCalendarGrid({
                             ? "bg-blue-600 text-white"
                             : day.inMonth
                               ? "text-neutral-700"
-                              : "text-neutral-400"
+                              : "text-neutral-500"
                         }`}
                       >
                         {day.dayOfMonth}
