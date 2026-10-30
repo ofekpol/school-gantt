@@ -19,6 +19,7 @@ async function globalSetup(config: FullConfig) {
   await clearForcedPasswordChange();
 
   const baseURL = config.projects[0].use.baseURL ?? "http://localhost:3000";
+  const extraHTTPHeaders = config.projects[0].use.extraHTTPHeaders;
   const authDir = path.join(process.cwd(), "test/e2e/.auth");
 
   const browser = await chromium.launch();
@@ -27,6 +28,7 @@ async function globalSetup(config: FullConfig) {
     await saveAuthState({
       browser,
       baseURL,
+      extraHTTPHeaders,
       email: "admin@demo-school.test",
       password: "ChangeMe123!",
       outputPath: path.join(authDir, "admin.json"),
@@ -35,6 +37,7 @@ async function globalSetup(config: FullConfig) {
     await saveAuthState({
       browser,
       baseURL,
+      extraHTTPHeaders,
       email: "grade10@demo-school.test",
       password: "ChangeMe123!",
       outputPath: path.join(authDir, "editor.json"),
@@ -43,6 +46,7 @@ async function globalSetup(config: FullConfig) {
     await saveAuthState({
       browser,
       baseURL,
+      extraHTTPHeaders,
       email: "viewer@demo-school.test",
       password: "ChangeMe123!",
       outputPath: path.join(authDir, "viewer.json"),
@@ -70,6 +74,7 @@ async function clearForcedPasswordChange(): Promise<void> {
 interface SaveAuthOptions {
   browser: import("@playwright/test").Browser;
   baseURL: string;
+  extraHTTPHeaders?: Record<string, string>;
   email: string;
   password: string;
   outputPath: string;
@@ -83,11 +88,12 @@ interface SaveAuthOptions {
 async function saveAuthState({
   browser,
   baseURL,
+  extraHTTPHeaders,
   email,
   password,
   outputPath,
 }: SaveAuthOptions): Promise<string> {
-  const context = await browser.newContext({ baseURL });
+  const context = await browser.newContext({ baseURL, extraHTTPHeaders });
   try {
     // The Next dev server can return a transient 5xx while a route is still
     // compiling (manifest write race). Retry a few times before giving up.

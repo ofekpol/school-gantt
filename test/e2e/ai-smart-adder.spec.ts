@@ -61,6 +61,6 @@ test("AI-ADDER: editor fixes flagged cards and publishes two events", async ({ p
   await dialog.getByRole("button", { name: "פרסם 2 אירועים" }).click();
   await expect(dialog).toBeHidden();
   await page.goto("/dashboard?week=2030-11-10");
-  await expect(page.getByText(`E2E טיול ${stamp}`).first()).toBeVisible();
-  await expect(page.getByText(`E2E מבחן ${stamp}`).first()).toBeVisible();
+  await expect(page.getByText(`E2E טיול ${stamp}`).locator("visible=true").first()).toBeVisible();
+  await expect(page.getByText(`E2E מבחן ${stamp}`).locator("visible=true").first()).toBeVisible();
 });
