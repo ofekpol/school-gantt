@@ -101,6 +101,25 @@ describe("POST /api/v1/auth/signin", () => {
     expect(body.attemptsRemaining).toBe(7); // 10 - (2+1)
   });
 
+  it("sends a banned user to the deactivated page without counting a failed attempt", async () => {
+    getStaffMock.mockResolvedValue({
+      id: "u1",
+      status: "deactivated",
+      loginAttempts: 2,
+      lockedUntil: null,
+    });
+    signInMock.mockResolvedValue({
+      data: { user: null },
+      error: { code: "user_banned", message: "User is banned" },
+    });
+
+    const res = await POST(makeRequest({ email: "a@b.com", password: "password123" }));
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).redirectTo).toBe("/auth/deactivated");
+    expect(incrementLoginAttemptsMock).not.toHaveBeenCalled();
+  });
+
   it("returns 200 on successful staff sign in and redirects to dashboard", async () => {
     getStaffMock.mockResolvedValue({
       id: "u1",

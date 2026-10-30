@@ -50,6 +50,14 @@ describe("GET /auth/callback without an invite", () => {
     });
   });
 
+  it("sends a banned Google sign-in to the deactivated page", async () => {
+    const res = await GET(
+      new NextRequest("http://localhost/auth/callback?error=access_denied&error_code=user_banned"),
+    );
+    expect(res.headers.get("location")).toContain("/auth/deactivated");
+    expect(exchangeMock).not.toHaveBeenCalled();
+  });
+
   it("creates the pending registration in the school whose link token is in ?school=", async () => {
     resolveMock.mockResolvedValue("school-a-id");
     const res = await callback(`&school=${SCHOOL_TOKEN}`);

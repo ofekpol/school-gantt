@@ -2,10 +2,8 @@ import "server-only";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import { supabaseAdmin } from "@/lib/db/supabase-admin";
+import { DEACTIVATED_BAN_DURATION } from "@/lib/db/ban-deactivated";
 import { editorScopes, icalSubscriptions, schools, staffUsers } from "@/lib/db/schema";
-
-// ~100 years; GoTrue has no "forever" ban.
-const DEACTIVATED_BAN_DURATION = "876000h";
 
 export interface StaffUserRecord {
   id: string;

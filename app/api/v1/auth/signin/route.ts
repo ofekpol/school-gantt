@@ -52,6 +52,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
+  // Supabase checks the ban before the password, so this is not a failed attempt.
+  if (error?.code === "user_banned") {
+    return NextResponse.json(
+      { status: "deactivated", redirectTo: "/auth/deactivated" },
+      { status: 200 },
+    );
+  }
+
   if (error || !data.user) {
     if (staffUser) {
       await incrementLoginAttempts(staffUser.id, staffUser.loginAttempts);
