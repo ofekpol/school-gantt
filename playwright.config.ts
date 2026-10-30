@@ -4,6 +4,9 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 const needsAuth = !!process.env.DATABASE_URL;
+// Set to run against a deployment (e.g. staging) instead of a local dev server.
+const remoteBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
+const vercelBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 export default defineConfig({
   testDir: "./test/e2e",
@@ -16,17 +19,22 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   globalSetup: needsAuth ? "./test/e2e/global.setup.ts" : undefined,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: remoteBaseUrl ?? "http://localhost:3000",
     trace: "on-first-retry",
     locale: "he-IL",
+    extraHTTPHeaders: vercelBypassSecret
+      ? { "x-vercel-protection-bypass": vercelBypassSecret, "x-vercel-set-bypass-cookie": "true" }
+      : undefined,
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
-  webServer: {
-    command: "pnpm dev",
-    url: "http://localhost:3000",
-    timeout: 120_000,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: remoteBaseUrl
+    ? undefined
+    : {
+        command: "pnpm dev",
+        url: "http://localhost:3000",
+        timeout: 120_000,
+        reuseExistingServer: !process.env.CI,
+      },
 });

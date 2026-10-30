@@ -72,6 +72,16 @@ export const getSchoolById = cache(
   (id: string): Promise<PublicSchoolRecord | null> => findSchool(eq(schools.id, id)),
 );
 
+/** The school's active academic year id. `schools` isn't readable inside `withSchool` (0010 revokes it). */
+export async function getActiveAcademicYearId(schoolId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ yearId: schools.activeAcademicYearId })
+    .from(schools)
+    .where(eq(schools.id, schoolId))
+    .limit(1);
+  return row?.yearId ?? null;
+}
+
 /**
  * Every school with its secret link token, alphabetical by name.
  * Platform admins only (/platform/schools) — never expose to a school's users.

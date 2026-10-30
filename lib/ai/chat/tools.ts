@@ -3,8 +3,8 @@ import { tool } from "ai";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { withSchool } from "@/lib/db/client";
-import { academicYears, schools } from "@/lib/db/schema";
-import { getSchoolById } from "@/lib/db/schools";
+import { academicYears } from "@/lib/db/schema";
+import { getActiveAcademicYearId, getSchoolById } from "@/lib/db/schools";
 import { listEventTypes } from "@/lib/events/queries";
 import { getAgendaForSchool } from "@/lib/views/agenda";
 import type { AgendaItem } from "@/lib/views/agenda-model";
@@ -93,13 +93,13 @@ export async function countSchoolEvents(schoolId: string, input: CountInput) {
 
 /** School name and its active academic year, if one is set. */
 export async function getSchoolInfo(schoolId: string) {
-  const school = await getSchoolById(schoolId);
+  const [school, yearId] = await Promise.all([getSchoolById(schoolId), getActiveAcademicYearId(schoolId)]);
+  if (!yearId) return { name: school?.name ?? "", academicYear: null };
   const [year] = await withSchool(schoolId, (tx) =>
     tx
       .select({ label: academicYears.label, startDate: academicYears.startDate, endDate: academicYears.endDate })
-      .from(schools)
-      .innerJoin(academicYears, eq(academicYears.id, schools.activeAcademicYearId))
-      .where(eq(schools.id, schoolId))
+      .from(academicYears)
+      .where(eq(academicYears.id, yearId))
       .limit(1),
   );
   return { name: school?.name ?? "", academicYear: year ?? null };
