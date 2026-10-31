@@ -128,7 +128,7 @@ export function InviteForm({ eventTypes }: { eventTypes: EventTypeRow[] }) {
         <div className="flex flex-wrap items-center gap-2">
           <p className="break-all text-sm text-green-700">
             {t("inviteCreated")}: {url}
-            {emailSent && <span className="ml-2">· {t("emailSent")}</span>}
+            {emailSent && <span className="ms-2">· {t("emailSent")}</span>}
           </p>
           <Button
             type="button"
