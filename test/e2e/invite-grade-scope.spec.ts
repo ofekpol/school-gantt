@@ -175,13 +175,15 @@ test.describe("VIEWER: viewer staff account experience", () => {
       });
       const { id, version } = await createRes.json();
       approvedEventTitle = `E2E Viewer Test Event ${Date.now()}`;
+      // The agenda opens on the current week, so a later date can be a page away.
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 
       await adminCtx.patch(`/api/v1/events/${id}`, {
         data: {
           title: approvedEventTitle,
           grades: [10],
-          startAt: `${new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10)}T09:00:00.000Z`,
-          endAt: `${new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10)}T16:00:00.000Z`,
+          startAt: `${today}T00:00:00.000Z`,
+          endAt: `${today}T21:00:00.000Z`,
         },
         headers: { "if-match": String(version) },
       });
