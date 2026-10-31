@@ -54,8 +54,8 @@ test("APPROVAL-PRD14: editor publishes an event, public view shows it within 5 s
     const { id: eventId } = (await createRes.json()) as { id: string };
 
     const title = `Approval-E2E-${Date.now()}`;
-    // The agenda hides past events, so keep the date ahead of today.
-    const eventDate = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+    // The agenda opens on the current week and hides past events, so use today.
+    const eventDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
     const patchRes = await editorApi.patch(`/api/v1/events/${eventId}`, {
       data: {
         title,
