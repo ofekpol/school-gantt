@@ -82,7 +82,7 @@ export function AgendaList({ weeks, emptyLabel, mode = "week" }: Props) {
           </PeriodButton>
           <h2
             id={`agenda-period-${period.key}`}
-            className="min-w-36 text-center text-sm font-semibold text-neutral-500"
+            className="min-w-36 text-center text-sm font-semibold text-neutral-600"
           >
             {period.label}
           </h2>
