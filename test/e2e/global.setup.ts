@@ -1,5 +1,6 @@
 import { chromium, type FullConfig } from "@playwright/test";
 import path from "path";
+import { Pool } from "pg";
 
 /**
  * Playwright global setup — creates persisted auth state files for DB-dependent tests.
@@ -15,7 +16,10 @@ import path from "path";
 async function globalSetup(config: FullConfig) {
   if (process.env.ADMIN_E2E !== "1") return;
 
+  await clearForcedPasswordChange();
+
   const baseURL = config.projects[0].use.baseURL ?? "http://localhost:3000";
+  const extraHTTPHeaders = config.projects[0].use.extraHTTPHeaders;
   const authDir = path.join(process.cwd(), "test/e2e/.auth");
 
   const browser = await chromium.launch();
@@ -24,6 +28,7 @@ async function globalSetup(config: FullConfig) {
     await saveAuthState({
       browser,
       baseURL,
+      extraHTTPHeaders,
       email: "admin@demo-school.test",
       password: "ChangeMe123!",
       outputPath: path.join(authDir, "admin.json"),
@@ -32,6 +37,7 @@ async function globalSetup(config: FullConfig) {
     await saveAuthState({
       browser,
       baseURL,
+      extraHTTPHeaders,
       email: "grade10@demo-school.test",
       password: "ChangeMe123!",
       outputPath: path.join(authDir, "editor.json"),
@@ -40,6 +46,7 @@ async function globalSetup(config: FullConfig) {
     await saveAuthState({
       browser,
       baseURL,
+      extraHTTPHeaders,
       email: "viewer@demo-school.test",
       password: "ChangeMe123!",
       outputPath: path.join(authDir, "viewer.json"),
@@ -49,9 +56,25 @@ async function globalSetup(config: FullConfig) {
   }
 }
 
+/**
+ * The demo seed forces a password change on first login, and the API answers 403
+ * until it happens. The suite logs in with the seed password as-is, so clear the flag.
+ */
+async function clearForcedPasswordChange(): Promise<void> {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  try {
+    await pool.query(
+      "UPDATE staff_users SET must_change_password = false WHERE email LIKE '%@demo-school.test'",
+    );
+  } finally {
+    await pool.end();
+  }
+}
+
 interface SaveAuthOptions {
   browser: import("@playwright/test").Browser;
   baseURL: string;
+  extraHTTPHeaders?: Record<string, string>;
   email: string;
   password: string;
   outputPath: string;
@@ -65,11 +88,12 @@ interface SaveAuthOptions {
 async function saveAuthState({
   browser,
   baseURL,
+  extraHTTPHeaders,
   email,
   password,
   outputPath,
 }: SaveAuthOptions): Promise<string> {
-  const context = await browser.newContext({ baseURL });
+  const context = await browser.newContext({ baseURL, extraHTTPHeaders });
   try {
     // The Next dev server can return a transient 5xx while a route is still
     // compiling (manifest write race). Retry a few times before giving up.

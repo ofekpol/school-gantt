@@ -1,6 +1,5 @@
-import { notFound } from "next/navigation";
 import { ReadOnlyViewerShell } from "@/components/ReadOnlyViewerShell";
-import { listSchools } from "@/lib/db/schools";
+import { SchoolLinkRequired } from "@/components/public/SchoolLinkRequired";
 import { loadPublicViewerData } from "@/lib/views/public-viewer-data";
 import { parsePublicViewerParams } from "@/lib/views/public-viewer";
 
@@ -13,15 +12,13 @@ interface PageProps {
 
 export default async function ReadOnlySchedulePage({ searchParams }: PageProps) {
   const sp = await searchParams;
-  const [school] = await listSchools();
-  if (!school) notFound();
-
-  const data = await loadPublicViewerData(school.slug);
-  if (!data) notFound();
+  // `?school=` must be the school's secret link token; a slug or nothing → no school.
+  const data = await loadPublicViewerData(sp.school);
+  if (!data) return <SchoolLinkRequired />;
 
   return (
     <ReadOnlyViewerShell
-      schoolSlug={school.slug}
+      accessToken={data.school.accessToken}
       schoolName={data.school.name}
       initialParams={parsePublicViewerParams(toUrlSearchParams(sp))}
       year={data.year}

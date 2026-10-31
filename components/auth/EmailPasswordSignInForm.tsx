@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function EmailPasswordSignInForm() {
+export function EmailPasswordSignInForm({ school }: { school?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +19,7 @@ export function EmailPasswordSignInForm() {
       const res = await fetch("/api/v1/auth/signin", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, ...(school ? { school } : {}) }),
       });
       const data = await res.json();
 

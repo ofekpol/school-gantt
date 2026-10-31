@@ -54,3 +54,27 @@ export function jerusalemWallClockMs(instant: Date): number {
   const offsetMin = (Number(hh) * 60 + Number(mm)) * (sign === "-" ? -1 : 1);
   return instant.getTime() + (offsetMin || 0) * 60 * 1000;
 }
+
+const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: SCHOOL_TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** "YYYY-MM-DD" of `instant` on the Jerusalem calendar. */
+export function jerusalemDateString(instant: Date): string {
+  return dateFormatter.format(instant);
+}
+
+const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: SCHOOL_TIMEZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** "HH:MM" of `instant` on the Jerusalem clock. */
+export function jerusalemTimeString(instant: Date): string {
+  return timeFormatter.format(instant);
+}

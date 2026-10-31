@@ -16,7 +16,6 @@ const createFromInviteMock = vi.fn();
 vi.mock("@/lib/db/staff", () => ({
   getStaffUserByAuthId: (...args: unknown[]) => getStaffByAuthIdMock(...args),
   getStaffUserByEmail: (...args: unknown[]) => getStaffMock(...args),
-  getStaffUserRecordByEmail: async () => null,
   createStaffUserFromInvite: (...args: unknown[]) => createFromInviteMock(...args),
   incrementLoginAttempts: (...args: unknown[]) => incrementLoginAttemptsMock(...args),
   resetLoginAttempts: (...args: unknown[]) => resetLoginAttemptsMock(...args),
@@ -29,6 +28,16 @@ vi.mock("@/lib/db/invites", () => ({
   getInviteByToken: (...args: unknown[]) => getInviteMock(...args),
   markInviteUsed: (...args: unknown[]) => markInviteUsedMock(...args),
   updateInviteUsedBy: (...args: unknown[]) => updateInviteUsedByMock(...args),
+}));
+
+const assignSchoolMock = vi.fn();
+vi.mock("@/lib/db/pending", () => ({
+  assignPendingSchoolIfMissing: (...args: unknown[]) => assignSchoolMock(...args),
+}));
+
+const resolveSchoolMock = vi.fn();
+vi.mock("@/lib/db/schools", () => ({
+  resolveSchoolIdFromParam: (...args: unknown[]) => resolveSchoolMock(...args),
 }));
 
 import { POST } from "@/app/api/v1/auth/signin/route";
@@ -92,6 +101,25 @@ describe("POST /api/v1/auth/signin", () => {
     expect(body.attemptsRemaining).toBe(7); // 10 - (2+1)
   });
 
+  it("sends a banned user to the deactivated page without counting a failed attempt", async () => {
+    getStaffMock.mockResolvedValue({
+      id: "u1",
+      status: "deactivated",
+      loginAttempts: 2,
+      lockedUntil: null,
+    });
+    signInMock.mockResolvedValue({
+      data: { user: null },
+      error: { code: "user_banned", message: "User is banned" },
+    });
+
+    const res = await POST(makeRequest({ email: "a@b.com", password: "password123" }));
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).redirectTo).toBe("/auth/deactivated");
+    expect(incrementLoginAttemptsMock).not.toHaveBeenCalled();
+  });
+
   it("returns 200 on successful staff sign in and redirects to dashboard", async () => {
     getStaffMock.mockResolvedValue({
       id: "u1",
@@ -150,6 +178,33 @@ describe("POST /api/v1/auth/signin", () => {
 
     const res = await POST(makeRequest({ email: "ghost@b.com", password: "password123" }));
     expect(res.status).toBe(401);
+  });
+
+  it("returns /auth/pending when the user has no staff row", async () => {
+    getStaffMock.mockResolvedValue(null);
+    getStaffByAuthIdMock.mockResolvedValue(null);
+    signInMock.mockResolvedValue({
+      data: { user: { id: "auth-2", email: "fresh@b.com", user_metadata: {} } },
+      error: null,
+    });
+
+    const res = await POST(makeRequest({ email: "fresh@b.com", password: "password123" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).redirectTo).toBe("/auth/pending");
+  });
+
+  it("files a school-less pending registration under the school from the sign-in link", async () => {
+    getStaffMock.mockResolvedValue(null);
+    getStaffByAuthIdMock.mockResolvedValue(null);
+    signInMock.mockResolvedValue({
+      data: { user: { id: "auth-3", email: "late@b.com", user_metadata: {} } },
+      error: null,
+    });
+    resolveSchoolMock.mockResolvedValue("school-a-id");
+
+    await POST(makeRequest({ email: "late@b.com", password: "password123", school: "test-a" }));
+    expect(resolveSchoolMock).toHaveBeenCalledWith("test-a");
+    expect(assignSchoolMock).toHaveBeenCalledWith("auth-3", "school-a-id");
   });
 
   describe("invite fallback (auth user without staff row)", () => {

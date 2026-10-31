@@ -48,6 +48,11 @@ export const schools = pgTable("schools", {
   name: text().notNull(),
   locale: varchar({ length: 8 }).notNull().default("he"),
   timezone: varchar({ length: 64 }).notNull().default("Asia/Jerusalem"),
+  /** Secret school link token (migration 0017) — the only key to public views and `?school=` sign-ups. */
+  accessToken: text("access_token")
+    .notNull()
+    .unique("schools_access_token_key")
+    .default(sql`replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '')`),
   /** Nullable FK to academic_years; set after year is inserted to avoid circular. */
   activeAcademicYearId: uuid("active_academic_year_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -324,6 +329,8 @@ export const auditLog = pgTable(
 export const pendingRegistrations = pgTable("pending_registrations", {
   id: uuid().defaultRandom().primaryKey(),
   authUserId: uuid("auth_user_id").notNull().unique(),
+  // NULL = signed up without a school link; invisible to every admin.
+  schoolId: uuid("school_id").references(() => schools.id, { onDelete: "cascade" }),
   email: varchar({ length: 255 }).notNull().unique(),
   fullName: text("full_name").notNull().default(""),
   googleAvatarUrl: text("google_avatar_url"),
@@ -331,4 +338,10 @@ export const pendingRegistrations = pgTable("pending_registrations", {
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   reviewedBy: uuid("reviewed_by").references(() => staffUsers.id),
   reviewOutcome: varchar("review_outcome", { length: 16 }),
+});
+
+// Supabase Auth users allowed to provision schools (/platform/schools). Not tenant data.
+export const platformAdmins = pgTable("platform_admins", {
+  authUserId: uuid("auth_user_id").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

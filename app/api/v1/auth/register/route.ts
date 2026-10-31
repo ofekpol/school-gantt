@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { SchoolAccessTokenSchema } from "@/lib/validations/school";
 
 const RegisterSchema = z.object({
   email: z.string().email(),
   fullName: z.string().min(1),
   password: z.string().min(8),
   inviteToken: z.string().uuid().optional(),
+  // Secret school link token from `?school=`; a slug is rejected (422).
+  school: SchoolAccessTokenSchema.optional(),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -19,7 +22,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { email, fullName, password, inviteToken } = parsed.data;
+  const { email, fullName, password, inviteToken, school } = parsed.data;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
@@ -29,6 +32,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       data: {
         full_name: fullName,
         ...(inviteToken ? { invite_token: inviteToken } : {}),
+        // Read back in /auth/confirm to file the pending registration under this school.
+        ...(school ? { school } : {}),
       },
       emailRedirectTo: `${appUrl}/auth/confirm`,
     },

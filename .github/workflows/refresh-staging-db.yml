@@ -1,8 +1,8 @@
 name: Refresh staging DB
 
 on:
-  schedule:
-    - cron: "0 1 * * *" # ~03:00-04:00 Asia/Jerusalem
+  # Manual only: anything created on staging (e.g. a provisioned rehearsal school) survives
+  # until the next refresh, which replaces staging with prod's data (see OPERATIONS.md §7).
   workflow_dispatch:
 
 concurrency:

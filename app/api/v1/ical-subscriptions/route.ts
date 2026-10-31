@@ -9,6 +9,7 @@ import { ICalSubscriptionSchema } from "@/lib/validations/events";
 export async function GET(): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (user.status !== "active") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const rows = await listSubscriptionsForStaff(user.schoolId!, user.id);
   return NextResponse.json({ subscriptions: rows }, { status: 200 });
 }
@@ -16,7 +17,7 @@ export async function GET(): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await getStaffUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (user.mustChangePassword) {
+  if (user.status !== "active" || user.mustChangePassword) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

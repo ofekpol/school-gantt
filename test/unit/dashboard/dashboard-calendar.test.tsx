@@ -264,6 +264,54 @@ describe("DashboardCalendar canceled event dismissal", () => {
   });
 });
 
+describe("DashboardCalendar deep link", () => {
+  it("opens the event named by initialEventId on first render", () => {
+    const weeklyModel = buildWeeklyModel(
+      new Date(Date.UTC(2026, 4, 24)),
+      [],
+      allGrades,
+      new Date(Date.UTC(2026, 4, 25)),
+    );
+    render(
+      <DashboardCalendar
+        view="weekly"
+        weeklyModel={weeklyModel}
+        events={[
+          {
+            id: "evt-9",
+            title: "Deep link event",
+            startAt: "2026-05-25T08:00:00.000Z",
+            endAt: "2026-05-25T09:00:00.000Z",
+            allDay: false,
+            description: null,
+            location: null,
+            eventTypeId: "type-1",
+            eventTypeKey: "trip",
+            eventTypeLabelHe: "טיול",
+            eventTypeColor: "#dc2626",
+            eventTypeGlyph: "T",
+            grades: [7],
+            status: "approved",
+            isCanceled: false,
+            isUpdated: false,
+            canEdit: true,
+          },
+        ]}
+        calendarRange={{ label: "2026", startDate: "2026-01-01", endDate: "2026-12-31" }}
+        schoolName="Demo School"
+        eventTypes={[]}
+        allowedGrades={allGrades}
+        selectedGrades={[]}
+        gradeColors={DEFAULT_GRADE_COLORS}
+        initialEventId="evt-9"
+      />,
+    );
+
+    // One in the weekly row (mock), one in the open drawer.
+    expect(screen.getAllByText("Deep link event")).toHaveLength(2);
+  });
+});
+
 describe("DashboardCalendar month grid cost", () => {
   it("builds the month grid only once the monthly view is shown", async () => {
     const user = userEvent.setup();

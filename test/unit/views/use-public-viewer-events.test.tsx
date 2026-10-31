@@ -49,7 +49,7 @@ describe("usePublicViewerEvents", () => {
 
     const { result } = renderHook(() =>
       usePublicViewerEvents({
-        schoolSlug: "demo-school",
+        accessToken: "demo-school",
         initialEvents: [baseEvent],
         initialEventsSignature: "1:1:now",
       }),
@@ -72,7 +72,7 @@ describe("usePublicViewerEvents", () => {
 
     const { result } = renderHook(() =>
       usePublicViewerEvents({
-        schoolSlug: "demo-school",
+        accessToken: "demo-school",
         initialEvents: [baseEvent],
         initialEventsSignature: "1:1:now",
       }),

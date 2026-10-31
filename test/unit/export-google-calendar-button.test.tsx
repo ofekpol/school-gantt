@@ -105,7 +105,7 @@ const printCalendar: CalendarPrintOptions = {
 function renderButton(options: { printCalendar?: CalendarPrintOptions } = {}) {
   return render(
     <ExportToGoogleCalendarButton
-      schoolSlug="demo-school"
+      accessToken="demo-school"
       allGrades={[7, 8, 9]}
       eventTypes={[
         {
@@ -137,7 +137,7 @@ describe("ExportToGoogleCalendarButton", () => {
 
     render(
       <ExportToGoogleCalendarButton
-        schoolSlug="demo-school"
+        accessToken="demo-school"
         loadPrintCalendar={loadPrintCalendar}
       />,
     );

@@ -115,13 +115,13 @@ describe("approvePendingRegistration", () => {
 
 describe("rejectPendingRegistration", () => {
   it("deletes the auth account when the user never became staff", async () => {
-    await rejectPendingRegistration({ pendingId: PENDING, reviewedBy: APPROVER });
+    await rejectPendingRegistration({ pendingId: PENDING, schoolId: SCHOOL, reviewedBy: APPROVER });
     expect(deleteUserMock).toHaveBeenCalledWith(AUTH_USER);
   });
 
   it("does not delete the auth account of an existing staff member", async () => {
     getStaffUserByAuthIdMock.mockResolvedValue({ id: AUTH_USER, schoolId: OTHER_SCHOOL });
-    await rejectPendingRegistration({ pendingId: PENDING, reviewedBy: APPROVER });
+    await rejectPendingRegistration({ pendingId: PENDING, schoolId: SCHOOL, reviewedBy: APPROVER });
     expect(deleteUserMock).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { DEMO_SCHOOL_PATH } from "../../db/demo-school";
 
 /**
  * PRD §14 — Output views: "Filter state persists across views and is
@@ -15,7 +16,7 @@ test.skip(
 
 test("FILTERS-PRD14: grade filter round-trips through the URL across views", async ({ page }) => {
   test.setTimeout(60_000);
-  await page.goto("/demo-school/agenda");
+  await page.goto(`${DEMO_SCHOOL_PATH}/agenda`);
   // Grades render "all on" by default; clicking a pill toggles it OFF and
   // writes the remaining set to the URL as repeated `grades=` params.
   // Wait for FilterBar to hydrate. Under load the grade pills are present in
@@ -24,7 +25,7 @@ test("FILTERS-PRD14: grade filter round-trips through the URL across views", asy
   await expect(async () => {
     // Navigate back to clean URL on each retry.
     if (page.url().includes("grades=")) {
-      await page.goto("/demo-school/agenda");
+      await page.goto(`${DEMO_SCHOOL_PATH}/agenda`);
     }
     const tenBtn = page.getByRole("button", { name: "י", exact: true }).first();
     await tenBtn.waitFor({ state: "visible" });
@@ -38,7 +39,7 @@ test("FILTERS-PRD14: grade filter round-trips through the URL across views", asy
   // Switch to the Gantt locally — the deselected grade must survive without a
   // server navigation wait.
   await page.getByRole("button", { name: "גאנט" }).click();
-  await expect(page).toHaveURL(/\/demo-school(\?|$)/);
+  await expect(page).toHaveURL(new RegExp(`${DEMO_SCHOOL_PATH}([?]|$)`));
   const tenPill = page.getByRole("button", { name: "י", exact: true }).first();
   await expect(tenPill).toHaveAttribute("aria-pressed", "false");
 });

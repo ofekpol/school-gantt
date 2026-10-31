@@ -63,7 +63,7 @@ export function AgendaList({ weeks, emptyLabel, mode = "week" }: Props) {
 
   if (periods.length === 0) {
     return (
-      <p className="px-4 py-8 text-center text-neutral-500">{emptyLabel}</p>
+      <p className="px-4 py-8 text-center text-neutral-600">{emptyLabel}</p>
     );
   }
 
@@ -82,7 +82,7 @@ export function AgendaList({ weeks, emptyLabel, mode = "week" }: Props) {
           </PeriodButton>
           <h2
             id={`agenda-period-${period.key}`}
-            className="min-w-36 text-center text-sm font-semibold text-neutral-500"
+            className="min-w-36 text-center text-sm font-semibold text-neutral-600"
           >
             {period.label}
           </h2>

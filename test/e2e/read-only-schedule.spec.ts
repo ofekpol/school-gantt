@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { DEMO_SCHOOL_ACCESS_TOKEN, DEMO_SCHOOL_PATH } from "../../db/demo-school";
 
 /**
- * Read-only public schedule: /auth/login → /schedule → weekly/monthly only,
- * filters still work, "Log in" returns to /auth/login. No DB write needed —
- * uses the demo seed's single school, same as the other unauthenticated
- * public-viewer specs.
+ * Read-only public schedule: the demo school's link (/auth/login?school=<token>)
+ * → guest button → /schedule?school=<token> → weekly/monthly only, filters
+ * still work, "Log in" returns to /auth/login. No DB write needed — uses the
+ * demo seed's fixed link token.
  */
 test.skip(
   !process.env.DATABASE_URL,
@@ -12,10 +13,11 @@ test.skip(
 );
 
 test("READONLY: login screen links to a 2-tab read-only schedule with working filters", async ({ page }) => {
-  await page.goto("/auth/login");
+  await page.goto(`/auth/login?school=${DEMO_SCHOOL_ACCESS_TOKEN}`);
 
-  await page.getByRole("link", { name: "המשך כאורח (צפייה בלוח)" }).click();
-  await expect(page).toHaveURL(/\/schedule$/);
+  const guest = page.getByRole("link", { name: "המשך כאורח (צפייה בלוח)" });
+  await expect(guest).toHaveAttribute("href", `/schedule?school=${DEMO_SCHOOL_ACCESS_TOKEN}`);
+  await guest.click();
 
   // Exactly weekly + monthly tabs, no agenda.
   const weeklyTab = page.getByRole("button", { name: "שבועי" });
@@ -40,7 +42,7 @@ test("READONLY: login screen links to a 2-tab read-only schedule with working fi
   await expect(async () => {
     await monthlyTab.waitFor({ state: "visible" });
     await monthlyTab.click();
-    await expect(page).toHaveURL(/\/schedule$/, { timeout: 5_000 });
+    await expect(page).toHaveURL(new RegExp(`/schedule[?]school=${DEMO_SCHOOL_ACCESS_TOKEN}$`), { timeout: 5_000 });
     // YearCalendarGrid renders navigation buttons with these Hebrew labels.
     await expect(page.getByRole("button", { name: "חודש קודם" })).toBeVisible();
   }).toPass({ timeout: 20_000 });
@@ -51,7 +53,7 @@ test("READONLY: login screen links to a 2-tab read-only schedule with working fi
 });
 
 test("READONLY: existing full public viewer is unaffected", async ({ page }) => {
-  await page.goto("/demo-school");
+  await page.goto(DEMO_SCHOOL_PATH);
   await expect(page.getByRole("button", { name: "גאנט" })).toBeVisible();
   await expect(page.getByRole("button", { name: "לוח שנה" })).toBeVisible();
   await expect(page.getByRole("button", { name: "סדר יום" })).toBeVisible();

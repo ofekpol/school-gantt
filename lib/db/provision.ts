@@ -1,8 +1,9 @@
 // NOTE: no `import "server-only"` — this module is invoked by scripts/provision-school.ts
 // via tsx outside the Next.js server runtime. It is also safe to call from server-only
 // Next.js code (Server Components / route handlers); never import from a Client Component.
+import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { z } from "zod";
+import { ProvisionSchoolInput } from "@/lib/validations/school";
 import { db, supabaseAdmin, withSchool } from "./client";
 import * as schema from "./schema";
 
@@ -24,23 +25,12 @@ export const DEFAULT_EVENT_TYPES = [
   { key: "general", labelHe: "כללי", labelEn: "General", colorHex: "#aec7e8", glyph: "G", sortOrder: 11 },
 ] as const;
 
-export const ProvisionSchoolInput = z.object({
-    slug: z
-      .string()
-      .min(2)
-      .max(64)
-      .regex(/^[a-z0-9-]+$/, "slug must match ^[a-z0-9-]+$"),
-    name: z.string().min(1).max(200),
-    locale: z.enum(["he", "en"]).default("he"),
-    timezone: z.string().default("Asia/Jerusalem"),
-    adminEmail: z.string().email().max(255),
-    adminName: z.string().min(1).max(200),
-  });
-
-export type ProvisionSchoolInput = z.infer<typeof ProvisionSchoolInput>;
+export { ProvisionSchoolInput };
 
 export interface ProvisionSchoolResult {
   schoolId: string;
+  /** Secret school link token for `/schedule?school=` and `/auth/login?school=` links. */
+  accessToken: string;
   adminAuthUserId: string;
   magicLinkUrl: string;
   /** ISO 8601. Supabase magic links default to 1 hour. */
@@ -50,7 +40,7 @@ export interface ProvisionSchoolResult {
 type Tx = NodePgDatabase<typeof schema>;
 
 /** Insert the tenant root row. Throws when slug already taken — never clobbers. */
-async function insertSchool(input: ProvisionSchoolInput): Promise<string> {
+async function insertSchool(input: ProvisionSchoolInput): Promise<{ id: string; accessToken: string }> {
   const inserted = await db
     .insert(schema.schools)
     .values({
@@ -60,11 +50,11 @@ async function insertSchool(input: ProvisionSchoolInput): Promise<string> {
       timezone: input.timezone,
     })
     .onConflictDoNothing({ target: schema.schools.slug })
-    .returning({ id: schema.schools.id });
+    .returning({ id: schema.schools.id, accessToken: schema.schools.accessToken });
   if (inserted.length === 0) {
     throw new Error(`school with slug "${input.slug}" already exists — refusing to clobber`);
   }
-  return inserted[0].id;
+  return inserted[0];
 }
 
 async function insertDefaultEventTypes(tx: Tx, schoolId: string): Promise<void> {
@@ -73,16 +63,37 @@ async function insertDefaultEventTypes(tx: Tx, schoolId: string): Promise<void> 
   }
 }
 
+const AUTH_USERS_PER_PAGE = 200;
+
+/** Walk every listUsers page; the Auth admin API has no lookup-by-email. */
+async function findAuthUserByEmail(
+  email: string,
+): Promise<{ id: string; email_confirmed_at?: string | null } | null> {
+  for (let page = 1; ; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage: AUTH_USERS_PER_PAGE,
+    });
+    if (error) throw new Error(`listUsers: ${error.message}`);
+    const found = data.users.find((u) => u.email === email);
+    if (found) return found;
+    if (data.users.length < AUTH_USERS_PER_PAGE) return null;
+  }
+}
+
 /** Resolve a Supabase Auth user by email; create if absent. No password — magic-link only. */
 async function ensureAuthUserPasswordless(email: string): Promise<string> {
-  // listUsers is paginated; 200/page is enough for small prod projects.
-  const { data: existing, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-  if (listErr) throw new Error(`listUsers: ${listErr.message}`);
-  const found = existing.users.find((u) => u.email === email);
-  if (found) return found.id;
+  const existing = await findAuthUserByEmail(email);
+  if (existing) {
+    // Anyone can sign up with an email they don't own; until it is confirmed, its
+    // password may be a stranger's, and our magic link would confirm it for them.
+    if (!existing.email_confirmed_at) {
+      throw new Error(
+        `auth user ${email} exists but is unconfirmed — delete it in Supabase Auth, then retry`,
+      );
+    }
+    return existing.id;
+  }
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -114,8 +125,8 @@ async function insertAdminStaffUser(
 
 async function generateAdminMagicLink(
   adminEmail: string,
+  appUrl: string | undefined,
 ): Promise<{ magicLinkUrl: string; magicLinkExpiresAt: string }> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (!appUrl) throw new Error("NEXT_PUBLIC_APP_URL is required to build the magic-link redirect");
   const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
     type: "magiclink",
@@ -136,21 +147,41 @@ async function generateAdminMagicLink(
  * Provision a brand-new tenant: school row + 11 event types + admin staff user.
  * Idempotency: conflicts on slug throw — we never clobber an existing school.
  * Caller is responsible for emailing the returned magicLinkUrl to the admin.
+ * `appUrl` is the magic link's redirect origin; defaults to NEXT_PUBLIC_APP_URL
+ * (unset on Vercel Preview, where the route passes the request origin).
  */
 export async function provisionSchool(
   rawInput: ProvisionSchoolInput,
+  appUrl: string | undefined = process.env.NEXT_PUBLIC_APP_URL,
 ): Promise<ProvisionSchoolResult> {
   const input = ProvisionSchoolInput.parse(rawInput);
 
-  const schoolId = await insertSchool(input);
+  const { id: schoolId, accessToken } = await insertSchool(input);
 
-  const { adminAuthUserId } = await withSchool(schoolId, async (tx) => {
-    await insertDefaultEventTypes(tx, schoolId);
-    const authId = await insertAdminStaffUser(tx, schoolId, input);
-    return { adminAuthUserId: authId };
-  });
+  let adminAuthUserId: string;
+  try {
+    adminAuthUserId = await withSchool(schoolId, async (tx) => {
+      await insertDefaultEventTypes(tx, schoolId);
+      return insertAdminStaffUser(tx, schoolId, input);
+    });
+  } catch (err) {
+    // The transaction rolled back, so only the bare school row is left; drop it so the
+    // slug is free to retry. A just-created Auth user stays and is reused on retry.
+    await db.delete(schema.schools).where(eq(schema.schools.id, schoolId));
+    throw err;
+  }
 
-  const { magicLinkUrl, magicLinkExpiresAt } = await generateAdminMagicLink(input.adminEmail);
+  let magicLink: { magicLinkUrl: string; magicLinkExpiresAt: string };
+  try {
+    magicLink = await generateAdminMagicLink(input.adminEmail, appUrl);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `school was created (${input.slug}) but its admin sign-in link failed: ${reason}. ` +
+        `The admin can sign in with "forgot password" or Google instead.`,
+    );
+  }
+  const { magicLinkUrl, magicLinkExpiresAt } = magicLink;
 
-  return { schoolId, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
+  return { schoolId, accessToken, adminAuthUserId, magicLinkUrl, magicLinkExpiresAt };
 }

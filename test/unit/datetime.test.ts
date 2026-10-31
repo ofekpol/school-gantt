@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   addCalendarDays,
+  jerusalemDateString,
   jerusalemOffset,
+  jerusalemTimeString,
   jerusalemWallClockMs,
   jerusalemWallClockToIso,
 } from "@/lib/datetime";
@@ -50,5 +52,19 @@ describe("jerusalemWallClockMs", () => {
   it("keeps the local hour for timed instants", () => {
     const ms = jerusalemWallClockMs(new Date("2026-11-17T08:00:00Z")); // 10:00 IST
     expect(new Date(ms).toISOString()).toBe("2026-11-17T10:00:00.000Z");
+  });
+});
+
+describe("jerusalemDateString", () => {
+  it("uses the Jerusalem calendar day, not UTC", () => {
+    expect(jerusalemDateString(new Date("2026-10-26T22:30:00Z"))).toBe("2026-10-27");
+    expect(jerusalemDateString(new Date("2026-10-26T20:30:00Z"))).toBe("2026-10-26");
+  });
+});
+
+describe("jerusalemTimeString", () => {
+  it("formats the Jerusalem wall clock as HH:MM", () => {
+    expect(jerusalemTimeString(new Date("2026-11-12T08:30:00Z"))).toBe("10:30");
+    expect(jerusalemTimeString(new Date("2026-07-01T21:05:00Z"))).toBe("00:05");
   });
 });

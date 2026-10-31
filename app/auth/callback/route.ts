@@ -3,13 +3,23 @@ import { safeRedirectPath } from "@/lib/auth/redirects";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createStaffUserFromInvite, getStaffUserByAuthId } from "@/lib/db/staff";
 import { getInviteByToken, markInviteUsed, updateInviteUsedBy } from "@/lib/db/invites";
-import { createPendingRegistration, getPendingRegistrationByAuthId } from "@/lib/db/pending";
+import {
+  assignPendingSchoolIfMissing,
+  createPendingRegistration,
+  getPendingRegistrationByAuthId,
+} from "@/lib/db/pending";
+import { resolveSchoolIdFromParam } from "@/lib/db/schools";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const inviteToken = searchParams.get("invite_token");
   const next = safeRedirectPath(searchParams.get("next"), "/dashboard");
+
+  // Supabase rejects a banned Google sign-in before issuing a code.
+  if (searchParams.get("error_code") === "user_banned") {
+    return NextResponse.redirect(new URL("/auth/deactivated", origin));
+  }
 
   if (!code) {
     return NextResponse.redirect(new URL("/auth/login", origin));
@@ -82,13 +92,11 @@ export async function GET(request: NextRequest) {
   }
 
   const pending = await getPendingRegistrationByAuthId(authUser.id);
+  const schoolId = await resolveSchoolIdFromParam(searchParams.get("school"));
   if (!pending) {
-    await createPendingRegistration({
-      authUserId: authUser.id,
-      email,
-      fullName,
-      googleAvatarUrl,
-    });
+    await createPendingRegistration({ authUserId: authUser.id, email, fullName, googleAvatarUrl, schoolId });
+  } else if (pending.schoolId === null && schoolId) {
+    await assignPendingSchoolIfMissing(authUser.id, schoolId);
   }
 
   return NextResponse.redirect(new URL("/auth/pending", origin));

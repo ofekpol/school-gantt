@@ -14,10 +14,12 @@ export async function getCurrentPath(): Promise<string> {
 
 /**
  * Builds the in-header nav for a staff or admin user. Admins also see
- * the admin-only sections (Staff, Event Types, Year).
+ * the admin-only sections (Staff, Event Types, Year); platform admins also
+ * get a link to /platform/schools.
  */
 export async function buildNavLinks(
   role: "editor" | "admin" | "viewer",
+  isPlatformAdmin = false,
 ): Promise<AppHeaderNavLink[]> {
   const t = await getTranslations("nav");
   const links: AppHeaderNavLink[] = [
@@ -28,6 +30,9 @@ export async function buildNavLinks(
   }
   if (role === "admin" || role === "editor") {
     links.push({ href: "/admin/event-types", label: t("eventTypes") });
+  }
+  if (isPlatformAdmin) {
+    links.push({ href: "/platform/schools", label: t("platform") });
   }
   return links;
 }

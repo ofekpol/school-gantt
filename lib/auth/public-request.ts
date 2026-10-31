@@ -18,7 +18,7 @@ const PUBLIC_PREFIXES = [
 
 const RESERVED_PREFIXES = [
   "/auth", "/invite", "/ical", "/api", "/admin",
-  "/dashboard", "/events", "/profile", "/_next", "/schedule",
+  "/dashboard", "/events", "/profile", "/_next", "/schedule", "/platform",
 ];
 
 export function shouldBypassAuthRefresh(pathname: string): boolean {

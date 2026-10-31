@@ -225,7 +225,7 @@ export function FilterBar({
               }}
             />
           </div>
-          <button type="submit" className="sr-only" tabIndex={-1} />
+          <button type="submit" className="sr-only" tabIndex={-1} aria-label={t("apply")} />
         </form>
 
         {visibleZoomOptions.length > 0 && (

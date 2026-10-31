@@ -82,9 +82,11 @@ pnpm dev               # http://localhost:3000
 Useful URLs once the demo seed is in place:
 
 - `/` — school index landing
-- `/demo-school` — Gantt view
-- `/demo-school/agenda` — mobile agenda
-- `/demo-school/calendar` — printable yearly calendar
+- `/<token>` — Gantt view
+- `/<token>/agenda` — mobile agenda
+- `/<token>/calendar` — printable yearly calendar
+
+`<token>` is the school's secret link token (`schools.access_token`). The demo seed pins `demo-school` to the fixed token in `db/demo-school.ts` (`dedede…`, 64 chars); slugs such as `/demo-school` return 404.
 - `/login` — sign in
 - `/dashboard` — editor home (after sign in)
 - `/admin/queue` — approval queue (admin only)
@@ -115,13 +117,23 @@ Vercel **Preview** env vars point at the staging project. `RESEND_API_KEY` and `
 
 **Promotion flow:** feature branch → PR into `staging` → verify on the staging URL → PR `staging` → `main`. A hotfix merged straight into `main` must be merged back into `staging`.
 
-**Data refresh:** `.github/workflows/refresh-staging-db.yml` runs nightly (01:00 UTC) and copies prod's `public` schema plus `auth.users`/`auth.identities` into staging via `scripts/refresh-staging-db.sh`, then re-applies staging-only migrations. Anything created on staging is wiped nightly. Run on demand:
+**Data refresh (manual):** `.github/workflows/refresh-staging-db.yml` copies prod's `public` schema plus `auth.users`/`auth.identities` into staging via `scripts/refresh-staging-db.sh` and re-applies staging-only migrations. It does not run on a schedule, so anything created on staging survives until the next refresh. Run it:
 
 ```bash
-gh workflow run refresh-staging-db.yml
+gh workflow run refresh-staging-db.yml --ref staging
 ```
 
-Required GitHub secrets (Supabase **session pooler** URIs — runners are IPv4-only): `PROD_DATABASE_URL`, `STAGING_DATABASE_URL`. The script only reads from prod and refuses any target that isn't the staging project.
+Required GitHub secrets: `PROD_DATABASE_URL`, `STAGING_DATABASE_URL` (Supabase **session pooler** URIs — runners are IPv4-only). The script only reads from prod and refuses any target that isn't the staging project.
+
+**Demo school on staging (optional):** staging is a copy of prod, so debug against the copied prod school directly. A refresh wipes any `demo-school` tenant. Seed it again only when you need the role-specific test logins (admin, grade editors, counselor, viewer). Point `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` at the **staging** project, then:
+
+```bash
+pnpm seed
+```
+
+`db/seed.ts` refuses any database or Supabase project that isn't local or staging. Demo logins are the seed accounts listed under "Default credentials after `pnpm seed`" above (forced password change on first login).
+
+**Second school on staging:** for manual cross-school checks, provision one with `scripts/provision-school.ts` against staging (the onboarding rehearsal, see "Onboarding checklist for a new school"). Redo it after each refresh. Automated isolation coverage doesn't depend on staging: the integration suite uses its own two test schools, and `test/e2e/multi-school.spec.ts` creates its own `second-school`.
 
 Running `pnpm test:integration` with `TEST_DATABASE_URL` pointed at staging leaves test rows on staging until the next refresh.
 
@@ -177,20 +189,17 @@ Events from the previous year remain readable but read-only.
 
 - `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` grant unrestricted DB access — never expose in client bundles, never log.
 - The `db` client (`lib/db/client.ts`) imports `supabaseAdmin` and bypasses RLS. ESLint bans importing `supabaseAdmin` outside `lib/db/` (overridden under `lib/db/**`, `db/seed.ts`, and `db/migrations/`).
-- Every school-data query must run inside `db.withSchool(schoolId, fn)`. Two known exceptions live in `lib/db/schools.ts` (slug lookup) and `lib/ical/subscriptions.ts` (token lookup) — both are keyed on a cryptographically-scoped value, document the why inline, and never read another tenant's data.
+- Every school-data query must run inside `db.withSchool(schoolId, fn)`. Two known exceptions live in `lib/db/schools.ts` (school link token lookup) and `lib/ical/subscriptions.ts` (iCal token lookup) — both are keyed on a cryptographically-scoped value, document the why inline, and never read another tenant's data.
 - All status transitions go through `lib/events/approval.ts`. Never set `events.status` directly in a route handler.
 
 ## 12. Provisioning a new school (production tenant)
 
-For real (non-demo) schools, use `scripts/provision-school.ts` rather than the seed. The CLI creates the `schools` row, the active `academic_years` row, the 11 default `event_types`, and a Supabase Auth + `staff_users` admin record, then generates a one-time magic-link email via Resend.
+For real (non-demo) schools, use `scripts/provision-school.ts` rather than the seed. The CLI creates the `schools` row, the 11 default `event_types`, and a Supabase Auth + `staff_users` admin record, then generates a one-time magic-link email via Resend. No academic year is needed: the public views derive their date range from the school's events.
 
 ```bash
 pnpm provision:school \
   --slug=kfar-galim \
   --name="כפר גלים" \
-  --year-label=2026-2027 \
-  --year-start=2026-09-01 \
-  --year-end=2027-07-31 \
   --admin-email=admin@example.com \
   --admin-name="ישראל ישראלי"
 ```
@@ -199,12 +208,9 @@ Flags:
 
 | Flag | Required | Notes |
 |------|----------|-------|
-| `--slug` | yes | URL segment; `^[a-z0-9-]+$` |
+| `--slug` | yes | Internal name; `^[a-z0-9-]+$`. Never part of a public URL (guessable) |
 | `--name` | yes | Display name (Hebrew OK) |
-| `--year-label` | yes | e.g. `2026-2027` |
-| `--year-start` | yes | ISO `YYYY-MM-DD` |
-| `--year-end` | yes | ISO `YYYY-MM-DD`, after `--year-start` |
-| `--admin-email` | yes | First admin's real email |
+| `--admin-email` | yes | First admin's real email. Must not already be staff in another school (one login = one school) |
 | `--admin-name` | yes | First admin's full name |
 | `--locale` | no | `he` (default) or `en` |
 | `--timezone` | no | default `Asia/Jerusalem` |
@@ -217,6 +223,43 @@ Behavior:
 - Conflict on existing slug → exits 1 with `school with slug "..." already exists — refusing to clobber`.
 - Admin Supabase Auth user is created **without a password** — first sign-in is via the emailed magic link (1 h expiry, Supabase default).
 - After first sign-in the admin invites further staff via `/admin/staff` (the standard invite flow); the CLI never creates editors directly.
+
+### From the deployed app (`/platform/schools`)
+
+Platform admins can do the same without a local script: `/platform/schools` has a form (slug, name, admin email/name, language) that runs the same `provisionSchool()` and emails the magic link. When Resend is unconfigured or fails, the page shows the link to pass on by hand. It also lists every school with its sign-up and guest links. Anyone else gets a 404.
+
+Platform admins are rows in `platform_admins` (Supabase Auth user ids), not a role or env var, so adding one needs no redeploy. They don't need to be staff in any school. To add one (SQL editor of the target project; the user must have signed in once):
+
+```sql
+INSERT INTO platform_admins (auth_user_id)
+SELECT id FROM auth.users WHERE email = '<email>'
+ON CONFLICT DO NOTHING;
+```
+
+Remove with `DELETE FROM platform_admins WHERE auth_user_id = (SELECT id FROM auth.users WHERE email = '<email>');`.
+
+### Onboarding checklist for a new school
+
+Rehearse on staging first (point the env at staging); the next manual staging refresh wipes it.
+
+1. Create the school on `/platform/schools`, or run `pnpm provision:school --slug=<slug> --name=... --admin-email=... --admin-name=...` with prod env loaded.
+2. The admin signs in through the magic link and reviews `/admin/event-types`.
+3. Give the school its links. The CLI prints them, and the school's admin can copy them any time from **School links** on `/admin/staff`. Both carry the school's secret link token (`schools.access_token`, 64 hex chars, random per school):
+   - Staff sign-up: `https://<app>/auth/login?school=<token>`. Google or email sign-ups through it land in **that** school's pending list (`/admin/staff`) and need admin approval. Sign-ups without a valid token have no school and no admin sees them. Invites (`/admin/staff`) work regardless.
+   - Guest view (read-only, no account): `https://<app>/schedule?school=<token>`. The full viewer is `https://<app>/<token>` (`/calendar`, `/agenda`).
+   - A slug never opens a school: `/<slug>`, `?school=<slug>` and plain `/schedule` show nothing about any school. Share links only with that school's community — whoever holds a link sees that one school's calendar.
+4. Smoke-check `/<token>`, `/<token>/calendar`, `/<token>/agenda` after the first event is published.
+
+**Look up a school's token** (prod SQL editor): `SELECT slug, access_token FROM schools WHERE slug = '<slug>';`
+
+**Rotate a leaked link** (old links stop working at once; re-send the new ones):
+
+```sql
+UPDATE schools SET access_token = replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '')
+WHERE slug = '<slug>';
+```
+
+Staging refreshes copy `schools.access_token` from prod, so prod links also open the staging copy (staging sits behind Vercel login).
 
 Production cutover (one-time, per new Supabase project):
 

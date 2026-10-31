@@ -1,5 +1,5 @@
 import "server-only";
-import { eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db, withSchool } from "@/lib/db/client";
 import { supabaseAdmin } from "@/lib/db/supabase-admin";
 import { editorScopes, pendingRegistrations, staffUsers } from "@/lib/db/schema";
@@ -8,6 +8,7 @@ import { getStaffUserByAuthId } from "@/lib/db/staff";
 export interface PendingRegistrationRecord {
   id: string;
   authUserId: string;
+  schoolId: string | null;
   email: string;
   fullName: string;
   googleAvatarUrl: string | null;
@@ -22,16 +23,39 @@ export async function createPendingRegistration(params: {
   email: string;
   fullName: string;
   googleAvatarUrl?: string | null;
+  /** Resolved server-side from the sign-up link; null when there was none. */
+  schoolId: string | null;
 }): Promise<void> {
   await db
     .insert(pendingRegistrations)
     .values({
       authUserId: params.authUserId,
+      schoolId: params.schoolId,
       email: params.email,
       fullName: params.fullName,
       googleAvatarUrl: params.googleAvatarUrl ?? null,
     })
     .onConflictDoNothing();
+}
+
+/**
+ * Files a still-open, school-less registration under `schoolId` (the user came
+ * back through a school's sign-up link). Never moves a row between schools.
+ */
+export async function assignPendingSchoolIfMissing(
+  authUserId: string,
+  schoolId: string,
+): Promise<void> {
+  await db
+    .update(pendingRegistrations)
+    .set({ schoolId })
+    .where(
+      and(
+        eq(pendingRegistrations.authUserId, authUserId),
+        isNull(pendingRegistrations.schoolId),
+        isNull(pendingRegistrations.reviewOutcome),
+      ),
+    );
 }
 
 export async function getPendingRegistrationByAuthId(
@@ -45,11 +69,21 @@ export async function getPendingRegistrationByAuthId(
   return (row as PendingRegistrationRecord | undefined) ?? null;
 }
 
-export async function listPendingRegistrations(): Promise<PendingRegistrationRecord[]> {
+// pending_registrations has no RLS (read before the school is known), so every
+// admin-facing read below filters on school_id explicitly.
+function openRowInSchool(pendingId: string, schoolId: string) {
+  return and(eq(pendingRegistrations.id, pendingId), eq(pendingRegistrations.schoolId, schoolId));
+}
+
+export async function listPendingRegistrations(
+  schoolId: string,
+): Promise<PendingRegistrationRecord[]> {
   const rows = await db
     .select()
     .from(pendingRegistrations)
-    .where(isNull(pendingRegistrations.reviewOutcome));
+    .where(
+      and(isNull(pendingRegistrations.reviewOutcome), eq(pendingRegistrations.schoolId, schoolId)),
+    );
   return rows as PendingRegistrationRecord[];
 }
 
@@ -65,7 +99,7 @@ export async function approvePendingRegistration(params: {
   const [pending] = await db
     .select()
     .from(pendingRegistrations)
-    .where(eq(pendingRegistrations.id, params.pendingId))
+    .where(openRowInSchool(params.pendingId, params.schoolId))
     .limit(1);
 
   if (!pending || pending.reviewOutcome) {
@@ -135,12 +169,13 @@ export async function approvePendingRegistration(params: {
 
 export async function rejectPendingRegistration(params: {
   pendingId: string;
+  schoolId: string;
   reviewedBy: string;
 }): Promise<void> {
   const [pending] = await db
     .select()
     .from(pendingRegistrations)
-    .where(eq(pendingRegistrations.id, params.pendingId))
+    .where(openRowInSchool(params.pendingId, params.schoolId))
     .limit(1);
 
   if (!pending || pending.reviewOutcome) {

@@ -66,7 +66,7 @@ const event: PublicViewerEvent = {
 function renderShell() {
   return render(
     <ReadOnlyViewerShell
-      schoolSlug="demo-school"
+      accessToken="demo-school"
       schoolName="Demo School"
       initialParams={{ grades: [], types: [], q: "", zoom: "year", week: null }}
       year={{ label: "2026", startDate: "2026-09-01", endDate: "2027-07-31" }}

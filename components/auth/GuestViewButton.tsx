@@ -9,13 +9,16 @@ import { cn } from "@/lib/utils";
 export function GuestViewButton({
   label,
   className,
+  href = "/schedule",
 }: {
   label: string;
   className?: string;
+  /** A school-specific sign-up link points straight at that school's schedule. */
+  href?: `/${string}`;
 }) {
   return (
     <Link
-      href="/schedule"
+      href={href}
       data-testid="guest-view-button"
       className={cn(
         "inline-flex w-full items-center justify-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-accent",

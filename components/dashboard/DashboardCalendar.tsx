@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import { type ReactNode, useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GanttWeekly } from "@/components/Gantt/GanttWeekly";
@@ -57,6 +57,10 @@ interface Props {
   selectedGrades: number[];
   gradeColors: GradeColorMap;
   canCreateEvents?: boolean;
+  /** Opens this event's dialog on first render (deep link from the smart adder). */
+  initialEventId?: string;
+  /** Extra creation actions (e.g. the smart adder) shown beside "new event". */
+  createActions?: ReactNode;
 }
 
 /**
@@ -76,6 +80,8 @@ export function DashboardCalendar({
   selectedGrades,
   gradeColors,
   canCreateEvents = true,
+  initialEventId,
+  createActions,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -87,7 +93,7 @@ export function DashboardCalendar({
   const [selectedGradeState, setSelectedGradeState] = useState(selectedGrades);
   const deferredSelectedGrades = useDeferredValue(selectedGradeState);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(initialEventId ?? null);
   const [printMonthKey, setPrintMonthKey] = useState<string | null>(null);
   const allowedGradeOptions = useMemo(
     () => Array.from(new Set(allowedGrades)).sort((a, b) => a - b),
@@ -289,7 +295,7 @@ export function DashboardCalendar({
       )}
 
       {canCreateEvents && (
-        <div className={`flex justify-start px-6 ${showGradeFilter ? "pt-3" : "pt-4"}`}>
+        <div className={`flex flex-wrap items-center justify-start gap-2 px-6 ${showGradeFilter ? "pt-3" : "pt-4"}`}>
           <button
             type="button"
             onClick={() => openNewEvent(new Date().toISOString().slice(0, 10))}
@@ -297,6 +303,7 @@ export function DashboardCalendar({
           >
             {t("newEvent")}
           </button>
+          {createActions}
         </div>
       )}
 

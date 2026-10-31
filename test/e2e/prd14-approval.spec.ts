@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { DEMO_SCHOOL_PATH } from "../../db/demo-school";
 
 /**
  * PRD §14 — Approval: "An administrator can approve or reject from the
@@ -53,14 +54,16 @@ test("APPROVAL-PRD14: editor publishes an event, public view shows it within 5 s
     const { id: eventId } = (await createRes.json()) as { id: string };
 
     const title = `Approval-E2E-${Date.now()}`;
+    // The agenda opens on the current week and hides past events, so use today.
+    const eventDate = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
     const patchRes = await editorApi.patch(`/api/v1/events/${eventId}`, {
       data: {
         title,
         grades: [10],
         eventTypeId,
         allDay: true,
-        startAt: "2026-06-15T00:00:00+03:00",
-        endAt: "2026-06-15T23:59:59+03:00",
+        startAt: `${eventDate}T00:00:00+03:00`,
+        endAt: `${eventDate}T23:59:59+03:00`,
       },
       headers: { "Content-Type": "application/json" },
     });
@@ -76,7 +79,7 @@ test("APPROVAL-PRD14: editor publishes an event, public view shows it within 5 s
     // the server fresh, so the event should appear on the next page load.
     const publicPage = await publicContext.newPage();
     await expect(async () => {
-      await publicPage.goto("/demo-school/agenda?cb=" + Date.now());
+      await publicPage.goto(`${DEMO_SCHOOL_PATH}/agenda?cb=${Date.now()}`);
       await expect(publicPage.getByText(title)).toBeVisible({ timeout: 2_000 });
     }).toPass({ timeout: 10_000 });
 

@@ -6,9 +6,9 @@ vi.mock("next/cache", () => ({
   unstable_cache: (fn: unknown) => fn,
 }));
 
-const getSchoolBySlugMock = vi.fn();
+const resolveSchoolMock = vi.fn();
 vi.mock("@/lib/db/schools", () => ({
-  getSchoolBySlug: (...args: unknown[]) => getSchoolBySlugMock(...args),
+  resolveSchoolFromParam: (...args: unknown[]) => resolveSchoolMock(...args),
 }));
 
 const listEventTypesMock = vi.fn();
@@ -38,7 +38,7 @@ import {
 describe("public viewer data cache", () => {
   beforeEach(() => {
     revalidateTagMock.mockReset();
-    getSchoolBySlugMock.mockReset();
+    resolveSchoolMock.mockReset();
     listEventTypesMock.mockReset();
     getAgendaForSchoolMock.mockReset();
     getAgendaSignatureForSchoolMock.mockReset();
@@ -55,8 +55,18 @@ describe("public viewer data cache", () => {
     expect(revalidateTagMock).toHaveBeenCalledWith("public-viewer:school-a");
   });
 
+  it("returns null without touching tenant data when the link token resolves no school", async () => {
+    resolveSchoolMock.mockResolvedValue(null);
+
+    expect(await loadPublicViewerData("test-a")).toBeNull();
+    expect(await loadPublicViewerEvents("test-a")).toBeNull();
+    expect(resolveSchoolMock).toHaveBeenCalledWith("test-a");
+    expect(getAgendaForSchoolMock).not.toHaveBeenCalled();
+    expect(listEventTypesMock).not.toHaveBeenCalled();
+  });
+
   it("loads public events without requiring an active school year", async () => {
-    getSchoolBySlugMock.mockResolvedValue({
+    resolveSchoolMock.mockResolvedValue({
       id: "school-1",
       slug: "school-a",
       name: "School A",
@@ -101,7 +111,7 @@ describe("public viewer data cache", () => {
   });
 
   it("loads the event endpoint payload without loading the full viewer data", async () => {
-    getSchoolBySlugMock.mockResolvedValue({ id: "school-1", slug: "school-a" });
+    resolveSchoolMock.mockResolvedValue({ id: "school-1", slug: "school-a" });
     getAgendaForSchoolMock.mockResolvedValue([{
       id: "event-1",
       title: "Summer event",

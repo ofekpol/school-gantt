@@ -10,6 +10,8 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import { POST } from "@/app/api/v1/auth/register/route";
 
+const SCHOOL_TOKEN = "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1";
+
 describe("POST /api/v1/auth/register", () => {
   beforeEach(() => signUpMock.mockReset());
 
@@ -69,5 +71,22 @@ describe("POST /api/v1/auth/register", () => {
     signUpMock.mockResolvedValue({ data: { user: null }, error: { message: "unexpected" } });
     const res = await POST(makeRequest({ email: "a@b.com", fullName: "Test", password: "password123" }));
     expect(res.status).toBe(500);
+  });
+
+  it("stores the school link token in user_metadata", async () => {
+    signUpMock.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    const res = await POST(
+      makeRequest({ email: "a@b.com", fullName: "Test", password: "password123", school: SCHOOL_TOKEN }),
+    );
+    expect(res.status).toBe(200);
+    expect(signUpMock.mock.calls[0][0].options.data).toMatchObject({ school: SCHOOL_TOKEN });
+  });
+
+  it.each([["../x"], ["test-a"]])("rejects %s (not a school link token) with 422", async (school) => {
+    const res = await POST(
+      makeRequest({ email: "a@b.com", fullName: "Test", password: "password123", school }),
+    );
+    expect(res.status).toBe(422);
+    expect(signUpMock).not.toHaveBeenCalled();
   });
 });

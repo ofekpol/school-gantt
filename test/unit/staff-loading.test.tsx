@@ -17,6 +17,7 @@ vi.mock("next-intl", () => ({
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("next-intl/server", () => ({ getTranslations: vi.fn() }));
 vi.mock("@/lib/auth/session", () => ({ getStaffUser: vi.fn() }));
+vi.mock("@/lib/db/schools", () => ({ getSchoolById: vi.fn() }));
 vi.mock("@/lib/nav", () => ({ buildNavLinks: vi.fn(), getCurrentPath: vi.fn() }));
 vi.mock("@/components/AppHeader", () => ({ AppHeader: () => null }));
 vi.mock("@/components/auth/LogoutButton", () => ({ LogoutButton: () => null }));

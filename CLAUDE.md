@@ -164,6 +164,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
 RESEND_API_KEY
 NEXT_PUBLIC_APP_URL
+GROQ_API_KEY          # staff AI features; unset = AI hidden
+AI_MODEL              # optional Groq model override
 ```
 
 Never commit these.
