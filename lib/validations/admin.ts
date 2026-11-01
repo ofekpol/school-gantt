@@ -14,8 +14,6 @@ export const StaffUserCreateSchema = z.object({
   eventTypeScopes: z.array(z.string().min(1).max(64)).optional(),
 });
 
-export type StaffUserCreateInput = z.infer<typeof StaffUserCreateSchema>;
-
 export const StaffUserUpdateSchema = z.object({
   fullName: z.string().min(1).max(255).optional(),
   role: z.enum(["editor", "admin", "viewer"]).optional(),
@@ -24,8 +22,6 @@ export const StaffUserUpdateSchema = z.object({
   eventTypeScopes: z.array(z.string().min(1).max(64)).optional(),
 });
 
-export type StaffUserUpdateInput = z.infer<typeof StaffUserUpdateSchema>;
-
 export const StaffInviteCreateSchema = z.object({
   role: z.enum(["editor", "admin", "viewer"]),
   gradeScopes: z.array(z.number().int().min(7).max(12)).optional(),
@@ -33,8 +29,6 @@ export const StaffInviteCreateSchema = z.object({
   multiUse: z.boolean().optional().default(false),
   email: z.string().email().optional(),
 });
-
-export type StaffInviteCreateInput = z.infer<typeof StaffInviteCreateSchema>;
 
 export const ApprovePendingSchema = z.discriminatedUnion("action", [
   z.object({
@@ -51,8 +45,6 @@ export const ApprovePendingSchema = z.discriminatedUnion("action", [
   }),
 ]);
 
-export type ApprovePendingInput = z.infer<typeof ApprovePendingSchema>;
-
 export const EventTypeSchema = z.object({
   key: z.string().min(1).max(64),
   labelHe: z.string().min(1),
@@ -62,20 +54,6 @@ export const EventTypeSchema = z.object({
   /** Single glyph or short string for the event type icon */
   glyph: z.string().min(1).max(8),
 });
-
-export type EventTypeInput = z.infer<typeof EventTypeSchema>;
-
-export const AcademicYearSchema = z.object({
-  label: z.string().min(1).max(128),
-  /** ISO date string YYYY-MM-DD */
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
-  /** ISO date string YYYY-MM-DD */
-  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
-  /** When true, also sets schools.active_academic_year_id to the new id */
-  setActive: z.boolean().optional(),
-});
-
-export type AcademicYearInput = z.infer<typeof AcademicYearSchema>;
 
 const GradeColorEntrySchema = z.object({
   grade: z.number().int().min(7).max(12),
@@ -92,8 +70,6 @@ export const GradeColorsUpdateSchema = z.object({
       message: "Duplicate grade",
     }),
 });
-
-export type GradeColorsUpdateInput = z.infer<typeof GradeColorsUpdateSchema>;
 
 export const GradeColorsResponseSchema = z.object({
   colors: z.record(z.string(), z.string().regex(/^#[0-9A-Fa-f]{6}$/)),

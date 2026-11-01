@@ -2,7 +2,7 @@ import "server-only";
 import { createGroq } from "@ai-sdk/groq";
 import type { LanguageModel } from "ai";
 
-/** Default Groq model; override with AI_MODEL. Chosen by scripts/ai-eval.ts. */
+/** Default Groq model; override with AI_MODEL. */
 const DEFAULT_MODEL = "openai/gpt-oss-120b";
 
 /** True when the AI features can run (a Groq key is configured). */

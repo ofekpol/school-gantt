@@ -110,11 +110,6 @@ export function eventJerusalemDateRange(
   };
 }
 
-export function eventTouchesJerusalemDate(event: CalendarStatusEvent, dateKey: string): boolean {
-  const range = eventJerusalemDateRange(event);
-  return range !== null && range.startDate <= dateKey && dateKey <= range.endDate;
-}
-
 export function jerusalemDateKey(date: Date): string {
   const parts = Object.fromEntries(
     dateFormatter.formatToParts(date).map((part) => [part.type, part.value]),
