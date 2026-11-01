@@ -131,6 +131,27 @@ describe("GanttWeekly toolbar", () => {
     expect(nav).toHaveClass("justify-center");
   });
 
+  it("keeps the paged-to week when re-rendered with a rebuilt model for the same week", () => {
+    const buildModel = () =>
+      buildWeeklyModel(
+        new Date(Date.UTC(2026, 6, 5)),
+        [],
+        [7, 8],
+        new Date(Date.UTC(2026, 6, 7)),
+      );
+    const { rerender } = render(
+      <GanttWeekly model={buildModel()} events={[]} navigationMode="local" />,
+    );
+    const nav = screen.getByLabelText("weeklyPeriodNavigation");
+
+    fireEvent.click(within(nav).getByRole("button", { name: "שבוע הבא" }));
+    const pagedHeading = within(nav).getByRole("heading").textContent;
+    rerender(<GanttWeekly model={buildModel()} events={[]} navigationMode="local" />);
+
+    expect(within(nav).getByRole("heading").textContent).toBe(pagedHeading);
+    expect(pagedHeading).toBe("שבוע 12–18 ביולי");
+  });
+
   it("jumps from another week back to the current week", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-08T09:00:00.000Z"));
