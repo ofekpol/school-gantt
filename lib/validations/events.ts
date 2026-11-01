@@ -29,8 +29,6 @@ export const EventSubmitSchema = z.object({
   grades: z.array(z.number().int().min(7).max(12)).min(1),
 });
 
-export type EventSubmitInput = z.infer<typeof EventSubmitSchema>;
-
 /**
  * Strict schema for one-step quick publish from the dashboard.
  * Unlike EventSubmitSchema, this includes the optional draft fields that are
@@ -52,8 +50,6 @@ export const RejectSchema = z.object({
   reason: z.string().min(1).max(2000),
 });
 
-export type RejectInput = z.infer<typeof RejectSchema>;
-
 /**
  * Filters captured when a staff user creates an iCal subscription.
  * Empty arrays mean "no filter on this axis" (i.e. include all).
@@ -62,5 +58,3 @@ export const ICalSubscriptionSchema = z.object({
   grades: z.array(z.number().int().min(7).max(12)).max(6).optional(),
   eventTypes: z.array(z.string().uuid()).max(50).optional(),
 });
-
-export type ICalSubscriptionInput = z.infer<typeof ICalSubscriptionSchema>;

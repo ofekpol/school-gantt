@@ -1,5 +1,3 @@
-// NOTE: no `import "server-only"` — this module is invoked by scripts/ban-deactivated-staff.ts
-// via tsx outside the Next.js server runtime.
 import { eq } from "drizzle-orm";
 import { db, supabaseAdmin } from "./client";
 import { staffUsers } from "./schema";

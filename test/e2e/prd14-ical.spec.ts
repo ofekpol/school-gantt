@@ -1,4 +1,4 @@
-import { test, expect, request } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 /**
  * PRD §14 — iCalendar: "Tokens can be revoked and revoked tokens return
