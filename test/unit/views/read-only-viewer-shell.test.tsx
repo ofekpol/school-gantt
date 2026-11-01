@@ -119,6 +119,7 @@ describe("ReadOnlyViewerShell", () => {
     const user = userEvent.setup();
     renderShell();
 
+    await user.click(screen.getByRole("button", { name: "weekly" }));
     await user.click(screen.getByRole("button", { name: "ז" }));
 
     expect(screen.queryByText("grade-7")).not.toBeInTheDocument();
