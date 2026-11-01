@@ -63,11 +63,14 @@ export function GanttWeekly({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const startRouteProgress = useRouteProgress();
-  const [displayWeekStartMs, setDisplayWeekStartMs] = useState(() => model.weekStart.getTime());
+  const modelWeekStartMs = model.weekStart.getTime();
+  const [displayWeekStartMs, setDisplayWeekStartMs] = useState(modelWeekStartMs);
 
+  // Depends on the timestamp: parents rebuild the model (and its Date) on re-render,
+  // which must not undo paging unless the week itself changed.
   useEffect(() => {
-    setDisplayWeekStartMs(model.weekStart.getTime());
-  }, [model.weekStart]);
+    setDisplayWeekStartMs(modelWeekStartMs);
+  }, [modelWeekStartMs]);
 
   const hydratedEvents = useMemo(
     () => events.map((e) => ({
