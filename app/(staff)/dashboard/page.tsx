@@ -40,7 +40,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   if (!user.schoolId) redirect("/auth/pending");
 
   const sp = await searchParams;
-  const view = sp.view === "monthly" ? "monthly" : "weekly";
+  const view =
+    sp.view === "weekly" || (sp.view !== "monthly" && sp.week !== undefined) ? "weekly" : "monthly";
 
   const [school, myEvents, eventTypeList, allowedGrades, gradeColors] = await Promise.all([
     getSchoolById(user.schoolId),

@@ -125,7 +125,7 @@ function useReadOnlyViewerState({
   initialEvents,
   initialEventsSignature,
 }: Omit<Props, "schoolName">): UseReadOnlyViewerStateResult {
-  const [tab, setTab] = useState<ReadOnlyTab>("weekly");
+  const [tab, setTab] = useState<ReadOnlyTab>(initialParams.week ? "weekly" : "monthly");
   const [params, setParams] = useState(initialParams);
   const events = usePublicViewerEvents({ accessToken, initialEvents, initialEventsSignature });
   const [calendarMonths, setCalendarMonths] = useState<CalendarMonth[] | null>(null);
