@@ -224,8 +224,6 @@ function parseIsoDate(iso: string): Date {
 
 export type ZoomLevel = "week" | "month" | "term" | "year";
 
-export const ZOOM_LEVELS: ZoomLevel[] = ["week", "month", "term", "year"];
-
 /**
  * Maps a zoom preset to a horizontal scale multiplier applied to the
  * timeline track. `year` fits the full display range in the viewport;
@@ -243,9 +241,4 @@ export function zoomScale(zoom: ZoomLevel): number {
     case "year":
       return 1;
   }
-}
-
-export function parseZoom(raw: string | undefined): ZoomLevel {
-  if (raw === "week" || raw === "month" || raw === "term") return raw;
-  return "year";
 }

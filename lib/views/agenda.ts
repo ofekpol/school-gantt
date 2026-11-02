@@ -10,7 +10,7 @@ import {
   staffEventDismissals,
 } from "@/lib/db/schema";
 import type { AgendaItem } from "@/lib/views/agenda-model";
-export type { AgendaItem, AgendaWeek } from "@/lib/views/agenda-model";
+export type { AgendaItem } from "@/lib/views/agenda-model";
 
 export interface AgendaFilters {
   /** Restrict to events touching any of these grades. Empty/undefined = all. */
@@ -175,5 +175,3 @@ export async function getAgendaSignatureForSchool(
     ].join(":");
   });
 }
-
-export { groupByWeek } from "@/lib/views/agenda-model";
