@@ -150,6 +150,8 @@ The PRD targets and the corresponding observables:
 | WCAG 2.1 AA — zero serious/critical | `pnpm playwright` running `test/e2e/a11y.spec.ts` |
 | Auth lockout — 10 attempts / 15 min | `staff_users.locked_until` updates |
 
+Infrastructure cost tiers, current usage vs. plan limits, and upgrade triggers: see [docs/COST_PLAN.md](docs/COST_PLAN.md).
+
 ## 9. Runbooks
 
 ### "An editor can't sign in — claims password is right"
