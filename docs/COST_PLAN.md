@@ -210,7 +210,7 @@ Check these numbers monthly. When one crosses its threshold, make the change lis
 
 ## 6. Cost levers (cheap wins before upgrading)
 
-1. **Let the Vercel CDN cache the poll endpoints.** `/api/v1/public/[school]/events{,/signature}` currently send `Cache-Control: public, max-age=5`, which only browsers cache. Adding `s-maxage=5` (or `CDN-Cache-Control`) lets the Vercel CDN answer repeat polls without running a function. That would cut invocations and CPU per school by an estimated 80–95% while staying within the 5 s freshness SLO. This is the biggest saving available.
+1. **Done (PR #55): the Vercel CDN now caches the poll endpoints.** `/api/v1/public/[school]/events{,/signature}` send `Cache-Control: public, max-age=0, s-maxage=5`, so the CDN answers repeat polls for 5 s without running a function. All viewers of one school share a single invocation per 5 s window, an estimated 80–95% cut in invocations and CPU. The per-school Vercel estimates in §3.1 and §4 are from before this change, so they are now an upper bound. Re-measure on the Usage tab after deploy.
 2. **Slow polling when idle:** e.g. poll every 30 s after 5 minutes with no interaction. Visible-tab polling already stops when the tab is hidden.
 3. **Staging in a free org** saves $10/month compared with a 2nd project in the Pro org.
 4. **Skip PITR** until a contract or data volume justifies it. Pro's daily backups cover most cases.
