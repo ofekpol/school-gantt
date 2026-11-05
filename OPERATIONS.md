@@ -13,7 +13,7 @@ Copy `.env.example` to `.env.local` and fill these in:
 | `SUPABASE_SERVICE_ROLE_KEY` | Service-role key (admin operations) | `lib/db/supabase-admin.ts` only |
 | `DATABASE_URL` | Postgres connection, preferably Supabase pooler for IPv4-only local/runtime networks (used by Drizzle migrations + the `db` pool) | `lib/db/client.ts` |
 | `TEST_DATABASE_URL` | Separate Postgres for integration tests; tests skip if absent | `test/integration/setup.ts` |
-| `RESEND_API_KEY` | Resend API key for approval notifications | `lib/email/approval.ts` |
+| `RESEND_API_KEY` | Resend API key for invite, approval and welcome emails | `lib/email/*` |
 | `NEXT_PUBLIC_APP_URL` | Public base URL (e.g. `https://school-gantt.example`) | reset-password email link |
 
 Never commit `.env.local`. The `.env.example` file is the canonical list of expected variables.

@@ -11,7 +11,7 @@ Staff editors submit events through a 7-step wizard → publish directly → app
 - Drizzle ORM + `pg` (service-role client only inside `lib/db/`)
 - `next-intl` (Hebrew + English, `he` default)
 - `ical-generator` (iCal feed)
-- Resend (email — invite links, password reset)
+- Resend (email — staff invites, registration approvals, new-school welcome links)
 - Zod (all API boundary validation)
 - Vitest (unit + integration) + Playwright (e2e)
 
