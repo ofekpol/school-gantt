@@ -11,9 +11,12 @@ Copy `.env.example` to `.env.local` and fill these in:
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | client + middleware |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | client auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service-role key (admin operations) | `lib/db/supabase-admin.ts` only |
-| `DATABASE_URL` | Postgres connection, preferably Supabase pooler for IPv4-only local/runtime networks (used by Drizzle migrations + the `db` pool) | `lib/db/client.ts` |
+| `DATABASE_URL` | Postgres connection. On Vercel use the Supabase **transaction pooler** (port 6543): the session pooler caps at 15 clients and each function instance opens up to 10 (`EMAXCONNSESSION`). Used by migrations + the `db` pool | `lib/db/client.ts` |
 | `TEST_DATABASE_URL` | Separate Postgres for integration tests; tests skip if absent | `test/integration/setup.ts` |
-| `NEXT_PUBLIC_APP_URL` | Public base URL (e.g. `https://school-gantt.example`) | reset-password email link |
+| `NEXT_PUBLIC_APP_URL` | Public base URL; unset on Preview (links use the request origin) | email links, provisioning |
+| `GROQ_API_KEY` / `AI_MODEL` | Staff AI chat + smart adder. Unset = AI hidden (Production today) | `lib/ai/` |
+| `TEST_LOGIN_ENABLED` | Enables the e2e test login route. Never on Production | `app/api/v1/auth/login` |
+| `PLAYWRIGHT_BASE_URL` / `VERCEL_AUTOMATION_BYPASS_SECRET` | Run e2e against a deployment (bypass needed for protected previews). Revoke the bypass after testing | `playwright.config.ts` |
 
 Never commit `.env.local`. The `.env.example` file is the canonical list of expected variables.
 
@@ -80,16 +83,19 @@ pnpm dev               # http://localhost:3000
 
 Useful URLs once the demo seed is in place:
 
-- `/` — school index landing
+- `/` — redirects to login / the user's dashboard
 - `/<token>` — Gantt view
+- `/schedule?school=<token>` — read-only guest view
 - `/<token>/agenda` — mobile agenda
 - `/<token>/calendar` — printable yearly calendar
 
 `<token>` is the school's secret link token (`schools.access_token`). The demo seed pins `demo-school` to the fixed token in `db/demo-school.ts` (`dedede…`, 64 chars); slugs such as `/demo-school` return 404.
-- `/login` — sign in
-- `/dashboard` — editor home (after sign in)
-- `/admin/queue` — approval queue (admin only)
-- `/profile` — iCal subscriptions
+- `/auth/login` — sign in
+- `/dashboard` — editor home (after sign in; monthly view by default)
+- `/admin/staff`, `/admin/event-types` — admin only
+- `/platform/schools` — platform admins only
+
+The preview launch config (`.claude/launch.json`, port 3100) expects a local Postgres on `localhost:54329`; without Docker/Postgres, verify in the browser on staging with the demo school instead.
 
 ## 7. Deployment (Vercel)
 
@@ -114,7 +120,13 @@ Required project settings:
 
 Vercel **Preview** env vars point at the staging project. `NEXT_PUBLIC_APP_URL` is deliberately unset on Preview, so links use the request origin.
 
-**Promotion flow:** feature branch → PR into `staging` → verify on the staging URL → PR `staging` → `main`. A hotfix merged straight into `main` must be merged back into `staging`.
+**Promotion flow:** feature branch → PR into `staging` → verify on the staging URL → PR `staging` → `main`. A hotfix merged straight into `main` must be merged back into `staging`. Merge only when every check on the PR is green (auto-merge is disabled on the repo).
+
+**After merging to `main`:** confirm Vercel created a production deployment for the commit. A push has been skipped before; if so, deploy that commit by hand and check the project's Git settings.
+
+**E2E against staging:** `PLAYWRIGHT_BASE_URL=<staging url> VERCEL_AUTOMATION_BYPASS_SECRET=<from .env.staging.local> pnpm playwright`. Generate the bypass in Vercel → Settings → Deployment Protection; it applies to the whole project, so revoke it afterwards.
+
+**Plans:** Vercel Hobby and Supabase Free today. Hobby forbids commercial use; see `docs/COST_PLAN.md` (PR #55) for upgrade thresholds.
 
 **Data refresh (manual):** `.github/workflows/refresh-staging-db.yml` copies prod's `public` schema plus `auth.users`/`auth.identities` into staging via `scripts/refresh-staging-db.sh` and re-applies staging-only migrations. It does not run on a schedule, so anything created on staging survives until the next refresh. Run it:
 
@@ -144,7 +156,7 @@ The PRD targets and the corresponding observables:
 |--------|---------------|
 | Gantt ≤ 2 s first paint with 1 k events | Vercel "Speed Insights" or Lighthouse run against `/[school]?cb=1` |
 | iCal feed ≤ 500 ms response | Vercel function logs (`/ical/[token]`) p95 |
-| Public view freshness ≤ 5 s after admin approval | Manual: approve → reload `/[school]/agenda` |
+| Public view freshness ≤ 5 s after publish | Manual: publish → watch `/<token>/agenda` |
 | Token revocation visible ≤ 60 s | `Cache-Control: max-age=60` on `/ical/[token]` |
 | WCAG 2.1 AA — zero serious/critical | `pnpm playwright` running `test/e2e/a11y.spec.ts` |
 | Auth lockout — 10 attempts / 15 min | `staff_users.locked_until` updates |
@@ -159,15 +171,17 @@ Check `staff_users.locked_until`. If set in the future, lockout is active (10 fa
 UPDATE staff_users SET locked_until = NULL, login_attempts = 0 WHERE email = '...';
 ```
 
-### "An admin approved an event but it's not showing up publicly"
+### "An editor published an event but it's not showing up publicly"
 
-Check that the public view URL doesn't have a stale ISR cache. Public routes use `revalidate = 5`, so the new version is at most 5 s away. Add `?cb=$(date +%s)` to force a fresh render.
+Public views poll `/api/v1/public/<token>/events/signature` every 5 s; responses carry a 5 s `Cache-Control`, so the new version is at most ~10 s away. Check the event is `status='approved'`, not `draft`, `canceled` or `deleted_at` set.
 
-If a revision (parent_event_id) was approved, `lib/events/approval.ts:approveEvent` soft-deletes the parent in the same transaction. If both rows are visible, that transaction failed — check Postgres logs.
+### "Google Calendar shows an event on the wrong / old date"
+
+Check the stored row and the live feed (`/ical/<token>`) first. If both are right, the client holds a stale copy: the feed signals changes via `SEQUENCE` (`version + FEED_FORMAT_REVISION`) and `LAST-MODIFIED`. Google refreshes in up to ~a day; removing and re-adding the subscription forces it. If the feed output format changed, bump `FEED_FORMAT_REVISION` in `lib/ical/serializer.ts`.
 
 ### "Someone needs to revoke an iCal token in a hurry"
 
-Either through `/profile` (the owning staff user) or directly:
+Through the API (`DELETE /api/v1/ical-subscriptions/<id>`, the owning staff user) or directly:
 
 ```sql
 UPDATE ical_subscriptions SET revoked_at = NOW() WHERE token = '...';
@@ -177,10 +191,7 @@ The public feed `Cache-Control: max-age=60` means a Google Calendar refresh with
 
 ### "We need a new academic year"
 
-1. Sign in as admin.
-2. Visit `/admin/year`.
-3. Create the year row.
-4. Click "Set as active". Subsequent wizard date-pickers will bound to the new year.
+There is no admin UI for this (`/admin/year` was removed). Insert the `academic_years` row and set `schools.active_academic_year_id` in the SQL editor of the target project. Public views derive their date range from the school's events.
 
 Events from the previous year remain readable but read-only.
 
@@ -189,7 +200,17 @@ Events from the previous year remain readable but read-only.
 - `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` grant unrestricted DB access — never expose in client bundles, never log.
 - The `db` client (`lib/db/client.ts`) imports `supabaseAdmin` and bypasses RLS. ESLint bans importing `supabaseAdmin` outside `lib/db/` (overridden under `lib/db/**`, `db/seed.ts`, and `db/migrations/`).
 - Every school-data query must run inside `db.withSchool(schoolId, fn)`. Two known exceptions live in `lib/db/schools.ts` (school link token lookup) and `lib/ical/subscriptions.ts` (iCal token lookup) — both are keyed on a cryptographically-scoped value, document the why inline, and never read another tenant's data.
-- All status transitions go through `lib/events/approval.ts`. Never set `events.status` directly in a route handler.
+- Publish/edit transitions go through `lib/events/approval.ts`; cancel-on-delete lives in `lib/events/crud.ts`. Never set `events.status` directly in a route handler.
+- Deactivating staff bans their Supabase auth user. To backfill bans for already-deactivated staff (prod SQL editor):
+
+  ```sql
+  UPDATE auth.users u
+  SET banned_until = now() + interval '876000 hours', updated_at = now()
+  FROM staff_users s
+  WHERE s.id = u.id AND s.status = 'deactivated'
+  RETURNING u.id, u.banned_until;
+  ```
+- Never put a real school's access token or other secrets into chat, logs or a URL an agent builds. Test against the demo school on staging.
 
 ## 12. Provisioning a new school (production tenant)
 
