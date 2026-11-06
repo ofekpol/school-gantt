@@ -147,7 +147,6 @@
       "revoked": "Revoked",
       "copyInvite": "Copy URL",
       "inviteCopied": "Invite copied",
-      "emailSent": "Email sent",
       "duplicateEmail": "Email address already exists",
       "createError": "Creation error",
       "staffCreated": "User created",
@@ -542,8 +541,7 @@
       "slugHint": "Internal id: lowercase letters, digits and hyphens. Not part of any public link.",
       "submit": "Create school",
       "success": "School {slug} created.",
-      "emailSent": "A sign-in link was emailed to the admin.",
-      "emailNotSent": "The email was not sent. Give the admin this sign-in link (valid for 1 hour):",
+      "magicLink": "Give the admin this sign-in link (valid for 1 hour):",
       "duplicateSlug": "That slug is already taken.",
       "invalid": "Check the fields.",
       "error": "Setup failed. Try again."
