@@ -11,7 +11,6 @@ Staff editors submit events through a 7-step wizard → publish directly → app
 - Drizzle ORM + `pg` (service-role client only inside `lib/db/`)
 - `next-intl` (Hebrew + English, `he` default)
 - `ical-generator` (iCal feed)
-- Resend (email — staff invites, registration approvals, new-school welcome links)
 - Zod (all API boundary validation)
 - Vitest (unit + integration) + Playwright (e2e)
 
@@ -46,7 +45,6 @@ lib/
   views/                     — Event → Gantt / calendar / agenda projections
   datetime.ts                — Timezone helpers (Asia/Jerusalem)
   validations/               — Zod schemas
-  email/                     — Resend email helpers
 components/                  — Shared UI; WizardStep[1..7], GanttCanvas, FilterBar, etc.
 db/
   migrations/                — One .sql file per schema change
@@ -162,7 +160,6 @@ audit_log         id, school_id, actor_staff_id, action, target_table, target_id
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
-RESEND_API_KEY
 NEXT_PUBLIC_APP_URL
 GROQ_API_KEY          # staff AI features; unset = AI hidden
 AI_MODEL              # optional Groq model override
@@ -237,7 +234,7 @@ Core Value: An editor can publish an event and it appears publicly across all vi
 
 ### Constraints
 
-- **Tech Stack:** Next.js 15 App Router + React 19 + TypeScript 5 strict; Tailwind + shadcn/ui; Supabase (Postgres + Auth + RLS); Drizzle ORM + `pg`; `next-intl`; `ical-generator`; Resend; Zod; Vitest + Playwright
+- **Tech Stack:** Next.js 15 App Router + React 19 + TypeScript 5 strict; Tailwind + shadcn/ui; Supabase (Postgres + Auth + RLS); Drizzle ORM + `pg`; `next-intl`; `ical-generator`; Zod; Vitest + Playwright
 - **RTL:** CSS logical properties only (`start`/`end`) — never hardcode `left`/`right` in layout/position styles
 - **DB safety:** Every query touching school data must use `db.withSchool(schoolId, fn)`. ESLint rule bans raw service client outside `lib/db/`
 - **Security:** Parameterized SQL only; no SQL string interpolation; `supabaseAdmin` only inside `lib/db/`
