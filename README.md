@@ -31,7 +31,7 @@ pnpm seed:perf           # populate 1 000 events for perf benchmarks
 
 ## Stack
 
-Next.js 15 (App Router) · React 19 · TypeScript 5 strict · Tailwind CSS · shadcn/ui · Supabase (Postgres + Auth + RLS) · Drizzle ORM · `next-intl` · Hand-written RFC 5545 iCal serializer · Resend · Zod · Vitest · Playwright · `@axe-core/playwright`.
+Next.js 15 (App Router) · React 19 · TypeScript 5 strict · Tailwind CSS · shadcn/ui · Supabase (Postgres + Auth + RLS) · Drizzle ORM · `next-intl` · Hand-written RFC 5545 iCal serializer · Zod · Vitest · Playwright · `@axe-core/playwright`.
 
 ## Architecture
 

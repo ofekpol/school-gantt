@@ -34,7 +34,6 @@ Today the company site's "כניסה למערכת" button goes to `NEXT_PUBLIC_G
 - [ ] Upgrade before the first paying school: Vercel Pro (Hobby forbids commercial use), Supabase Pro (backups, no auto-pause). Cost tiers: `docs/COST_PLAN.md` (PR #55, open).
 - [ ] Merge PR #55's CDN caching for public poll endpoints (`s-maxage=5`).
 - [ ] Production `DATABASE_URL` on the transaction pooler (staging already switched; session pooler hit `EMAXCONNSESSION`).
-- [ ] Set `RESEND_FROM_EMAIL` on Production to a verified sender; send one test invite.
 - [ ] Turn on Supabase leaked-password protection.
 - [ ] Confirm the 2 deactivated prod staff are banned and platform admins exist on prod (SQL in OPERATIONS.md §12).
 - [ ] Revoke the Vercel automation bypass secret if still active (it was exposed in a transcript).

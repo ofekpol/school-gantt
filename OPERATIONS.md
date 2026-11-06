@@ -13,8 +13,6 @@ Copy `.env.example` to `.env.local` and fill these in:
 | `SUPABASE_SERVICE_ROLE_KEY` | Service-role key (admin operations) | `lib/db/supabase-admin.ts` only |
 | `DATABASE_URL` | Postgres connection. On Vercel use the Supabase **transaction pooler** (port 6543): the session pooler caps at 15 clients and each function instance opens up to 10 (`EMAXCONNSESSION`). Used by migrations + the `db` pool | `lib/db/client.ts` |
 | `TEST_DATABASE_URL` | Separate Postgres for integration tests; tests skip if absent | `test/integration/setup.ts` |
-| `RESEND_API_KEY` | Resend API key for invite / welcome / magic-link emails | `lib/email/` |
-| `RESEND_FROM_EMAIL` | Verified sender. Unset = `no-reply@example.com`, which Resend rejects | `lib/email/` |
 | `NEXT_PUBLIC_APP_URL` | Public base URL; unset on Preview (links use the request origin) | email links, provisioning |
 | `GROQ_API_KEY` / `AI_MODEL` | Staff AI chat + smart adder. Unset = AI hidden (Production today) | `lib/ai/` |
 | `TEST_LOGIN_ENABLED` | Enables the e2e test login route. Never on Production | `app/api/v1/auth/login` |
@@ -120,7 +118,7 @@ Required project settings:
 | Staging | `staging` | `school-gantt-git-staging-ofekpols-projects.vercel.app` (Vercel login required) | `school-gantt-staging` (`wmapfuwpdyishfqtzwha`, eu-central-1) |
 | Branch previews | any other | `school-gantt-git-<branch>-ofekpols-projects.vercel.app` | same as staging |
 
-Vercel **Preview** env vars point at the staging project. `RESEND_API_KEY` and `NEXT_PUBLIC_APP_URL` are deliberately unset on Preview: no emails are sent, and links use the request origin.
+Vercel **Preview** env vars point at the staging project. `NEXT_PUBLIC_APP_URL` is deliberately unset on Preview, so links use the request origin.
 
 **Promotion flow:** feature branch → PR into `staging` → verify on the staging URL → PR `staging` → `main`. A hotfix merged straight into `main` must be merged back into `staging`. Merge only when every check on the PR is green (auto-merge is disabled on the repo).
 
@@ -216,7 +214,7 @@ Events from the previous year remain readable but read-only.
 
 ## 12. Provisioning a new school (production tenant)
 
-For real (non-demo) schools, use `scripts/provision-school.ts` rather than the seed. The CLI creates the `schools` row, the 11 default `event_types`, and a Supabase Auth + `staff_users` admin record, then generates a one-time magic-link email via Resend. No academic year is needed: the public views derive their date range from the school's events.
+For real (non-demo) schools, use `scripts/provision-school.ts` rather than the seed. The CLI creates the `schools` row, the 11 default `event_types`, and a Supabase Auth + `staff_users` admin record, then prints a one-time magic link to hand to the admin. No academic year is needed: the public views derive their date range from the school's events.
 
 ```bash
 pnpm provision:school \
@@ -236,19 +234,18 @@ Flags:
 | `--admin-name` | yes | First admin's full name |
 | `--locale` | no | `he` (default) or `en` |
 | `--timezone` | no | default `Asia/Jerusalem` |
-| `--skip-email` | no | Print magic link to stdout instead of sending via Resend |
 
-Required env vars at run time: `DATABASE_URL` (prod pooler), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL`, and (unless `--skip-email`) `RESEND_API_KEY` + `RESEND_FROM_EMAIL`.
+Required env vars at run time: `DATABASE_URL` (prod pooler), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL`.
 
 Behavior:
 
 - Conflict on existing slug → exits 1 with `school with slug "..." already exists — refusing to clobber`.
-- Admin Supabase Auth user is created **without a password** — first sign-in is via the emailed magic link (1 h expiry, Supabase default).
+- Admin Supabase Auth user is created **without a password** — first sign-in is via the magic link the CLI prints, delivered by hand (1 h expiry, Supabase default).
 - After first sign-in the admin invites further staff via `/admin/staff` (the standard invite flow); the CLI never creates editors directly.
 
 ### From the deployed app (`/platform/schools`)
 
-Platform admins can do the same without a local script: `/platform/schools` has a form (slug, name, admin email/name, language) that runs the same `provisionSchool()` and emails the magic link. When Resend is unconfigured or fails, the page shows the link to pass on by hand. It also lists every school with its sign-up and guest links. Anyone else gets a 404.
+Platform admins can do the same without a local script: `/platform/schools` has a form (slug, name, admin email/name, language) that runs the same `provisionSchool()` and shows the magic link to pass on to the new admin. It also lists every school with its sign-up and guest links. Anyone else gets a 404.
 
 Platform admins are rows in `platform_admins` (Supabase Auth user ids), not a role or env var, so adding one needs no redeploy. They don't need to be staff in any school. To add one (SQL editor of the target project; the user must have signed in once):
 

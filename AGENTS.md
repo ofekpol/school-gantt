@@ -18,7 +18,6 @@ Staff editors create events in a single-page event form (`components/wizard/Wiza
 - Drizzle ORM + `pg` (service-role client only inside `lib/db/`)
 - `next-intl` (Hebrew + English, `he` default)
 - Hand-written RFC 5545 iCal serializer (`lib/ical/serializer.ts`)
-- Resend (email — invites, welcome, password reset)
 - Groq via `ai` SDK (staff AI chat + smart adder; hidden when `GROQ_API_KEY` is unset)
 - Zod (all API boundary validation)
 - Vitest (unit + integration) + Playwright (e2e)
@@ -61,7 +60,6 @@ lib/
   views/                     — Event → Gantt / calendar / agenda projections
   datetime.ts                — Timezone helpers (Asia/Jerusalem)
   validations/               — Zod schemas
-  email/                     — Resend helpers (invite, welcome)
 components/                  — Shared UI; Gantt/, dashboard/, admin/, ai/, wizard/, FilterBar, etc.
 db/
   migrations/                — One .sql file per schema change (0000–0018 so far)
@@ -205,8 +203,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
 DATABASE_URL                    # runtime: Supabase transaction pooler (port 6543) — session pooler exhausts at 15 clients
 TEST_DATABASE_URL
-RESEND_API_KEY
-RESEND_FROM_EMAIL               # verified sender; unset on Production = emails likely rejected
 NEXT_PUBLIC_APP_URL             # unset on Preview: links use the request origin
 GROQ_API_KEY                    # staff AI features; unset = AI hidden (unset on Production today)
 AI_MODEL                        # optional Groq model override
@@ -297,7 +293,7 @@ Core Value: An editor can publish an event and it appears publicly across all vi
 
 ### Constraints
 
-- **Tech Stack:** Next.js 15 App Router + React 19 + TypeScript 5 strict; Tailwind + shadcn/ui; Supabase (Postgres + Auth + RLS); Drizzle ORM + `pg`; `next-intl`; Resend; Zod; Vitest + Playwright
+- **Tech Stack:** Next.js 15 App Router + React 19 + TypeScript 5 strict; Tailwind + shadcn/ui; Supabase (Postgres + Auth + RLS); Drizzle ORM + `pg`; `next-intl`; Zod; Vitest + Playwright
 - **RTL:** CSS logical properties only (`start`/`end`) — never hardcode `left`/`right` in layout/position styles
 - **DB safety:** Every query touching school data must use `db.withSchool(schoolId, fn)`. ESLint rule bans raw service client outside `lib/db/`
 - **Security:** Parameterized SQL only; no SQL string interpolation; `supabaseAdmin` only inside `lib/db/`
