@@ -15,6 +15,7 @@ Copy `.env.example` to `.env.local` and fill these in:
 | `TEST_DATABASE_URL` | Separate Postgres for integration tests; tests skip if absent | `test/integration/setup.ts` |
 | `NEXT_PUBLIC_APP_URL` | Public base URL; unset on Preview (links use the request origin) | email links, provisioning |
 | `GROQ_API_KEY` / `AI_MODEL` | Staff AI chat + smart adder. Unset = AI hidden (Production today) | `lib/ai/` |
+| `GITHUB_SUPPORT_REPO` / `GITHUB_SUPPORT_TOKEN` | Staff "עזרה" form → issues in the private support repo. Unset = Help link hidden. Setup: §9 "Support reports" | `lib/support/` |
 | `TEST_LOGIN_ENABLED` | Enables the e2e test login route. Never on Production | `app/api/v1/auth/login` |
 | `PLAYWRIGHT_BASE_URL` / `VERCEL_AUTOMATION_BYPASS_SECRET` | Run e2e against a deployment (bypass needed for protected previews). Revoke the bypass after testing | `playwright.config.ts` |
 
@@ -162,6 +163,19 @@ The PRD targets and the corresponding observables:
 | Auth lockout — 10 attempts / 15 min | `staff_users.locked_until` updates |
 
 ## 9. Runbooks
+
+### Support reports (staff "עזרה" link)
+
+Staff open `/support` from the header, pick תקלה / שאלה / הצעה and write a message. The app files it as an issue in a **private** GitHub repo, with school, name, email, role, page and browser attached, labelled `bug` / `question` / `idea`. GitHub emails the repo's watchers on every new issue, and the owner watches by default. Each staff member can send 10 reports per 24 h (counted in `audit_log`, action `support_report`). `@mentions` in staff text are defused so a report can't ping GitHub users.
+
+One-time setup:
+
+1. `gh repo create ofekpol/schoolsync-support --private`, then `gh label create bug`, `question` and `idea` on it (`--repo ofekpol/schoolsync-support`). **Never point it at `ofekpol/schoolsync`, which is public.**
+2. GitHub → Settings → Developer settings → Fine-grained tokens: repository access = only `schoolsync-support`; permission Issues = Read and write. Expiry: up to a year, with a calendar reminder.
+3. Vercel (Production and Preview): `GITHUB_SUPPORT_REPO=ofekpol/schoolsync-support`, `GITHUB_SUPPORT_TOKEN=<token>`. Redeploy.
+4. Check the repo's Watch setting is "All activity" (or at least Issues), and that GitHub → Settings → Notifications sends email.
+5. Reply to the staff member from your own email (their address is in the issue), then close the issue.
+
 
 ### "An editor can't sign in — claims password is right"
 
