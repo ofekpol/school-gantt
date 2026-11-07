@@ -1,4 +1,6 @@
 const PUBLIC_PREFIXES = [
+  "/accessibility",
+  "/privacy",
   "/auth/login",
   "/auth/callback",
   "/auth/confirm",
