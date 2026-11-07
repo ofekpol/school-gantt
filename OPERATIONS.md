@@ -116,8 +116,8 @@ Required project settings:
 | Env | Git branch | URL | Supabase project |
 |-----|-----------|-----|------------------|
 | Production | `main` | `school-gantt.vercel.app` | `school-gantt-production` (`mfrtdirkknuvweaiqfzs`) |
-| Staging | `staging` | `school-gantt-git-staging-ofekpols-projects.vercel.app` (Vercel login required) | `school-gantt-staging` (`wmapfuwpdyishfqtzwha`, eu-central-1) |
-| Branch previews | any other | `school-gantt-git-<branch>-ofekpols-projects.vercel.app` | same as staging |
+| Staging | `staging` | `schoolsync-git-staging-edu-solutions.vercel.app` (Vercel login required) | `school-gantt-staging` (`wmapfuwpdyishfqtzwha`, eu-central-1) |
+| Branch previews | any other | `schoolsync-git-<branch>-edu-solutions.vercel.app` | same as staging |
 
 Vercel **Preview** env vars point at the staging project. `NEXT_PUBLIC_APP_URL` is deliberately unset on Preview, so links use the request origin.
 

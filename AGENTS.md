@@ -218,9 +218,10 @@ Never commit these. Never ask for or paste secret values in chat — have the us
 | Env | Branch | URL | Supabase |
 |-----|--------|-----|----------|
 | Production | `main` | `school-gantt.vercel.app` (public) | `mfrtdirkknuvweaiqfzs` |
-| Staging | `staging` | `school-gantt-git-staging-ofekpols-projects.vercel.app` (Vercel login) | `wmapfuwpdyishfqtzwha` |
-| Previews | any other | `school-gantt-git-<branch>-ofekpols-projects.vercel.app` | staging |
+| Staging | `staging` | `schoolsync-git-staging-edu-solutions.vercel.app` (Vercel login) | `wmapfuwpdyishfqtzwha` |
+| Previews | any other | `schoolsync-git-<branch>-edu-solutions.vercel.app` | staging |
 
+- Vercel project: `schoolsync` in team `edu-solutions` (prod domain `school-gantt.vercel.app` is attached to it). Old `school-gantt-git-*-ofekpols-projects` URLs are a stale project — don't test there.
 - Vercel is on Hobby, Supabase on Free (see `docs/COST_PLAN.md` on `feature/cost-plan` / PR #55 for upgrade thresholds).
 - Vercel has skipped a push to `main` before: after merging, confirm a production deployment exists for the commit; redeploy by hand if not.
 - Production has one real school (Kfar Galim). Do browser checks on staging with the demo school.
