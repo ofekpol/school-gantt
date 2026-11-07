@@ -144,6 +144,14 @@ pnpm seed
 
 `db/seed.ts` refuses any database or Supabase project that isn't local or staging. Demo logins are the seed accounts listed under "Default credentials after `pnpm seed`" above (forced password change on first login).
 
+**Sales demo school:** `edusolutions-demo` ("תיכון נווה ים (הדגמה)") holds a realistic 2026–2027 year (`db/demo-events.ts`: holidays, trips, exams and bagrut, parent meetings, ceremonies, counseling, grades 7–12). Staging needs a Vercel login, so sales meetings use production:
+
+1. On prod `/platform/schools`, provision slug `edusolutions-demo`, name `תיכון נווה ים (הדגמה)`, admin = a founder's email.
+2. `gh workflow run seed-demo-events.yml --ref staging -f target=production -f slug=edusolutions-demo` (re-run any time to reset the demo after a meeting).
+3. Copy its guest link from `/platform/schools`.
+
+`scripts/seed-demo-events.ts` deletes and re-inserts only the events of `demo-school` or `edusolutions-demo`, and refuses every other slug. Staging already has an `edusolutions-demo` copy (seeded 2026-11-07); a staging refresh replaces it with prod's.
+
 **Second school on staging:** for manual cross-school checks, provision one with `scripts/provision-school.ts` against staging (the onboarding rehearsal, see "Onboarding checklist for a new school"). Redo it after each refresh. Automated isolation coverage doesn't depend on staging: the integration suite uses its own two test schools, and `test/e2e/multi-school.spec.ts` creates its own `second-school`.
 
 Running `pnpm test:integration` with `TEST_DATABASE_URL` pointed at staging leaves test rows on staging until the next refresh.
