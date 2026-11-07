@@ -42,7 +42,8 @@
     "gantt": "Gantt",
     "agenda": "Agenda",
     "calendar": "Calendar",
-    "platform": "Schools"
+    "platform": "Schools",
+    "import": "Import"
   },
   "grades": {
     "label_7": "ז",
@@ -217,6 +218,43 @@
       "reset": "Restore defaults",
       "saved": "Saved",
       "error": "Save failed"
+    },
+    "import": {
+      "title": "Import calendar",
+      "intro": "Bring the school's existing calendar into the system in one go, from an Excel file.",
+      "step1": "Download the template and fill it in Excel, one row per event. Keep the header row as is.",
+      "step2": "In \"סוג אירוע\" write one of: {types}. In \"שכבות\" write e.g. 7,8 or \"כל בית הספר\". No times = all-day event.",
+      "step3": "Save as CSV UTF-8 and upload. You'll see a preview; nothing is saved until you confirm.",
+      "templateFile": "event-import-template.csv",
+      "download": "Download template",
+      "upload": "Upload file",
+      "loading": "Checking the file...",
+      "failed": "The check failed. Try again.",
+      "empty": "No events found in the file.",
+      "hasErrors": "{count, plural, one {One row has an error} other {# rows have errors}}. Fix the file and upload it again.",
+      "ready": "{count, plural, one {One event is ready to import} other {# events are ready to import}}.",
+      "confirm": "Publish {count} events",
+      "imported": "{count} events published and now on the calendar.",
+      "ok": "OK",
+      "columns": {
+        "line": "Row",
+        "eventTitle": "Title",
+        "type": "Type",
+        "when": "When",
+        "grades": "Grades",
+        "status": "Status"
+      },
+      "errors": {
+        "bad_header": "The header row doesn't match the template. Download the template and copy your data into it.",
+        "too_many_rows": "File too long: up to 500 events per import.",
+        "missing_title": "Missing title",
+        "unknown_type": "Unknown event type",
+        "bad_date": "Invalid date (e.g. 27/10/2026)",
+        "bad_time": "Invalid time (e.g. 08:30)",
+        "bad_grades": "Unknown grade (7 to 12)",
+        "end_before_start": "Ends before it starts",
+        "invalid": "Invalid data"
+      }
     }
   },
   "invite": {

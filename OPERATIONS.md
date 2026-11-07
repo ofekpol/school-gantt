@@ -262,12 +262,14 @@ Remove with `DELETE FROM platform_admins WHERE auth_user_id = (SELECT id FROM au
 Rehearse on staging first (point the env at staging); the next manual staging refresh wipes it.
 
 1. Create the school on `/platform/schools`, or run `pnpm provision:school --slug=<slug> --name=... --admin-email=... --admin-name=...` with prod env loaded.
-2. The admin signs in through the magic link and reviews `/admin/event-types`.
-3. Give the school its links. The CLI prints them, and the school's admin can copy them any time from **School links** on `/admin/staff`. Both carry the school's secret link token (`schools.access_token`, 64 hex chars, random per school):
+2. The admin signs in through the magic link (valid 1 hour; afterwards "שכחתם סיסמה?" or Google) and reviews `/admin/event-types`.
+3. **Import the existing calendar:** `/admin/import` (admin only). Download the CSV template, fill it in Excel (one row per event; type = an event-type label; grades like `ז,ח` or `כל בית הספר`; empty times = all day), save as "CSV UTF-8", upload. The preview flags bad rows by line; nothing is written until the admin confirms, and a confirm publishes every row in one transaction (up to 500 per file).
+4. Invite staff from `/admin/staff` (invite links carry role and grade/event-type scopes) or share the staff sign-up link below.
+5. Give the school its links. The CLI prints them, and the school's admin can copy them any time from **School links** on `/admin/staff`. Both carry the school's secret link token (`schools.access_token`, 64 hex chars, random per school):
    - Staff sign-up: `https://<app>/auth/login?school=<token>`. Google or email sign-ups through it land in **that** school's pending list (`/admin/staff`) and need admin approval. Sign-ups without a valid token have no school and no admin sees them. Invites (`/admin/staff`) work regardless.
    - Guest view (read-only, no account): `https://<app>/schedule?school=<token>`. The full viewer is `https://<app>/<token>` (`/calendar`, `/agenda`).
    - A slug never opens a school: `/<slug>`, `?school=<slug>` and plain `/schedule` show nothing about any school. Share links only with that school's community — whoever holds a link sees that one school's calendar.
-4. Smoke-check `/<token>`, `/<token>/calendar`, `/<token>/agenda` after the first event is published.
+6. Smoke-check `/<token>`, `/<token>/calendar`, `/<token>/agenda` after the import.
 
 **Look up a school's token** (prod SQL editor): `SELECT slug, access_token FROM schools WHERE slug = '<slug>';`
 
