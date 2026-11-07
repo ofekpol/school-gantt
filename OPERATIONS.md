@@ -145,6 +145,14 @@ pnpm seed
 
 `db/seed.ts` refuses any database or Supabase project that isn't local or staging. Demo logins are the seed accounts listed under "Default credentials after `pnpm seed`" above (forced password change on first login).
 
+**Sales demo school:** `edusolutions-demo` ("תיכון נווה ים (הדגמה)") holds a realistic 2026–2027 year (`db/demo-events.ts`: holidays, trips, exams and bagrut, parent meetings, ceremonies, counseling, grades 7–12). Staging needs a Vercel login, so sales meetings use production:
+
+1. On prod `/platform/schools`, provision slug `edusolutions-demo`, name `תיכון נווה ים (הדגמה)`, admin = a founder's email.
+2. `gh workflow run seed-demo-events.yml --ref staging -f target=production -f slug=edusolutions-demo` (re-run any time to reset the demo after a meeting).
+3. Copy its guest link from `/platform/schools`.
+
+`scripts/seed-demo-events.ts` deletes and re-inserts only the events of `demo-school` or `edusolutions-demo`, and refuses every other slug. Staging already has an `edusolutions-demo` copy (seeded 2026-11-07); a staging refresh replaces it with prod's.
+
 **Second school on staging:** for manual cross-school checks, provision one with `scripts/provision-school.ts` against staging (the onboarding rehearsal, see "Onboarding checklist for a new school"). Redo it after each refresh. Automated isolation coverage doesn't depend on staging: the integration suite uses its own two test schools, and `test/e2e/multi-school.spec.ts` creates its own `second-school`.
 
 Running `pnpm test:integration` with `TEST_DATABASE_URL` pointed at staging leaves test rows on staging until the next refresh.
@@ -276,12 +284,14 @@ Remove with `DELETE FROM platform_admins WHERE auth_user_id = (SELECT id FROM au
 Rehearse on staging first (point the env at staging); the next manual staging refresh wipes it.
 
 1. Create the school on `/platform/schools`, or run `pnpm provision:school --slug=<slug> --name=... --admin-email=... --admin-name=...` with prod env loaded.
-2. The admin signs in through the magic link and reviews `/admin/event-types`.
-3. Give the school its links. The CLI prints them, and the school's admin can copy them any time from **School links** on `/admin/staff`. Both carry the school's secret link token (`schools.access_token`, 64 hex chars, random per school):
+2. The admin signs in through the magic link (valid 1 hour; afterwards "שכחתם סיסמה?" or Google) and reviews `/admin/event-types`.
+3. **Import the existing calendar:** `/admin/import` (admin only). Download the CSV template, fill it in Excel (one row per event; type = an event-type label; grades like `ז,ח` or `כל בית הספר`; empty times = all day), save as "CSV UTF-8", upload. The preview flags bad rows by line; nothing is written until the admin confirms, and a confirm publishes every row in one transaction (up to 500 per file).
+4. Invite staff from `/admin/staff` (invite links carry role and grade/event-type scopes) or share the staff sign-up link below.
+5. Give the school its links. The CLI prints them, and the school's admin can copy them any time from **School links** on `/admin/staff`. Both carry the school's secret link token (`schools.access_token`, 64 hex chars, random per school):
    - Staff sign-up: `https://<app>/auth/login?school=<token>`. Google or email sign-ups through it land in **that** school's pending list (`/admin/staff`) and need admin approval. Sign-ups without a valid token have no school and no admin sees them. Invites (`/admin/staff`) work regardless.
    - Guest view (read-only, no account): `https://<app>/schedule?school=<token>`. The full viewer is `https://<app>/<token>` (`/calendar`, `/agenda`).
    - A slug never opens a school: `/<slug>`, `?school=<slug>` and plain `/schedule` show nothing about any school. Share links only with that school's community — whoever holds a link sees that one school's calendar.
-4. Smoke-check `/<token>`, `/<token>/calendar`, `/<token>/agenda` after the first event is published.
+6. Smoke-check `/<token>`, `/<token>/calendar`, `/<token>/agenda` after the import.
 
 **Look up a school's token** (prod SQL editor): `SELECT slug, access_token FROM schools WHERE slug = '<slug>';`
 
