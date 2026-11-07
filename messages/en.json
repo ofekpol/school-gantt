@@ -371,7 +371,13 @@
     },
     "linkRequired": {
       "title": "School link required",
-      "body": "To view the event calendar, open the link your school sent you."
+      "body": "Each school's event calendar opens only through the private link the school shares with parents, students and staff.",
+      "tipsTitle": "Where to find the link",
+      "tipMessages": "Look for a WhatsApp message or email from the school with a link to the calendar.",
+      "tipAsk": "Can't find it? Ask your homeroom teacher or the school office for the link.",
+      "tipFullLink": "Open the full link as you received it. A partial or mistyped link won't work.",
+      "staffPrompt": "School staff?",
+      "staffLogin": "Log in"
     }
   },
   "profile": {
