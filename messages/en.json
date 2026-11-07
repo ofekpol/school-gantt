@@ -546,5 +546,18 @@
       "invalid": "Check the fields.",
       "error": "Setup failed. Try again."
     }
+  },
+  "auth": {
+    "forgotPassword": {
+      "title": "Reset password",
+      "body": "Enter the email you signed up with and we will send you a link to choose a new password.",
+      "email": "Email",
+      "submit": "Send link",
+      "sending": "Sending...",
+      "sent": "If an account exists for this email, we sent it a link to choose a new password. Check your spam folder too.",
+      "error": "Something went wrong. Check the email address and try again.",
+      "back": "Back to sign in",
+      "link": "Forgot your password?"
+    }
   }
 }
