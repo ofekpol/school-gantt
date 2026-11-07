@@ -18,4 +18,9 @@ describe("shouldBypassAuthRefresh", () => {
     expect(shouldBypassAuthRefresh("/schedule/")).toBe(true);
     expect(shouldBypassAuthRefresh("/schedule/anything")).toBe(false);
   });
+
+  it("bypasses middleware auth refresh for the legal pages", () => {
+    expect(shouldBypassAuthRefresh("/accessibility")).toBe(true);
+    expect(shouldBypassAuthRefresh("/privacy")).toBe(true);
+  });
 });
